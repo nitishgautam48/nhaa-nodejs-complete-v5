@@ -3,10 +3,10 @@
   "version": "3.0.0",
   "type": "module",
   "description": "NHAA Complete System with Human Intelligence & SC/ST Training",
-  "main": "server.js",
+  "main": "index.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js",
+    "start": "node index.js",
+    "dev": "node --watch index.js",
     "train": "node trainScst.js"
   },
   "dependencies": {
