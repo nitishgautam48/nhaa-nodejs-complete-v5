@@ -1,0 +1,920 @@
+{
+  "drugged": {
+    "count": 1,
+    "severity": 100,
+    "types": [
+      "Gang Rape"
+    ],
+    "avgSeverity": 100
+  },
+  "gang rape": {
+    "count": 2,
+    "severity": 200,
+    "types": [
+      "Gang Rape",
+      "Gang Rape and Public Humiliation"
+    ],
+    "avgSeverity": 100
+  },
+  "14-year-old": {
+    "count": 1,
+    "severity": 100,
+    "types": [
+      "Gang Rape"
+    ],
+    "avgSeverity": 100
+  },
+  "tribal girl": {
+    "count": 1,
+    "severity": 100,
+    "types": [
+      "Gang Rape"
+    ],
+    "avgSeverity": 100
+  },
+  "Lambada": {
+    "count": 1,
+    "severity": 100,
+    "types": [
+      "Gang Rape"
+    ],
+    "avgSeverity": 100
+  },
+  "marriage offer": {
+    "count": 1,
+    "severity": 100,
+    "types": [
+      "Gang Rape"
+    ],
+    "avgSeverity": 100
+  },
+  "refused": {
+    "count": 2,
+    "severity": 165,
+    "types": [
+      "Gang Rape",
+      "Untouchability / Denial of Access"
+    ],
+    "avgSeverity": 82.5
+  },
+  "legal battle": {
+    "count": 1,
+    "severity": 100,
+    "types": [
+      "Gang Rape"
+    ],
+    "avgSeverity": 100
+  },
+  "kidnapped": {
+    "count": 1,
+    "severity": 100,
+    "types": [
+      "Gang Rape and Exploitation"
+    ],
+    "avgSeverity": 100
+  },
+  "gang raped": {
+    "count": 1,
+    "severity": 100,
+    "types": [
+      "Gang Rape and Exploitation"
+    ],
+    "avgSeverity": 100
+  },
+  "months": {
+    "count": 1,
+    "severity": 100,
+    "types": [
+      "Gang Rape and Exploitation"
+    ],
+    "avgSeverity": 100
+  },
+  "filmed": {
+    "count": 1,
+    "severity": 100,
+    "types": [
+      "Gang Rape and Exploitation"
+    ],
+    "avgSeverity": 100
+  },
+  "casteist slurs": {
+    "count": 1,
+    "severity": 100,
+    "types": [
+      "Gang Rape and Exploitation"
+    ],
+    "avgSeverity": 100
+  },
+  "online threat": {
+    "count": 3,
+    "severity": 243,
+    "types": [
+      "Gang Rape and Exploitation",
+      "Cyber Caste Harassment",
+      "Coordinated Online Hate Campaign"
+    ],
+    "avgSeverity": 81
+  },
+  "Dalit girl": {
+    "count": 1,
+    "severity": 100,
+    "types": [
+      "Gang Rape and Exploitation"
+    ],
+    "avgSeverity": 100
+  },
+  "ethnic violence": {
+    "count": 1,
+    "severity": 100,
+    "types": [
+      "Gang Rape and Public Humiliation"
+    ],
+    "avgSeverity": 100
+  },
+  "stripped": {
+    "count": 1,
+    "severity": 100,
+    "types": [
+      "Gang Rape and Public Humiliation"
+    ],
+    "avgSeverity": 100
+  },
+  "paraded naked": {
+    "count": 1,
+    "severity": 100,
+    "types": [
+      "Gang Rape and Public Humiliation"
+    ],
+    "avgSeverity": 100
+  },
+  "public humiliation": {
+    "count": 1,
+    "severity": 100,
+    "types": [
+      "Gang Rape and Public Humiliation"
+    ],
+    "avgSeverity": 100
+  },
+  "Manipur": {
+    "count": 1,
+    "severity": 100,
+    "types": [
+      "Gang Rape and Public Humiliation"
+    ],
+    "avgSeverity": 100
+  },
+  "researchers": {
+    "count": 1,
+    "severity": 70,
+    "types": [
+      "Intellectual Property Theft"
+    ],
+    "avgSeverity": 70
+  },
+  "JNU": {
+    "count": 1,
+    "severity": 70,
+    "types": [
+      "Intellectual Property Theft"
+    ],
+    "avgSeverity": 70
+  },
+  "data stolen": {
+    "count": 1,
+    "severity": 70,
+    "types": [
+      "Intellectual Property Theft"
+    ],
+    "avgSeverity": 70
+  },
+  "intellectual property": {
+    "count": 1,
+    "severity": 70,
+    "types": [
+      "Intellectual Property Theft"
+    ],
+    "avgSeverity": 70
+  },
+  "Supreme Court": {
+    "count": 1,
+    "severity": 70,
+    "types": [
+      "Intellectual Property Theft"
+    ],
+    "avgSeverity": 70
+  },
+  "compensation": {
+    "count": 1,
+    "severity": 70,
+    "types": [
+      "Intellectual Property Theft"
+    ],
+    "avgSeverity": 70
+  },
+  "school cook": {
+    "count": 1,
+    "severity": 75,
+    "types": [
+      "Academic Shunning"
+    ],
+    "avgSeverity": 75
+  },
+  "shunned": {
+    "count": 2,
+    "severity": 147,
+    "types": [
+      "Academic Shunning",
+      "Economic Boycott"
+    ],
+    "avgSeverity": 73.5
+  },
+  "untouchability": {
+    "count": 3,
+    "severity": 214,
+    "types": [
+      "Academic Shunning",
+      "Untouchability / Denial of Access",
+      "Temple Entry Denial"
+    ],
+    "avgSeverity": 71.33333333333333
+  },
+  "six accused": {
+    "count": 1,
+    "severity": 75,
+    "types": [
+      "Academic Shunning"
+    ],
+    "avgSeverity": 75
+  },
+  "convicted": {
+    "count": 1,
+    "severity": 75,
+    "types": [
+      "Academic Shunning"
+    ],
+    "avgSeverity": 75
+  },
+  "Tamil Nadu": {
+    "count": 1,
+    "severity": 75,
+    "types": [
+      "Academic Shunning"
+    ],
+    "avgSeverity": 75
+  },
+  "suicide": {
+    "count": 1,
+    "severity": 100,
+    "types": [
+      "Suicide after Caste Abuse"
+    ],
+    "avgSeverity": 100
+  },
+  "caste abuse": {
+    "count": 1,
+    "severity": 100,
+    "types": [
+      "Suicide after Caste Abuse"
+    ],
+    "avgSeverity": 100
+  },
+  "cowshed": {
+    "count": 1,
+    "severity": 100,
+    "types": [
+      "Suicide after Caste Abuse"
+    ],
+    "avgSeverity": 100
+  },
+  "purify": {
+    "count": 1,
+    "severity": 100,
+    "types": [
+      "Suicide after Caste Abuse"
+    ],
+    "avgSeverity": 100
+  },
+  "poison": {
+    "count": 1,
+    "severity": 100,
+    "types": [
+      "Suicide after Caste Abuse"
+    ],
+    "avgSeverity": 100
+  },
+  "death": {
+    "count": 1,
+    "severity": 100,
+    "types": [
+      "Suicide after Caste Abuse"
+    ],
+    "avgSeverity": 100
+  },
+  "Koli community": {
+    "count": 1,
+    "severity": 100,
+    "types": [
+      "Suicide after Caste Abuse"
+    ],
+    "avgSeverity": 100
+  },
+  "police torture": {
+    "count": 1,
+    "severity": 90,
+    "types": [
+      "Police Torture"
+    ],
+    "avgSeverity": 90
+  },
+  "urea delays": {
+    "count": 1,
+    "severity": 90,
+    "types": [
+      "Police Torture"
+    ],
+    "avgSeverity": 90
+  },
+  "farmer": {
+    "count": 1,
+    "severity": 90,
+    "types": [
+      "Police Torture"
+    ],
+    "avgSeverity": 90
+  },
+  "Lambadi": {
+    "count": 1,
+    "severity": 90,
+    "types": [
+      "Police Torture"
+    ],
+    "avgSeverity": 90
+  },
+  "tied up": {
+    "count": 1,
+    "severity": 90,
+    "types": [
+      "Police Torture"
+    ],
+    "avgSeverity": 90
+  },
+  "hospitalized": {
+    "count": 1,
+    "severity": 90,
+    "types": [
+      "Police Torture"
+    ],
+    "avgSeverity": 90
+  },
+  "denied entry": {
+    "count": 2,
+    "severity": 139,
+    "types": [
+      "Untouchability / Denial of Access",
+      "Temple Entry Denial"
+    ],
+    "avgSeverity": 69.5
+  },
+  "temple": {
+    "count": 2,
+    "severity": 139,
+    "types": [
+      "Untouchability / Denial of Access",
+      "Temple Entry Denial"
+    ],
+    "avgSeverity": 69.5
+  },
+  "well": {
+    "count": 1,
+    "severity": 65,
+    "types": [
+      "Untouchability / Denial of Access"
+    ],
+    "avgSeverity": 65
+  },
+  "sarpanch": {
+    "count": 1,
+    "severity": 65,
+    "types": [
+      "Untouchability / Denial of Access"
+    ],
+    "avgSeverity": 65
+  },
+  "beaten by police": {
+    "count": 1,
+    "severity": 90,
+    "types": [
+      "Custodial Violence"
+    ],
+    "avgSeverity": 90
+  },
+  "custodial torture": {
+    "count": 1,
+    "severity": 90,
+    "types": [
+      "Custodial Violence"
+    ],
+    "avgSeverity": 90
+  },
+  "detained": {
+    "count": 1,
+    "severity": 90,
+    "types": [
+      "Custodial Violence"
+    ],
+    "avgSeverity": 90
+  },
+  "released without charge": {
+    "count": 1,
+    "severity": 90,
+    "types": [
+      "Custodial Violence"
+    ],
+    "avgSeverity": 90
+  },
+  "inter-caste marriage": {
+    "count": 1,
+    "severity": 88,
+    "types": [
+      "Honor-Based Violence"
+    ],
+    "avgSeverity": 88
+  },
+  "threatened to kill": {
+    "count": 2,
+    "severity": 173,
+    "types": [
+      "Honor-Based Violence",
+      "Election-Related Caste Violence"
+    ],
+    "avgSeverity": 86.5
+  },
+  "honor": {
+    "count": 1,
+    "severity": 88,
+    "types": [
+      "Honor-Based Violence"
+    ],
+    "avgSeverity": 88
+  },
+  "assaulted": {
+    "count": 3,
+    "severity": 236,
+    "types": [
+      "Honor-Based Violence",
+      "Land Dispute Violence",
+      "Denial of Wedding Procession Rights"
+    ],
+    "avgSeverity": 78.66666666666667
+  },
+  "family threatened": {
+    "count": 1,
+    "severity": 88,
+    "types": [
+      "Honor-Based Violence"
+    ],
+    "avgSeverity": 88
+  },
+  "casteist slur": {
+    "count": 3,
+    "severity": 203,
+    "types": [
+      "Workplace Caste Discrimination",
+      "Cyber Caste Harassment",
+      "Coordinated Online Hate Campaign"
+    ],
+    "avgSeverity": 67.66666666666667
+  },
+  "denied promotion": {
+    "count": 2,
+    "severity": 118,
+    "types": [
+      "Workplace Caste Discrimination",
+      "Institutional Discrimination in Higher Education"
+    ],
+    "avgSeverity": 59
+  },
+  "supervisor": {
+    "count": 1,
+    "severity": 60,
+    "types": [
+      "Workplace Caste Discrimination"
+    ],
+    "avgSeverity": 60
+  },
+  "workplace harassment": {
+    "count": 2,
+    "severity": 118,
+    "types": [
+      "Workplace Caste Discrimination",
+      "Institutional Discrimination in Higher Education"
+    ],
+    "avgSeverity": 59
+  },
+  "degrading duties": {
+    "count": 1,
+    "severity": 60,
+    "types": [
+      "Workplace Caste Discrimination"
+    ],
+    "avgSeverity": 60
+  },
+  "land occupied": {
+    "count": 2,
+    "severity": 154,
+    "types": [
+      "Land Dispute Violence",
+      "Land Grab During Forest Rights Claim"
+    ],
+    "avgSeverity": 77
+  },
+  "forcibly occupied": {
+    "count": 2,
+    "severity": 154,
+    "types": [
+      "Land Dispute Violence",
+      "Land Grab During Forest Rights Claim"
+    ],
+    "avgSeverity": 77
+  },
+  "police refused": {
+    "count": 2,
+    "severity": 152,
+    "types": [
+      "Land Dispute Violence",
+      "Temple Entry Denial"
+    ],
+    "avgSeverity": 76
+  },
+  "encroachment": {
+    "count": 1,
+    "severity": 78,
+    "types": [
+      "Land Dispute Violence"
+    ],
+    "avgSeverity": 78
+  },
+  "shared my photos": {
+    "count": 1,
+    "severity": 70,
+    "types": [
+      "Cyber Caste Harassment"
+    ],
+    "avgSeverity": 70
+  },
+  "social media": {
+    "count": 1,
+    "severity": 70,
+    "types": [
+      "Cyber Caste Harassment"
+    ],
+    "avgSeverity": 70
+  },
+  "cyberbullying": {
+    "count": 1,
+    "severity": 70,
+    "types": [
+      "Cyber Caste Harassment"
+    ],
+    "avgSeverity": 70
+  },
+  "denied treatment": {
+    "count": 1,
+    "severity": 82,
+    "types": [
+      "Healthcare Denial"
+    ],
+    "avgSeverity": 82
+  },
+  "refused to touch": {
+    "count": 1,
+    "severity": 82,
+    "types": [
+      "Healthcare Denial"
+    ],
+    "avgSeverity": 82
+  },
+  "healthcare denial": {
+    "count": 1,
+    "severity": 82,
+    "types": [
+      "Healthcare Denial"
+    ],
+    "avgSeverity": 82
+  },
+  "delivered without assistance": {
+    "count": 1,
+    "severity": 82,
+    "types": [
+      "Healthcare Denial"
+    ],
+    "avgSeverity": 82
+  },
+  "sit separately": {
+    "count": 1,
+    "severity": 55,
+    "types": [
+      "Educational Discrimination"
+    ],
+    "avgSeverity": 55
+  },
+  "eat separately": {
+    "count": 1,
+    "severity": 55,
+    "types": [
+      "Educational Discrimination"
+    ],
+    "avgSeverity": 55
+  },
+  "mid-day meal": {
+    "count": 1,
+    "severity": 55,
+    "types": [
+      "Educational Discrimination"
+    ],
+    "avgSeverity": 55
+  },
+  "segregation": {
+    "count": 1,
+    "severity": 55,
+    "types": [
+      "Educational Discrimination"
+    ],
+    "avgSeverity": 55
+  },
+  "discrimination": {
+    "count": 2,
+    "severity": 113,
+    "types": [
+      "Educational Discrimination",
+      "Institutional Discrimination in Higher Education"
+    ],
+    "avgSeverity": 56.5
+  },
+  "economic boycott": {
+    "count": 1,
+    "severity": 72,
+    "types": [
+      "Economic Boycott"
+    ],
+    "avgSeverity": 72
+  },
+  "denied access": {
+    "count": 2,
+    "severity": 142,
+    "types": [
+      "Economic Boycott",
+      "Denial of Wedding Procession Rights"
+    ],
+    "avgSeverity": 71
+  },
+  "market": {
+    "count": 1,
+    "severity": 72,
+    "types": [
+      "Economic Boycott"
+    ],
+    "avgSeverity": 72
+  },
+  "irrigation": {
+    "count": 1,
+    "severity": 72,
+    "types": [
+      "Economic Boycott"
+    ],
+    "avgSeverity": 72
+  },
+  "social boycott": {
+    "count": 1,
+    "severity": 72,
+    "types": [
+      "Economic Boycott"
+    ],
+    "avgSeverity": 72
+  },
+  "beaten": {
+    "count": 2,
+    "severity": 159,
+    "types": [
+      "Election-Related Caste Violence",
+      "Temple Entry Denial"
+    ],
+    "avgSeverity": 79.5
+  },
+  "reserved seat": {
+    "count": 1,
+    "severity": 85,
+    "types": [
+      "Election-Related Caste Violence"
+    ],
+    "avgSeverity": 85
+  },
+  "election violence": {
+    "count": 1,
+    "severity": 85,
+    "types": [
+      "Election-Related Caste Violence"
+    ],
+    "avgSeverity": 85
+  },
+  "take office": {
+    "count": 1,
+    "severity": 85,
+    "types": [
+      "Election-Related Caste Violence"
+    ],
+    "avgSeverity": 85
+  },
+  "manual scavenging": {
+    "count": 1,
+    "severity": 75,
+    "types": [
+      "Forced Manual Scavenging"
+    ],
+    "avgSeverity": 75
+  },
+  "forced labor": {
+    "count": 1,
+    "severity": 75,
+    "types": [
+      "Forced Manual Scavenging"
+    ],
+    "avgSeverity": 75
+  },
+  "threatened with eviction": {
+    "count": 1,
+    "severity": 75,
+    "types": [
+      "Forced Manual Scavenging"
+    ],
+    "avgSeverity": 75
+  },
+  "banned practice": {
+    "count": 1,
+    "severity": 75,
+    "types": [
+      "Forced Manual Scavenging"
+    ],
+    "avgSeverity": 75
+  },
+  "wedding procession blocked": {
+    "count": 1,
+    "severity": 70,
+    "types": [
+      "Denial of Wedding Procession Rights"
+    ],
+    "avgSeverity": 70
+  },
+  "main road": {
+    "count": 1,
+    "severity": 70,
+    "types": [
+      "Denial of Wedding Procession Rights"
+    ],
+    "avgSeverity": 70
+  },
+  "dominant caste": {
+    "count": 1,
+    "severity": 70,
+    "types": [
+      "Denial of Wedding Procession Rights"
+    ],
+    "avgSeverity": 70
+  },
+  "false charges filed against": {
+    "count": 1,
+    "severity": 76,
+    "types": [
+      "Land Grab During Forest Rights Claim"
+    ],
+    "avgSeverity": 76
+  },
+  "threatened": {
+    "count": 1,
+    "severity": 76,
+    "types": [
+      "Land Grab During Forest Rights Claim"
+    ],
+    "avgSeverity": 76
+  },
+  "forest land": {
+    "count": 1,
+    "severity": 76,
+    "types": [
+      "Land Grab During Forest Rights Claim"
+    ],
+    "avgSeverity": 76
+  },
+  "casteist remarks": {
+    "count": 1,
+    "severity": 58,
+    "types": [
+      "Institutional Discrimination in Higher Education"
+    ],
+    "avgSeverity": 58
+  },
+  "scholarship delayed": {
+    "count": 1,
+    "severity": 58,
+    "types": [
+      "Institutional Discrimination in Higher Education"
+    ],
+    "avgSeverity": 58
+  },
+  "social media harassment": {
+    "count": 1,
+    "severity": 73,
+    "types": [
+      "Coordinated Online Hate Campaign"
+    ],
+    "avgSeverity": 73
+  },
+  "trolled": {
+    "count": 1,
+    "severity": 73,
+    "types": [
+      "Coordinated Online Hate Campaign"
+    ],
+    "avgSeverity": 73
+  },
+  "doxxed": {
+    "count": 1,
+    "severity": 73,
+    "types": [
+      "Coordinated Online Hate Campaign"
+    ],
+    "avgSeverity": 73
+  },
+  "custodial death": {
+    "count": 1,
+    "severity": 100,
+    "types": [
+      "Custodial Death"
+    ],
+    "avgSeverity": 100
+  },
+  "died in custody": {
+    "count": 1,
+    "severity": 100,
+    "types": [
+      "Custodial Death"
+    ],
+    "avgSeverity": 100
+  },
+  "torture": {
+    "count": 1,
+    "severity": 100,
+    "types": [
+      "Custodial Death"
+    ],
+    "avgSeverity": 100
+  },
+  "delayed post-mortem": {
+    "count": 1,
+    "severity": 100,
+    "types": [
+      "Custodial Death"
+    ],
+    "avgSeverity": 100
+  },
+  "minor girl": {
+    "count": 1,
+    "severity": 100,
+    "types": [
+      "Institutional Child Sexual Abuse"
+    ],
+    "avgSeverity": 100
+  },
+  "touched me inappropriately": {
+    "count": 1,
+    "severity": 100,
+    "types": [
+      "Institutional Child Sexual Abuse"
+    ],
+    "avgSeverity": 100
+  },
+  "warden": {
+    "count": 1,
+    "severity": 100,
+    "types": [
+      "Institutional Child Sexual Abuse"
+    ],
+    "avgSeverity": 100
+  },
+  "underage": {
+    "count": 1,
+    "severity": 100,
+    "types": [
+      "Institutional Child Sexual Abuse"
+    ],
+    "avgSeverity": 100
+  },
+  "did not want it": {
+    "count": 1,
+    "severity": 100,
+    "types": [
+      "Institutional Child Sexual Abuse"
+    ],
+    "avgSeverity": 100
+  }
+}

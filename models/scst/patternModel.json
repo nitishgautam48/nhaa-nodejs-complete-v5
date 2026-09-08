@@ -1,0 +1,207 @@
+{
+  "gang_rape": {
+    "keywords": [
+      "gang rape",
+      "raped",
+      "drugged",
+      "kidnapped",
+      "gang-raped"
+    ],
+    "severity": 100,
+    "description": "Gang rape of SC/ST victim"
+  },
+  "child_abuse": {
+    "keywords": [
+      "14-year-old",
+      "16-year-old",
+      "minor girl",
+      "minor boy",
+      "pocso",
+      "child victim",
+      "underage"
+    ],
+    "severity": 100,
+    "description": "Child sexual abuse of SC/ST minor"
+  },
+  "sexual_abuse_indirect": {
+    "keywords": [
+      "touched me inappropriately",
+      "touched inappropriately",
+      "inappropriate touch",
+      "unwanted advances",
+      "forced himself",
+      "forced herself",
+      "forced me",
+      "against my will",
+      "didn't want it",
+      "did not want it",
+      "made me uncomfortable",
+      "took advantage of me",
+      "molested",
+      "groped"
+    ],
+    "severity": 85,
+    "description": "Sexual abuse described in victim's own indirect language"
+  },
+  "police_brutality": {
+    "keywords": [
+      "police beat",
+      "beaten by police",
+      "police torture",
+      "tortured by police",
+      "police custody torture",
+      "custodial death",
+      "custodial torture",
+      "police assault",
+      "lathi charge",
+      "police station beating",
+      "assaulted by police",
+      "detained",
+      "released without charge"
+    ],
+    "severity": 85,
+    "description": "Police brutality against SC/ST victim"
+  },
+  "discrimination": {
+    "keywords": [
+      "caste",
+      "discrimination",
+      "casteist slur",
+      "caste slur",
+      "denied promotion",
+      "workplace harassment",
+      "casteist remarks",
+      "denied treatment",
+      "refused to touch",
+      "healthcare denial"
+    ],
+    "severity": 65,
+    "description": "Caste discrimination against SC/ST individual (workplace, healthcare, or general)"
+  },
+  "public_humiliation": {
+    "keywords": [
+      "paraded",
+      "stripped",
+      "paraded naked",
+      "publicly humiliated",
+      "humiliation"
+    ],
+    "severity": 80,
+    "description": "Public humiliation of SC/ST victim"
+  },
+  "false_conviction": {
+    "keywords": [
+      "falsely convicted",
+      "wrongful conviction",
+      "wrongfully jailed",
+      "acquitted after",
+      "false charges filed against"
+    ],
+    "severity": 85,
+    "description": "False conviction of SC/ST individual"
+  },
+  "intellectual_theft": {
+    "keywords": [
+      "research stolen",
+      "data stolen",
+      "intellectual property theft",
+      "stole her research",
+      "stole his research"
+    ],
+    "severity": 60,
+    "description": "Intellectual property theft against Dalit researchers"
+  },
+  "coercive_silencing": {
+    "keywords": [
+      "threatened to hurt",
+      "threatened my family",
+      "threatened her family",
+      "threatened his family",
+      "scared to tell",
+      "scared to report",
+      "afraid to tell",
+      "afraid to report",
+      "warned me not to tell",
+      "said he would",
+      "threatened to evict",
+      "blackmail",
+      "threatened to kill",
+      "threatened to expose",
+      "threatened to release",
+      "told me not to tell"
+    ],
+    "severity": 80,
+    "description": "Victim actively threatened or coerced into silence"
+  },
+  "land_and_livelihood_dispossession": {
+    "keywords": [
+      "land occupied",
+      "forcibly occupied",
+      "encroachment",
+      "bonded labor",
+      "bonded labour",
+      "denied access to land",
+      "evicted from land",
+      "seized their land"
+    ],
+    "severity": 78,
+    "description": "Illegal dispossession of SC/ST land or coerced/bonded labor"
+  },
+  "denial_of_access_and_social_boycott": {
+    "keywords": [
+      "untouchability",
+      "denied entry",
+      "denied access",
+      "segregation",
+      "shunned",
+      "social boycott",
+      "economic boycott",
+      "sit separately",
+      "eat separately"
+    ],
+    "severity": 68,
+    "description": "Denial of access to public resources or organized social/economic boycott"
+  },
+  "election_and_political_intimidation": {
+    "keywords": [
+      "election violence",
+      "reserved seat",
+      "prevented from voting",
+      "prevented from contesting",
+      "take office",
+      "panchayat election"
+    ],
+    "severity": 80,
+    "description": "Intimidation preventing an SC/ST person from voting, contesting, or holding office"
+  },
+  "honor_based_violence": {
+    "keywords": [
+      "inter-caste marriage",
+      "inter caste marriage",
+      "honor killing",
+      "family threatened",
+      "forced to separate",
+      "threatened for marrying",
+      "marrying outside my caste",
+      "marrying outside caste",
+      "marrying outside our caste",
+      "kill us both",
+      "disgrace to the family",
+      "disgracing the family"
+    ],
+    "severity": 85,
+    "description": "Violence or threats over an inter-caste relationship/marriage"
+  },
+  "cyber_caste_harassment": {
+    "keywords": [
+      "online threat",
+      "cyberbullying",
+      "shared my photos",
+      "social media harassment",
+      "posted casteist",
+      "trolled"
+    ],
+    "severity": 65,
+    "description": "Caste-based harassment, threats, or blackmail conducted online"
+  }
+}

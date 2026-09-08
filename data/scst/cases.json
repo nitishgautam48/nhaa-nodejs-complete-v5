@@ -1,0 +1,740 @@
+{
+  "cases": [
+    {
+      "id": "CASE-2022-001",
+      "year": 2022,
+      "state": "Andhra Pradesh",
+      "victim": {
+        "name": "14-year-old Lambada tribal girl",
+        "community": "ST (Lambada)",
+        "gender": "Female",
+        "age": 14
+      },
+      "incident": {
+        "type": "Gang Rape",
+        "description": "14-year-old girl was drugged and gang-raped. Accused offered to marry her to withdraw the case. She refused and fought the legal battle.",
+        "keywords": [
+          "drugged",
+          "gang rape",
+          "14-year-old",
+          "tribal girl",
+          "Lambada",
+          "marriage offer",
+          "refused",
+          "legal battle"
+        ],
+        "abuse_types": [
+          "gang rape",
+          "drugging",
+          "child sexual abuse",
+          "coercion"
+        ],
+        "severity": 100
+      }
+    },
+    {
+      "id": "CASE-2024-001",
+      "year": 2024,
+      "state": "Uttar Pradesh",
+      "victim": {
+        "name": "16-year-old Dalit girl",
+        "community": "SC (Dalit)",
+        "gender": "Female",
+        "age": 16
+      },
+      "incident": {
+        "type": "Gang Rape and Exploitation",
+        "description": "16-year-old girl was kidnapped and gang-raped for months. Accused filmed the abuse and hurled casteist slurs.",
+        "keywords": [
+          "kidnapped",
+          "gang raped",
+          "months",
+          "filmed",
+          "casteist slurs",
+          "online threat",
+          "Dalit girl"
+        ],
+        "abuse_types": [
+          "gang rape",
+          "kidnapping",
+          "blackmail",
+          "caste abuse"
+        ],
+        "severity": 100
+      }
+    },
+    {
+      "id": "CASE-2023-001",
+      "year": 2023,
+      "state": "Manipur",
+      "victim": {
+        "name": "Women from SC/ST community",
+        "community": "SC/ST",
+        "gender": "Female"
+      },
+      "incident": {
+        "type": "Gang Rape and Public Humiliation",
+        "description": "During ethnic violence, three women were stripped, paraded naked, and gang-raped.",
+        "keywords": [
+          "ethnic violence",
+          "stripped",
+          "paraded naked",
+          "gang rape",
+          "public humiliation",
+          "Manipur"
+        ],
+        "abuse_types": [
+          "gang rape",
+          "public humiliation",
+          "stripping"
+        ],
+        "severity": 100
+      }
+    },
+    {
+      "id": "CASE-2014-001",
+      "year": 2014,
+      "state": "Delhi",
+      "victim": {
+        "name": "Dr. Kshipra Uke and Dr. Shiv Shankar Das",
+        "community": "SC (Dalit)",
+        "gender": "Both"
+      },
+      "incident": {
+        "type": "Intellectual Property Theft",
+        "description": "Research equipment and data stolen. Supreme Court ruled intangible property under SC/ST Act.",
+        "keywords": [
+          "researchers",
+          "JNU",
+          "data stolen",
+          "intellectual property",
+          "Supreme Court",
+          "compensation"
+        ],
+        "abuse_types": [
+          "property theft",
+          "intellectual property theft"
+        ],
+        "severity": 70
+      }
+    },
+    {
+      "id": "CASE-2018-001",
+      "year": 2018,
+      "state": "Tamil Nadu",
+      "victim": {
+        "name": "Paapaal",
+        "community": "SC (Dalit)",
+        "gender": "Female"
+      },
+      "incident": {
+        "type": "Academic Shunning",
+        "description": "Government school cook shunned for 'cooking bad food.' Six convicted under SC/ST Act.",
+        "keywords": [
+          "school cook",
+          "shunned",
+          "untouchability",
+          "six accused",
+          "convicted",
+          "Tamil Nadu"
+        ],
+        "abuse_types": [
+          "untouchability",
+          "discrimination",
+          "shunning"
+        ],
+        "severity": 75
+      }
+    },
+    {
+      "id": "CASE-2025-001",
+      "year": 2025,
+      "state": "Himachal Pradesh",
+      "victim": {
+        "name": "12-year-old Dalit boy",
+        "community": "SC (Koli)",
+        "gender": "Male",
+        "age": 12
+      },
+      "incident": {
+        "type": "Suicide after Caste Abuse",
+        "description": "Boy confined in cowshed, demanded goat to 'purify' house. He consumed poison and died.",
+        "keywords": [
+          "suicide",
+          "caste abuse",
+          "cowshed",
+          "purify",
+          "poison",
+          "death",
+          "Koli community"
+        ],
+        "abuse_types": [
+          "caste discrimination",
+          "psychological abuse",
+          "death"
+        ],
+        "severity": 100
+      }
+    },
+    {
+      "id": "CASE-2025-002",
+      "year": 2025,
+      "state": "Telangana",
+      "victim": {
+        "name": "Dhanavath Sai Siddu",
+        "community": "ST (Lambadi)",
+        "gender": "Male",
+        "age": 22
+      },
+      "incident": {
+        "type": "Police Torture",
+        "description": "Farmer tortured by police for protesting urea delays. Beaten with rubber-covered lathis.",
+        "keywords": [
+          "police torture",
+          "urea delays",
+          "farmer",
+          "Lambadi",
+          "tied up",
+          "hospitalized"
+        ],
+        "abuse_types": [
+          "police brutality",
+          "torture"
+        ],
+        "severity": 90
+      }
+    },
+    {
+      "id": "CASE-2021-002",
+      "year": 2021,
+      "state": "Tamil Nadu",
+      "victim": {
+        "name": "Dalit man, farm laborer",
+        "community": "SC (Dalit)",
+        "gender": "Male",
+        "age": 34
+      },
+      "incident": {
+        "type": "Untouchability / Denial of Access",
+        "description": "Denied entry to the village temple and drinking water well by dominant-caste residents; sarpanch refused to intervene.",
+        "keywords": [
+          "denied entry",
+          "temple",
+          "well",
+          "untouchability",
+          "sarpanch",
+          "refused"
+        ],
+        "abuse_types": [
+          "untouchability",
+          "discrimination",
+          "social exclusion"
+        ],
+        "severity": 65
+      }
+    },
+    {
+      "id": "CASE-2023-002",
+      "year": 2023,
+      "state": "Rajasthan",
+      "victim": {
+        "name": "Dalit sanitation worker",
+        "community": "SC (Dalit)",
+        "gender": "Male",
+        "age": 41
+      },
+      "incident": {
+        "type": "Custodial Violence",
+        "description": "Detained on suspicion of theft and beaten in police custody for two days before being released without charge.",
+        "keywords": [
+          "beaten by police",
+          "custodial torture",
+          "detained",
+          "released without charge"
+        ],
+        "abuse_types": [
+          "police brutality",
+          "custodial torture",
+          "wrongful detention"
+        ],
+        "severity": 90
+      }
+    },
+    {
+      "id": "CASE-2022-002",
+      "year": 2022,
+      "state": "Haryana",
+      "victim": {
+        "name": "Inter-caste couple, Dalit groom",
+        "community": "SC (Dalit)",
+        "gender": "Male",
+        "age": 24
+      },
+      "incident": {
+        "type": "Honor-Based Violence",
+        "description": "Threatened and assaulted by the bride's family for an inter-caste marriage; family threatened to kill both if they did not separate.",
+        "keywords": [
+          "inter-caste marriage",
+          "threatened to kill",
+          "honor",
+          "assaulted",
+          "family threatened"
+        ],
+        "abuse_types": [
+          "threats",
+          "assault",
+          "coercion",
+          "honor-based violence"
+        ],
+        "severity": 88
+      }
+    },
+    {
+      "id": "CASE-2024-002",
+      "year": 2024,
+      "state": "Madhya Pradesh",
+      "victim": {
+        "name": "Tribal woman, government school teacher",
+        "community": "ST (Gond)",
+        "gender": "Female",
+        "age": 29
+      },
+      "incident": {
+        "type": "Workplace Caste Discrimination",
+        "description": "Repeatedly denied promotion and assigned degrading duties by her upper-caste supervisor, who made casteist remarks in front of colleagues.",
+        "keywords": [
+          "casteist slur",
+          "denied promotion",
+          "supervisor",
+          "workplace harassment",
+          "degrading duties"
+        ],
+        "abuse_types": [
+          "caste discrimination",
+          "workplace harassment",
+          "psychological abuse"
+        ],
+        "severity": 60
+      }
+    },
+    {
+      "id": "CASE-2023-003",
+      "year": 2023,
+      "state": "Bihar",
+      "victim": {
+        "name": "Dalit family, agricultural landowners",
+        "community": "SC (Dalit)",
+        "gender": "Mixed",
+        "age": null
+      },
+      "incident": {
+        "type": "Land Dispute Violence",
+        "description": "Dominant-caste neighbors forcibly occupied the family's land and assaulted family members who tried to resist, with local police initially refusing to register the complaint.",
+        "keywords": [
+          "land occupied",
+          "forcibly occupied",
+          "assaulted",
+          "police refused",
+          "encroachment"
+        ],
+        "abuse_types": [
+          "property theft",
+          "assault",
+          "police brutality",
+          "intimidation"
+        ],
+        "severity": 78
+      }
+    },
+    {
+      "id": "CASE-2024-003",
+      "year": 2024,
+      "state": "Karnataka",
+      "victim": {
+        "name": "Dalit college student",
+        "community": "SC (Dalit)",
+        "gender": "Female",
+        "age": 20
+      },
+      "incident": {
+        "type": "Cyber Caste Harassment",
+        "description": "Targeted with casteist slurs and threats on social media after speaking publicly about caste discrimination on campus; harassers also shared her personal photos without consent.",
+        "keywords": [
+          "casteist slur",
+          "online threat",
+          "shared my photos",
+          "social media",
+          "cyberbullying"
+        ],
+        "abuse_types": [
+          "cyber harassment",
+          "caste abuse",
+          "blackmail",
+          "psychological abuse"
+        ],
+        "severity": 70
+      }
+    },
+    {
+      "id": "CASE-2021-003",
+      "year": 2021,
+      "state": "Uttar Pradesh",
+      "victim": {
+        "name": "Dalit woman, pregnant",
+        "community": "SC (Dalit)",
+        "gender": "Female",
+        "age": 26
+      },
+      "incident": {
+        "type": "Healthcare Denial",
+        "description": "Denied timely treatment at a government health center by staff who refused to touch her during delivery, citing her caste; delivered without medical assistance.",
+        "keywords": [
+          "denied treatment",
+          "refused to touch",
+          "healthcare denial",
+          "delivered without assistance"
+        ],
+        "abuse_types": [
+          "discrimination",
+          "untouchability",
+          "medical negligence"
+        ],
+        "severity": 82
+      }
+    },
+    {
+      "id": "CASE-2022-003",
+      "year": 2022,
+      "state": "Odisha",
+      "victim": {
+        "name": "Tribal children, government school",
+        "community": "ST (Kondh)",
+        "gender": "Mixed",
+        "age": null
+      },
+      "incident": {
+        "type": "Educational Discrimination",
+        "description": "Made to sit separately and eat separately from upper-caste classmates during the mid-day meal scheme; teacher justified it as 'tradition'.",
+        "keywords": [
+          "sit separately",
+          "eat separately",
+          "mid-day meal",
+          "segregation",
+          "discrimination"
+        ],
+        "abuse_types": [
+          "untouchability",
+          "discrimination",
+          "social exclusion"
+        ],
+        "severity": 55
+      }
+    },
+    {
+      "id": "CASE-2023-004",
+      "year": 2023,
+      "state": "Gujarat",
+      "victim": {
+        "name": "Dalit family, leatherworkers",
+        "community": "SC (Dalit)",
+        "gender": "Mixed",
+        "age": null
+      },
+      "incident": {
+        "type": "Economic Boycott",
+        "description": "Village council imposed a social and economic boycott on the family after they reported a cattle-skinning assault, cutting off access to the local market and shared irrigation.",
+        "keywords": [
+          "economic boycott",
+          "shunned",
+          "denied access",
+          "market",
+          "irrigation",
+          "social boycott"
+        ],
+        "abuse_types": [
+          "shunning",
+          "social exclusion",
+          "economic coercion",
+          "retaliation"
+        ],
+        "severity": 72
+      }
+    },
+    {
+      "id": "CASE-2024-004",
+      "year": 2024,
+      "state": "Andhra Pradesh",
+      "victim": {
+        "name": "Dalit sarpanch (elected village head)",
+        "community": "SC (Dalit)",
+        "gender": "Male",
+        "age": 45
+      },
+      "incident": {
+        "type": "Election-Related Caste Violence",
+        "description": "Beaten by dominant-caste rivals after winning a reserved-seat panchayat election; threatened with death if he tried to take office.",
+        "keywords": [
+          "beaten",
+          "threatened to kill",
+          "reserved seat",
+          "election violence",
+          "take office"
+        ],
+        "abuse_types": [
+          "assault",
+          "threats",
+          "intimidation",
+          "political violence"
+        ],
+        "severity": 85
+      }
+    },
+    {
+      "id": "CASE-2021-004",
+      "year": 2021,
+      "state": "Punjab",
+      "victim": {
+        "name": "Dalit manual scavenger",
+        "community": "SC (Dalit)",
+        "gender": "Male",
+        "age": 38
+      },
+      "incident": {
+        "type": "Forced Manual Scavenging",
+        "description": "Forced to continue manual scavenging work despite the practice being legally banned; threatened with job loss and eviction from village housing if he refused.",
+        "keywords": [
+          "manual scavenging",
+          "forced labor",
+          "threatened with eviction",
+          "banned practice"
+        ],
+        "abuse_types": [
+          "coercion",
+          "discrimination",
+          "bonded labor",
+          "intimidation"
+        ],
+        "severity": 75
+      }
+    },
+    {
+      "id": "CASE-2022-004",
+      "year": 2022,
+      "state": "Telangana",
+      "victim": {
+        "name": "Dalit groom's wedding party",
+        "community": "SC (Dalit)",
+        "gender": "Mixed",
+        "age": null
+      },
+      "incident": {
+        "type": "Denial of Wedding Procession Rights",
+        "description": "Dominant-caste villagers blocked a Dalit groom's traditional horse-riding wedding procession through the main village road, and assaulted family members who insisted on their right to proceed.",
+        "keywords": [
+          "wedding procession blocked",
+          "assaulted",
+          "denied access",
+          "main road",
+          "dominant caste"
+        ],
+        "abuse_types": [
+          "discrimination",
+          "assault",
+          "public_humiliation",
+          "denial of access"
+        ],
+        "severity": 70
+      }
+    },
+    {
+      "id": "CASE-2023-005",
+      "year": 2023,
+      "state": "Chhattisgarh",
+      "victim": {
+        "name": "Tribal woman, forest rights claimant",
+        "community": "ST (Gond)",
+        "gender": "Female",
+        "age": 33
+      },
+      "incident": {
+        "type": "Land Grab During Forest Rights Claim",
+        "description": "Forest officials and local contractors forcibly cleared her family's claimed forest land, and threatened her with false criminal charges when she resisted.",
+        "keywords": [
+          "land occupied",
+          "forcibly occupied",
+          "false charges filed against",
+          "threatened",
+          "forest land"
+        ],
+        "abuse_types": [
+          "property theft",
+          "intimidation",
+          "coercion",
+          "land_and_livelihood_dispossession"
+        ],
+        "severity": 76
+      }
+    },
+    {
+      "id": "CASE-2024-005",
+      "year": 2024,
+      "state": "Delhi",
+      "victim": {
+        "name": "Dalit civil services aspirant",
+        "community": "SC (Dalit)",
+        "gender": "Male",
+        "age": 27
+      },
+      "incident": {
+        "type": "Institutional Discrimination in Higher Education",
+        "description": "Denied fair evaluation and subjected to casteist remarks by faculty during his doctoral viva; scholarship disbursement was repeatedly and unfairly delayed compared to peers.",
+        "keywords": [
+          "casteist remarks",
+          "denied promotion",
+          "workplace harassment",
+          "discrimination",
+          "scholarship delayed"
+        ],
+        "abuse_types": [
+          "caste discrimination",
+          "institutional discrimination",
+          "psychological abuse"
+        ],
+        "severity": 58
+      }
+    },
+    {
+      "id": "CASE-2021-005",
+      "year": 2021,
+      "state": "Bihar",
+      "victim": {
+        "name": "Dalit temple-entry activist",
+        "community": "SC (Dalit)",
+        "gender": "Male",
+        "age": 45
+      },
+      "incident": {
+        "type": "Temple Entry Denial",
+        "description": "Beaten by temple committee members after attempting to enter a village temple that had historically excluded Dalits; police initially dismissed the complaint as a 'local dispute'.",
+        "keywords": [
+          "denied entry",
+          "temple",
+          "beaten",
+          "untouchability",
+          "police refused"
+        ],
+        "abuse_types": [
+          "untouchability",
+          "assault",
+          "denial_of_access_and_social_boycott",
+          "police brutality"
+        ],
+        "severity": 74
+      }
+    },
+    {
+      "id": "CASE-2023-006",
+      "year": 2023,
+      "state": "Maharashtra",
+      "victim": {
+        "name": "Dalit content creator",
+        "community": "SC (Dalit)",
+        "gender": "Female",
+        "age": 24
+      },
+      "incident": {
+        "type": "Coordinated Online Hate Campaign",
+        "description": "Targeted by a coordinated social media pile-on with casteist slurs and rape threats after a video about caste discrimination went viral; harassers also doxxed her home address.",
+        "keywords": [
+          "casteist slur",
+          "online threat",
+          "social media harassment",
+          "trolled",
+          "doxxed"
+        ],
+        "abuse_types": [
+          "cyber harassment",
+          "caste abuse",
+          "threats",
+          "psychological abuse"
+        ],
+        "severity": 73
+      }
+    },
+    {
+      "id": "CASE-2022-005",
+      "year": 2022,
+      "state": "Uttar Pradesh",
+      "victim": {
+        "name": "Dalit undertrial prisoner",
+        "community": "SC (Dalit)",
+        "gender": "Male",
+        "age": 30
+      },
+      "incident": {
+        "type": "Custodial Death",
+        "description": "Died in police custody two days after arrest on a minor charge; family alleges torture, and the post-mortem was delayed for a week.",
+        "keywords": [
+          "custodial death",
+          "died in custody",
+          "torture",
+          "delayed post-mortem"
+        ],
+        "abuse_types": [
+          "police brutality",
+          "custodial torture",
+          "death"
+        ],
+        "severity": 100
+      }
+    },
+    {
+      "id": "CASE-2024-006",
+      "year": 2024,
+      "state": "Kerala",
+      "victim": {
+        "name": "Tribal minor, residential school student",
+        "community": "ST (Adivasi)",
+        "gender": "Female",
+        "age": 15
+      },
+      "incident": {
+        "type": "Institutional Child Sexual Abuse",
+        "description": "Sexually abused by a warden at a government tribal residential school; other students had reported similar incidents that were not acted on for months.",
+        "keywords": [
+          "minor girl",
+          "touched me inappropriately",
+          "warden",
+          "underage",
+          "did not want it"
+        ],
+        "abuse_types": [
+          "child sexual abuse",
+          "institutional abuse",
+          "coercion"
+        ],
+        "severity": 100
+      }
+    }
+  ],
+  "statistics": {
+    "total_cases": 7,
+    "by_year": {
+      "2014": 1,
+      "2018": 1,
+      "2022": 1,
+      "2023": 1,
+      "2024": 1,
+      "2025": 2
+    },
+    "abuse_types": {
+      "gang rape": 3,
+      "discrimination": 2,
+      "police brutality": 1,
+      "torture": 1,
+      "property theft": 1,
+      "child abuse": 2,
+      "public humiliation": 1
+    }
+  }
+}

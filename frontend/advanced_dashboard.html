@@ -1,0 +1,1434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧠 NHAA Advanced Assessment</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            /* Spacing scale - used instead of one-off inline pixel values
+               scattered through the markup, so spacing stays consistent
+               as the page evolves. */
+            --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px;
+            --sp-5: 20px; --sp-6: 24px; --sp-7: 32px;
+            --radius-sm: 8px; --radius-md: 12px; --radius-lg: 20px;
+            /* Single severity palette, referenced everywhere a severity
+               color is needed instead of re-typing hex values per-section. */
+            --sev-critical: #d63031; --sev-high: #e17055;
+            --sev-moderate: #fdcb6e; --sev-low: #00b894;
+            --accent: #6c5ce7; --accent-light: #a29bfe;
+            --text-dim: rgba(255,255,255,0.6); --text-faint: rgba(255,255,255,0.4);
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a1a;
+            color: white;
+            min-height: 100vh;
+            padding: 16px;
+            background-image: radial-gradient(ellipse at 20% 50%, rgba(108, 92, 231, 0.08) 0%, transparent 60%),
+                              radial-gradient(ellipse at 80% 50%, rgba(0, 206, 201, 0.05) 0%, transparent 60%);
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header {
+            background: linear-gradient(135deg, #1a1a3e, #2d2d6e);
+            border-radius: 20px; padding: 20px 28px; margin-bottom: 24px;
+            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;
+            border: 1px solid rgba(255,255,255,0.06);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+        .header-left { display: flex; align-items: center; gap: 14px; }
+        .header-logo { font-size: 32px; animation: float 3s ease-in-out infinite; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        .header-title { font-size: 20px; font-weight: 800; background: linear-gradient(135deg, #6c5ce7, #a29bfe); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .header-subtitle { font-size: 12px; color: rgba(255,255,255,0.7); }
+        .status-badge { display: flex; align-items: center; gap: 8px; padding: 4px 14px; background: rgba(0, 206, 201, 0.15); border: 1px solid rgba(0, 206, 201, 0.2); border-radius: 30px; font-size: 11px; font-weight: 600; color: #00cec9; }
+        .status-badge .dot { width: 8px; height: 8px; border-radius: 50%; background: #00cec9; animation: pulse-dot 1.5s infinite; }
+        @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        .version-badge { padding: 4px 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 30px; font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.4); }
+        .tabs {
+            display: flex; gap: 4px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 20px; padding: 4px; margin-bottom: 24px; overflow-x: auto;
+        }
+        .tab-btn {
+            flex: 1; padding: 12px 24px; border: none; border-radius: 16px; background: transparent;
+            color: rgba(255,255,255,0.6); font-weight: 600; font-size: 13px; cursor: pointer;
+            transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px;
+            min-width: 100px; white-space: nowrap; font-family: inherit;
+        }
+        .tab-btn:hover { background: rgba(255,255,255,0.04); color: white; }
+        .tab-btn.active { background: linear-gradient(135deg, #6c5ce7, #5a4bd1); color: white; box-shadow: 0 4px 20px rgba(108, 92, 231, 0.35); }
+        .page { display: none; animation: slideIn 0.5s ease; }
+        .page.active { display: block; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .card {
+            background: rgba(255,255,255,0.04); backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.06); border-radius: 20px; padding: 20px;
+            transition: 0.3s; margin-bottom: 16px;
+        }
+        .card:hover { border-color: rgba(108, 92, 231, 0.3); box-shadow: 0 12px 48px rgba(0,0,0,0.2); }
+        .card-title { font-size: 15px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; color: #ffffff; }
+        .card-title i { color: #a29bfe; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+        .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 12px; }
+        @media (max-width: 1100px) { .grid-2 { grid-template-columns: 1fr; } }
+        @media (max-width: 768px) { .grid-3 { grid-template-columns: 1fr; } }
+
+        textarea {
+            width: 100%; padding: 14px 18px; background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.06); border-radius: 12px;
+            color: #ffffff; font-size: 14px; font-family: inherit; resize: vertical;
+            min-height: 100px; line-height: 1.6;
+        }
+        textarea:focus { outline: none; border-color: #6c5ce7; box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.1); }
+        textarea::placeholder { color: rgba(255,255,255,0.3); }
+
+        .btn {
+            padding: 10px 22px; border: none; border-radius: 12px; font-weight: 600; font-size: 13px;
+            cursor: pointer; transition: 0.3s; display: inline-flex; align-items: center; gap: 8px;
+            font-family: inherit; position: relative; overflow: hidden;
+        }
+        .btn::after { content: ''; position: absolute; inset: 0; background: rgba(255,255,255,0.1); transform: translateX(-100%); transition: transform 0.5s; }
+        .btn:hover::after { transform: translateX(0); }
+        .btn-primary { background: linear-gradient(135deg, #6c5ce7, #5a4bd1); color: white; box-shadow: 0 4px 16px rgba(108, 92, 231, 0.3); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(108, 92, 231, 0.4); }
+        .btn-danger { background: linear-gradient(135deg, #e17055, #d63031); color: white; }
+        .btn-success { background: linear-gradient(135deg, #00b894, #00a381); color: white; }
+        .btn-outline { background: transparent; border: 1px solid rgba(255,255,255,0.06); color: rgba(255,255,255,0.6); }
+        .btn-outline:hover { background: rgba(255,255,255,0.04); border-color: #6c5ce7; color: #ffffff; }
+        .btn-sm { padding: 6px 14px; font-size: 11px; }
+
+        .metric-card {
+            background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px; padding: 12px 14px; text-align: center; transition: 0.3s;
+        }
+        .metric-card:hover { border-color: rgba(108, 92, 231, 0.3); background: rgba(255,255,255,0.04); transform: translateY(-2px); }
+        .metric-card .number { font-size: 22px; font-weight: 800; background: linear-gradient(135deg, #6c5ce7, #a29bfe); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .metric-card .number.danger { background: linear-gradient(135deg, #e17055, #d63031); -webkit-background-clip: text; background-clip: text; }
+        .metric-card .label { font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+
+        .badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 16px; border-radius: 30px; font-weight: 700; font-size: 13px; }
+        .badge-low { background: rgba(0, 184, 148, 0.15); color: #00b894; border: 1px solid rgba(0, 184, 148, 0.2); }
+        .badge-moderate { background: rgba(253, 203, 110, 0.15); color: #fdcb6e; border: 1px solid rgba(253, 203, 110, 0.2); }
+        .badge-high { background: rgba(225, 112, 85, 0.15); color: #e17055; border: 1px solid rgba(225, 112, 85, 0.2); }
+        .badge-critical { background: rgba(214, 48, 49, 0.2); color: #d63031; border: 1px solid rgba(214, 48, 49, 0.3); animation: pulse-glow 1.5s infinite; }
+        @keyframes pulse-glow { 0%, 100% { box-shadow: 0 0 20px rgba(108, 92, 231, 0.2); } 50% { box-shadow: 0 0 40px rgba(108, 92, 231, 0.4); } }
+
+        .gauge-wrapper { display: flex; flex-direction: column; align-items: center; padding: 10px; }
+        .gauge-svg { transform: rotate(-90deg); width: 160px; height: 160px; }
+        .gauge-bg { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 14; }
+        .gauge-progress { fill: none; stroke-width: 14; stroke-linecap: round; transition: stroke-dashoffset 1.5s ease; }
+        .gauge-text { font-size: 32px; font-weight: 900; fill: #ffffff; transform: rotate(90deg); text-anchor: middle; dominant-baseline: central; }
+
+        .rec-box { padding: 14px 18px; border-radius: 12px; border-left: 4px solid #6c5ce7; background: rgba(255,255,255,0.02); margin-top: 12px; }
+        .rec-box.critical { border-left-color: #d63031; background: rgba(214, 48, 49, 0.05); }
+        .rec-box.high { border-left-color: #e17055; background: rgba(225, 112, 85, 0.05); }
+        .rec-box.moderate { border-left-color: #fdcb6e; background: rgba(253, 203, 110, 0.05); }
+        .rec-box.low { border-left-color: #00b894; background: rgba(0, 184, 148, 0.05); }
+        .rec-box .action { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+        .rec-box .details { color: rgba(255,255,255,0.7); font-size: 13px; line-height: 1.6; }
+        .rec-box .helpline { margin-top: 8px; font-weight: 600; color: #a29bfe; font-size: 13px; }
+
+        .emergency-banner { background: linear-gradient(135deg, rgba(214, 48, 49, 0.2), rgba(225, 112, 85, 0.1)); border: 2px solid rgba(214, 48, 49, 0.3); padding: 12px 18px; border-radius: 12px; margin: 12px 0; font-weight: 700; text-align: center; font-size: 15px; color: #d63031; animation: pulse-glow 1.5s infinite; }
+
+        .dimension-tag { display: flex; justify-content: space-between; align-items: center; padding: 6px 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; transition: 0.3s; }
+        .dimension-tag:hover { border-color: rgba(108, 92, 231, 0.3); }
+        .dimension-tag .name { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.7); text-transform: capitalize; }
+        .dimension-tag .score { font-size: 14px; font-weight: 700; }
+        .dimension-bar { width: 60px; height: 4px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; }
+        .dimension-bar .fill { height: 100%; border-radius: 4px; transition: width 1.2s ease; }
+
+        /* ============================================================
+           RESULTS HERO - the severity + plain-language summary is now
+           the clear visual headline of the results card, with everything
+           else demoted to secondary supporting detail below it.
+           ============================================================ */
+        .results-hero {
+            display: flex; align-items: center; gap: var(--sp-4);
+            padding: var(--sp-5); border-radius: var(--radius-lg);
+            margin-bottom: var(--sp-4); position: relative; overflow: hidden;
+        }
+        .results-hero.sev-critical { background: linear-gradient(135deg, rgba(214,48,49,0.18), rgba(214,48,49,0.05)); border: 1px solid rgba(214,48,49,0.3); }
+        .results-hero.sev-high { background: linear-gradient(135deg, rgba(225,112,85,0.16), rgba(225,112,85,0.04)); border: 1px solid rgba(225,112,85,0.3); }
+        .results-hero.sev-moderate { background: linear-gradient(135deg, rgba(253,203,110,0.14), rgba(253,203,110,0.04)); border: 1px solid rgba(253,203,110,0.25); }
+        .results-hero.sev-low { background: linear-gradient(135deg, rgba(0,184,148,0.14), rgba(0,184,148,0.04)); border: 1px solid rgba(0,184,148,0.25); }
+        .results-hero-icon { font-size: 40px; line-height: 1; flex-shrink: 0; }
+        .results-hero-title { font-size: 20px; font-weight: 800; margin-bottom: 4px; }
+        .results-hero-text { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.85); }
+
+        .quick-indicators { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: var(--sp-4); }
+        .quick-indicator-pill {
+            display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px;
+            border-radius: 20px; font-size: 12px; font-weight: 700;
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        /* Collapsible full breakdown - open by default (nothing is hidden
+           from anyone who wants the full clinical detail), but visually
+           demoted below the hero so it reads as supporting detail rather
+           than competing with it for attention. */
+        details.breakdown-accordion {
+            border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius-md);
+            background: rgba(255,255,255,0.015); margin-bottom: var(--sp-4);
+        }
+        details.breakdown-accordion summary {
+            padding: 12px var(--sp-4); cursor: pointer; font-weight: 700; font-size: 13px;
+            display: flex; align-items: center; justify-content: space-between;
+            list-style: none; color: var(--text-dim);
+        }
+        details.breakdown-accordion summary::-webkit-details-marker { display: none; }
+        details.breakdown-accordion summary::after { content: '\f107'; font-family: 'Font Awesome 6 Free'; font-weight: 900; transition: transform 0.3s; }
+        details.breakdown-accordion[open] summary::after { transform: rotate(180deg); }
+        details.breakdown-accordion .breakdown-body { padding: 0 var(--sp-4) var(--sp-4); }
+
+        /* Tooltip for jargon (SVI, etc.) - native title attribute styled
+           with a small affordance so it's discoverable */
+        .info-hint { cursor: help; border-bottom: 1px dotted var(--text-faint); }
+
+        /* Loading skeleton shown while waiting on the API instead of a
+           blank flash */
+        .skeleton { background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0.03) 75%); background-size: 200% 100%; animation: skeleton-shine 1.4s infinite; border-radius: var(--radius-md); }
+        @keyframes skeleton-shine { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        @keyframes resultsFadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+        .results-reveal { animation: resultsFadeIn 0.5s ease; }
+
+        .scst-result-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 16px; margin-top: 12px; }
+        .scst-result-card .severity-display { font-size: 24px; font-weight: 800; }
+        .scst-pattern-tag { display: inline-block; padding: 3px 12px; background: rgba(108, 92, 231, 0.15); border: 1px solid rgba(108, 92, 231, 0.2); border-radius: 30px; font-size: 11px; font-weight: 600; color: #a29bfe; margin: 3px; }
+        .scst-community-tag { display: inline-block; padding: 3px 12px; background: rgba(0, 184, 148, 0.15); border: 1px solid rgba(0, 184, 148, 0.2); border-radius: 30px; font-size: 11px; font-weight: 600; color: #00b894; margin: 3px; }
+
+        .legal-priority-banner {
+            display: flex; align-items: center; gap: 10px; padding: 12px 16px; margin-bottom: 14px;
+            background: rgba(214, 48, 49, 0.1); border: 1px solid rgba(214, 48, 49, 0.3); border-radius: 12px;
+            font-size: 13px; font-weight: 700; color: #ff7675;
+        }
+        .legal-section-title { font-size: 13px; font-weight: 700; color: #a29bfe; margin: 16px 0 10px; display: flex; align-items: center; gap: 8px; }
+        .legal-provision-card {
+            background: rgba(255,255,255,0.02); border: 1px solid rgba(108, 92, 231, 0.15); border-radius: 12px;
+            padding: 14px 16px; margin-bottom: 10px;
+        }
+        .legal-provision-card .incident-tag {
+            display: inline-block; padding: 2px 10px; background: rgba(108, 92, 231, 0.2); border-radius: 20px;
+            font-size: 10px; font-weight: 700; color: #a29bfe; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 6px;
+        }
+        .legal-provision-card .primary-law { font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+        .legal-provision-card ul { margin: 0 0 0 18px; padding: 0; font-size: 12px; color: rgba(255,255,255,0.75); line-height: 1.6; }
+        .legal-authorities-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        @media (max-width: 768px) { .legal-authorities-grid { grid-template-columns: 1fr; } }
+        .legal-authority-card {
+            background: rgba(0, 184, 148, 0.06); border: 1px solid rgba(0, 184, 148, 0.2); border-radius: 10px;
+            padding: 10px 12px;
+        }
+        .legal-authority-card .name { font-size: 12px; font-weight: 700; color: #00b894; margin-bottom: 4px; }
+        .legal-authority-card .detail { font-size: 11px; color: rgba(255,255,255,0.65); line-height: 1.5; }
+        .legal-authority-card .website { font-size: 10px; color: #a29bfe; margin-top: 4px; display: block; }
+        .legal-baseline-rights { font-size: 12px; color: rgba(255,255,255,0.75); line-height: 1.7; margin: 0 0 4px 18px; padding: 0; }
+        .legal-disclaimer {
+            margin-top: 16px; padding: 10px 14px; background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.15);
+            border-radius: 10px; font-size: 11px; color: rgba(255,255,255,0.45); line-height: 1.6;
+        }
+        .legal-source-note { font-size: 11px; color: rgba(255,255,255,0.4); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-left">
+            <span class="header-logo">🧠</span>
+            <div>
+                <div class="header-title">NHAA Advanced Assessment</div>
+                <div class="header-subtitle">AI-Powered Stress &amp; Trauma · SC/ST Atrocities Analysis</div>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="status-badge"><span class="dot"></span> Live</div>
+            <span class="version-badge">v3.0 · AI-Powered</span>
+        </div>
+    </header>
+
+    <!-- TABS -->
+    <nav class="tabs">
+        <button class="tab-btn active" onclick="switchTab('assess')"><i class="fas fa-microphone-alt"></i> Assessment</button>
+        <button class="tab-btn" onclick="switchTab('scst')"><i class="fas fa-gavel"></i> SC/ST Analysis</button>
+        <button class="tab-btn" onclick="switchTab('legal')"><i class="fas fa-balance-scale"></i> Legal Redressal</button>
+        <button class="tab-btn" onclick="switchTab('dashboard')"><i class="fas fa-chart-pie"></i> Dashboard</button>
+        <button class="tab-btn" onclick="switchTab('history')"><i class="fas fa-history"></i> History</button>
+    </nav>
+
+    <!-- PAGE 1: ASSESSMENT -->
+    <div id="page-assess" class="page active">
+        <div class="grid-2">
+            <div class="card">
+                <div class="card-title"><i class="fas fa-pen-fancy"></i> Text Narrative</div>
+                <textarea id="textInput" placeholder="Describe your experience in any Indian language..." oninput="updateCharCount()"></textarea>
+                <div id="emptyInputError" style="display:none; margin-top:6px; padding:8px 12px; background:rgba(214,48,49,0.1); border:1px solid rgba(214,48,49,0.3); border-radius:8px; color:#ff8787; font-size:12px;">
+                    <i class="fas fa-circle-exclamation"></i> Please type something above, or click one of the "Try:" samples below, before analyzing.
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+                    <div id="samplePrompts" style="display:flex; gap:6px; flex-wrap:wrap;">
+                        <span style="font-size:11px; color:rgba(255,255,255,0.35); margin-right:2px;">Try:</span>
+                        <button class="btn btn-outline btn-sm" style="font-size:11px; padding:4px 10px;" onclick="fillSample('workplace')">Workplace harassment</button>
+                        <button class="btn btn-outline btn-sm" style="font-size:11px; padding:4px 10px;" onclick="fillSample('dv')">Domestic violence</button>
+                        <button class="btn btn-outline btn-sm" style="font-size:11px; padding:4px 10px;" onclick="fillSample('scst')">Caste-based incident</button>
+                    </div>
+                    <span id="charCount" style="font-size:11px; color:rgba(255,255,255,0.3);">0 characters</span>
+                </div>
+                <div style="display:flex; gap:10px; margin-top:12px; flex-wrap:wrap;">
+                    <button class="btn btn-primary" onclick="runAssessment()"><i class="fas fa-robot"></i> Analyze</button>
+                    <button class="btn btn-danger" onclick="toggleRecording()" id="recordBtn"><i class="fas fa-circle"></i> Record</button>
+                    <button class="btn btn-success btn-sm" onclick="document.getElementById('audioUpload').click()"><i class="fas fa-upload"></i> Upload</button>
+                    <input type="file" id="audioUpload" accept="audio/*" style="display:none;" onchange="handleAudioUpload(event)">
+                    <button class="btn btn-outline btn-sm" onclick="clearAll()"><i class="fas fa-undo"></i> Clear</button>
+                </div>
+                <div id="recordingStatus" style="margin-top:8px; font-size:12px; color:rgba(255,255,255,0.4);">
+                    <i class="fas fa-info-circle"></i> Press Record to speak (max 15s)
+                </div>
+                <div id="waveContainer" style="display:none; margin-top:8px; display:flex; align-items:center; gap:3px; height:44px; padding:6px 16px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid rgba(255,255,255,0.06);">
+                    <div style="width:3px;height:10px;background:linear-gradient(135deg,#6c5ce7,#a29bfe);border-radius:4px;animation:wave 0.8s infinite ease-in-out alternate;animation-delay:0.0s;"></div>
+                    <div style="width:3px;height:18px;background:linear-gradient(135deg,#6c5ce7,#a29bfe);border-radius:4px;animation:wave 0.8s infinite ease-in-out alternate;animation-delay:0.1s;"></div>
+                    <div style="width:3px;height:28px;background:linear-gradient(135deg,#6c5ce7,#a29bfe);border-radius:4px;animation:wave 0.8s infinite ease-in-out alternate;animation-delay:0.2s;"></div>
+                    <div style="width:3px;height:22px;background:linear-gradient(135deg,#6c5ce7,#a29bfe);border-radius:4px;animation:wave 0.8s infinite ease-in-out alternate;animation-delay:0.3s;"></div>
+                    <div style="width:3px;height:34px;background:linear-gradient(135deg,#6c5ce7,#a29bfe);border-radius:4px;animation:wave 0.8s infinite ease-in-out alternate;animation-delay:0.4s;"></div>
+                    <div style="width:3px;height:14px;background:linear-gradient(135deg,#6c5ce7,#a29bfe);border-radius:4px;animation:wave 0.8s infinite ease-in-out alternate;animation-delay:0.5s;"></div>
+                    <div style="width:3px;height:10px;background:linear-gradient(135deg,#6c5ce7,#a29bfe);border-radius:4px;animation:wave 0.8s infinite ease-in-out alternate;animation-delay:0.6s;"></div>
+                    <div style="width:3px;height:26px;background:linear-gradient(135deg,#6c5ce7,#a29bfe);border-radius:4px;animation:wave 0.8s infinite ease-in-out alternate;animation-delay:0.7s;"></div>
+                </div>
+                <audio id="audioPlayback" controls style="width:100%; margin-top:8px; display:none;"></audio>
+            </div>
+
+            <div class="card" id="resultsCard" style="display:none;">
+                <div class="card-title"><i class="fas fa-chart-line"></i> Assessment Results</div>
+
+                <!-- ✅ REDESIGN: this used to be a flat, low-contrast box
+                     with the same visual weight as everything else on the
+                     page - a person's eye had nowhere obvious to land
+                     first. This is now the clear headline: severity +
+                     plain-language summary, sized and colored to actually
+                     read as "the answer", with the detailed clinical grid
+                     demoted below it. -->
+                <div id="resultsHero" class="results-hero sev-low">
+                    <div id="resultsHeroIcon" class="results-hero-icon">🟢</div>
+                    <div>
+                        <div id="resultsHeroTitle" class="results-hero-title">Minimal</div>
+                        <div id="plainLanguageText" class="results-hero-text"></div>
+                    </div>
+                </div>
+
+                <div id="emergencyBanner" style="display:none;" class="emergency-banner">
+                    🚨 EMERGENCY: Immediate intervention required. Call <strong>112</strong> or <strong>1800-599-0019</strong>
+                </div>
+
+                <!-- At-a-glance chips for the 2-3 highest indicators, so a
+                     quick scan doesn't require opening the full breakdown -
+                     but the full breakdown below still shows everything. -->
+                <div id="quickIndicators" class="quick-indicators"></div>
+
+                <!-- Case confirmation + what-happens-next reassurance. This
+                     is genuinely true, not empty reassurance: the case is
+                     actually persisted server-side (see nhaa.controller.js
+                     _persistCase) and IS visible on the authority dashboard
+                     for review - previously the caseId was returned by the
+                     API but never shown to the user at all, so they had no
+                     confirmation their submission went anywhere. -->
+                <div id="caseReportCard" style="padding:16px; border-radius:10px; margin-bottom:16px; background:rgba(0,184,148,0.06); border:1px solid rgba(0,184,148,0.2);">
+                    <div style="display:flex; justify-content:space-between; align-items:start; flex-wrap:wrap; gap:10px;">
+                        <div>
+                            <div style="font-size:13px; color:rgba(255,255,255,0.6);"><i class="fas fa-check-circle" style="color:#00b894;"></i> Your case has been recorded</div>
+                            <div id="caseIdDisplay" style="font-size:16px; font-weight:800; margin-top:2px;">--</div>
+                        </div>
+                        <button class="btn btn-outline btn-sm" onclick="downloadReport()"><i class="fas fa-download"></i> Download Report</button>
+                    </div>
+                    <div id="whatHappensNext" style="margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.08); font-size:13px; line-height:1.7; color:rgba(255,255,255,0.8);"></div>
+                </div>
+
+                <div class="rec-box low" id="recBox">
+                    <div class="action" id="recAction">Assessment Complete</div>
+                    <div class="details" id="recDetails">No significant issues detected.</div>
+                    <div class="helpline" id="recHelpline">📞 Helpline: 1800-599-0019 | 14566</div>
+                </div>
+
+                <details class="breakdown-accordion" open>
+                    <summary><span><i class="fas fa-chart-simple"></i> Full Evaluation Breakdown</span></summary>
+                    <div class="breakdown-body">
+                        <div style="display:flex; align-items:center; gap:20px; flex-wrap:wrap;">
+                            <div class="gauge-wrapper">
+                                <svg viewBox="0 0 120 120" class="gauge-svg">
+                                    <circle cx="60" cy="60" r="48" class="gauge-bg"/>
+                                    <circle cx="60" cy="60" r="48" class="gauge-progress" id="gaugeCircle"
+                                            stroke="#6c5ce7" stroke-dasharray="301.6" stroke-dashoffset="301.6"/>
+                                    <text x="60" y="60" class="gauge-text" id="gaugeText">0</text>
+                                </svg>
+                                <span id="severityBadge" class="badge badge-low">🟢 Low</span>
+                            </div>
+                            <div style="flex:1; min-width:220px;">
+                                <div class="grid-4">
+                                    <div class="metric-card" title="Stress Vulnerability Index - an overall weighted score across all detected concern categories, from 0 (no concern) to 100 (critical)."><div class="number info-hint" id="sviScore">--</div><div class="label">SVI</div></div>
+                                    <div class="metric-card"><div class="number" id="stressScore">--</div><div class="label">Stress</div></div>
+                                    <div class="metric-card"><div class="number" id="traumaScore">--</div><div class="label">Trauma</div></div>
+                                    <div class="metric-card"><div class="number danger" id="suicideRisk">--</div><div class="label">Suicide Risk</div></div>
+                                </div>
+                                <div class="grid-4">
+                                    <div class="metric-card"><div class="number" id="fearScore">--</div><div class="label">Fear</div></div>
+                                    <div class="metric-card"><div class="number" id="anxietyScore">--</div><div class="label">Anxiety</div></div>
+                                    <div class="metric-card"><div class="number" id="vulnerabilityScore">--</div><div class="label">Vulnerability</div></div>
+                                    <div class="metric-card"><div class="number" id="languageDisplay">--</div><div class="label">Language</div></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="margin-top:12px;">
+                            <div style="font-size:12px; font-weight:600; margin-bottom:6px; color:rgba(255,255,255,0.6);">
+                        <i class="fas fa-cubes"></i> Dimension Breakdown
+                    </div>
+                    <div class="grid-4" id="dimensionGrid"></div>
+                </div>
+                    </div>
+                </details>
+                <div style="margin-top:10px; padding:8px 14px; background:rgba(255,255,255,0.02); border-radius:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
+                    <span style="font-size:11px; color:rgba(255,255,255,0.4);"><i class="fas fa-shield-alt"></i> Confidence</span>
+                    <span id="confidenceDisplay" style="font-weight:700; font-size:13px; color:#a29bfe;">High (85%)</span>
+                </div>
+                <div style="margin-top:10px;" id="assessLegalLink"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE 2: SC/ST ANALYSIS -->
+    <div id="page-scst" class="page">
+        <div class="card">
+            <div class="card-title"><i class="fas fa-gavel"></i> SC/ST Atrocities Analysis</div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                <div>
+                    <label style="font-size:13px; color:rgba(255,255,255,0.6);">Enter text to analyze for SC/ST atrocity patterns:</label>
+                    <textarea id="scstInput" rows="4" placeholder="Describe an incident or case..." style="margin-top:8px;"></textarea>
+                    <button class="btn btn-primary" onclick="analyzeSCST()" style="margin-top:10px;">
+                        <i class="fas fa-search"></i> Analyze SC/ST Pattern
+                    </button>
+                </div>
+                <div id="scstResults">
+                    <div style="text-align:center; padding:20px; color:rgba(255,255,255,0.4);">
+                        <i class="fas fa-search" style="font-size:32px;"></i>
+                        <p style="margin-top:8px;">Enter text to analyze</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE: LEGAL REDRESSAL -->
+    <div id="page-legal" class="page">
+        <div class="card">
+            <div class="card-title"><i class="fas fa-balance-scale"></i> Legal Redressal &amp; Provisions</div>
+            <p style="font-size:12px; color:rgba(255,255,255,0.5); margin-bottom:14px;">
+                See where to go and what legal protections apply for your specific situation - based on your last
+                assessment, or describe it below to check on its own.
+            </p>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                <div>
+                    <label style="font-size:13px; color:rgba(255,255,255,0.6);">Describe the incident (optional if you've already run an assessment):</label>
+                    <textarea id="legalInput" rows="4" placeholder="Describe an incident or case..." style="margin-top:8px;"></textarea>
+                    <button class="btn btn-primary" onclick="fetchLegalGuidance()" style="margin-top:10px;">
+                        <i class="fas fa-search"></i> Find Redressal &amp; Provisions
+                    </button>
+                    <div style="font-size:11px; color:rgba(255,255,255,0.35); margin-top:10px;">
+                        <i class="fas fa-info-circle"></i> This shows general legal information and where to seek help - not legal advice.
+                    </div>
+                </div>
+                <div id="legalResults">
+                    <div style="text-align:center; padding:20px; color:rgba(255,255,255,0.4);">
+                        <i class="fas fa-balance-scale" style="font-size:32px;"></i>
+                        <p style="margin-top:8px;">Run an assessment, or describe an incident above, to see applicable redressal and provisions</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE 3: DASHBOARD -->
+    <div id="page-dashboard" class="page">
+        <div class="grid-3">
+            <div class="card" style="text-align:center; border-left:4px solid #6c5ce7;">
+                <div style="font-size:32px; font-weight:800;" id="totalAssessments">0</div>
+                <div style="color:rgba(255,255,255,0.4);">Total Assessments</div>
+            </div>
+            <div class="card" style="text-align:center; border-left:4px solid #d63031;">
+                <div style="font-size:32px; font-weight:800; color:#d63031;" id="criticalAssessments">0</div>
+                <div style="color:rgba(255,255,255,0.4);">Critical Cases</div>
+            </div>
+            <div class="card" style="text-align:center; border-left:4px solid #e17055;">
+                <div style="font-size:32px; font-weight:800; color:#e17055;" id="highAssessments">0</div>
+                <div style="color:rgba(255,255,255,0.4);">High Risk</div>
+            </div>
+        </div>
+        <div class="grid-2">
+            <div class="card">
+                <div class="card-title"><i class="fas fa-chart-pie"></i> Risk Distribution</div>
+                <div style="height:200px;"><canvas id="riskChart"></canvas></div>
+            </div>
+            <div class="card">
+                <div class="card-title"><i class="fas fa-calculator"></i> SVI Statistics</div>
+                <div class="grid-2" style="gap:10px;">
+                    <div class="metric-card"><div class="number" id="avgSvi">--</div><div class="label">Average</div></div>
+                    <div class="metric-card"><div class="number success" id="maxSvi">--</div><div class="label">Highest</div></div>
+                    <div class="metric-card"><div class="number" id="minSvi">--</div><div class="label">Lowest</div></div>
+                    <div class="metric-card"><div class="number" id="medSvi">--</div><div class="label">Median</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PAGE 4: HISTORY -->
+    <div id="page-history" class="page">
+        <div class="card">
+            <div class="card-title">
+                <i class="fas fa-list"></i> Assessment History
+                <span style="margin-left:auto;">
+                    <button class="btn btn-success btn-sm" onclick="exportCSV()"><i class="fas fa-file-csv"></i> Export</button>
+                    <button class="btn btn-danger btn-sm" onclick="clearHistory()"><i class="fas fa-trash"></i> Clear</button>
+                </span>
+            </div>
+            <div style="overflow-x:auto;">
+                <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                    <thead>
+                        <tr>
+                            <th style="text-align:left; padding:8px 12px; color:rgba(255,255,255,0.4); border-bottom:1px solid rgba(255,255,255,0.06);">Date</th>
+                            <th style="text-align:left; padding:8px 12px; color:rgba(255,255,255,0.4); border-bottom:1px solid rgba(255,255,255,0.06);">Severity</th>
+                            <th style="text-align:left; padding:8px 12px; color:rgba(255,255,255,0.4); border-bottom:1px solid rgba(255,255,255,0.06);">SVI</th>
+                            <th style="text-align:left; padding:8px 12px; color:rgba(255,255,255,0.4); border-bottom:1px solid rgba(255,255,255,0.06);">Stress</th>
+                            <th style="text-align:left; padding:8px 12px; color:rgba(255,255,255,0.4); border-bottom:1px solid rgba(255,255,255,0.06);">Trauma</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody">
+                        <tr><td colspan="5" style="text-align:center; color:rgba(255,255,255,0.4); padding:30px 0;">No cases yet.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div style="margin-top:20px; padding:10px 0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; border-top:1px solid rgba(255,255,255,0.06);">
+        <span style="font-size:11px; color:rgba(255,255,255,0.4);"><i class="fas fa-shield-alt"></i> NHAA System · All data encrypted</span>
+        <span style="font-size:11px; color:rgba(255,255,255,0.4);"><i class="fas fa-robot"></i> AI-Powered · SC/ST Analytics</span>
+        <span style="font-size:11px; color:rgba(255,255,255,0.4);">Last updated: <span id="lastUpdated">Just now</span></span>
+    </div>
+</div>
+
+<script>
+    // ✅ FIX: this used to be window.location.origin + '/api/v1', which
+    // assumed the page is always served BY the Node/Express backend itself.
+    // If you open this file through a separate static server instead (e.g.
+    // VS Code "Live Server", default port 5500/5501), window.location.origin
+    // points at THAT server, not the backend - every API call then hits the
+    // wrong server and fails with something like "Unexpected end of JSON
+    // input" (an empty/HTML response where JSON was expected). Detect that
+    // case and fall back to the backend's actual default port (8000, see
+    // server.js) instead of guessing wrong silently.
+    const API_URL = (() => {
+        const staticPreviewPorts = ['5500', '5501', '3000', '5173', '8080'];
+        const isStaticPreview = staticPreviewPorts.includes(window.location.port) ||
+            window.location.protocol === 'file:';
+        return isStaticPreview
+            ? 'http://localhost:8000/api/v1'
+            : window.location.origin + '/api/v1';
+    })();
+    let isRecording = false;
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let recordedBlob = null;
+    let chartInstances = {};
+    let assessmentHistory = JSON.parse(localStorage.getItem('nhaa_history') || '[]');
+
+    function switchTab(tab) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('page-' + tab).classList.add('active');
+        document.querySelector(`.tab-btn[onclick*="${tab}"]`).classList.add('active');
+        if (tab === 'dashboard' || tab === 'history') loadHistory();
+        if (tab === 'legal' && typeof latestLegalGuidance !== 'undefined' && latestLegalGuidance) {
+            renderLegalGuidance(latestLegalGuidance, latestLegalSource);
+        }
+    }
+
+    // ============================================================
+    //  ✅ FIX: MediaRecorder records in the browser's native codec
+    //  (WebM/Opus in Chrome/Edge, similar in Firefox) - there is no
+    //  real 'audio/wav' recording mode. The old code did
+    //  `new Blob(audioChunks, { type: 'audio/wav' })`, which only
+    //  changes the Blob's metadata LABEL, not the actual bytes - the
+    //  uploaded file was still WebM/Opus data pretending to be WAV.
+    //  The backend's WAV decoder (node-wav) can't parse that, silently
+    //  fails, and falls back to default/zero scores every time -
+    //  which is exactly why voice input never detected anything.
+    //  This decodes the real audio via the Web Audio API and properly
+    //  re-encodes it as 16-bit PCM WAV before upload.
+    // ============================================================
+    async function convertBlobToWav(blob) {
+        const arrayBuffer = await blob.arrayBuffer();
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioCtx();
+        const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+        const wavBlob = audioBufferToWavBlob(audioBuffer);
+        audioCtx.close();
+        return wavBlob;
+    }
+
+    function audioBufferToWavBlob(audioBuffer) {
+        const numChannels = audioBuffer.numberOfChannels;
+        const sampleRate = audioBuffer.sampleRate;
+
+        // Downmix to mono - the backend's analyzer only reads
+        // result.channelData[0] (see audioAnalyzer.js), so a stereo file
+        // would silently have its second channel ignored anyway. Mixing
+        // down here keeps the exported file consistent with what's
+        // actually analyzed.
+        let samples;
+        if (numChannels === 1) {
+            samples = audioBuffer.getChannelData(0);
+        } else {
+            const len = audioBuffer.length;
+            samples = new Float32Array(len);
+            for (let ch = 0; ch < numChannels; ch++) {
+                const data = audioBuffer.getChannelData(ch);
+                for (let i = 0; i < len; i++) samples[i] += data[i] / numChannels;
+            }
+        }
+
+        const buffer = new ArrayBuffer(44 + samples.length * 2);
+        const view = new DataView(buffer);
+        const writeString = (offset, str) => {
+            for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+        };
+
+        writeString(0, 'RIFF');
+        view.setUint32(4, 36 + samples.length * 2, true);
+        writeString(8, 'WAVE');
+        writeString(12, 'fmt ');
+        view.setUint32(16, 16, true);        // PCM subchunk size
+        view.setUint16(20, 1, true);         // PCM format
+        view.setUint16(22, 1, true);         // mono
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, sampleRate * 2, true); // byte rate (16-bit mono)
+        view.setUint16(32, 2, true);         // block align
+        view.setUint16(34, 16, true);        // bits per sample
+        writeString(36, 'data');
+        view.setUint32(40, samples.length * 2, true);
+
+        let offset = 44;
+        for (let i = 0; i < samples.length; i++, offset += 2) {
+            const s = Math.max(-1, Math.min(1, samples[i]));
+            view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+        }
+
+        return new Blob([buffer], { type: 'audio/wav' });
+    }
+
+    async function toggleRecording() {
+        const btn = document.getElementById('recordBtn');
+        const status = document.getElementById('recordingStatus');
+        const waveContainer = document.getElementById('waveContainer');
+        if (isRecording) {
+            isRecording = false; mediaRecorder.stop();
+            btn.innerHTML = '<i class="fas fa-circle"></i> Record';
+            waveContainer.style.display = 'none';
+        } else {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+                mediaRecorder.onstop = async () => {
+                    status.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing audio...';
+                    try {
+                        const rawBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+                        recordedBlob = await convertBlobToWav(rawBlob);
+                        const url = URL.createObjectURL(recordedBlob);
+                        document.getElementById('audioPlayback').src = url;
+                        document.getElementById('audioPlayback').style.display = 'block';
+                        status.innerHTML = '<i class="fas fa-check-circle" style="color:#00b894;"></i> Audio ready!';
+                    } catch (err) {
+                        console.error('Audio conversion failed:', err);
+                        status.innerHTML = '<i class="fas fa-circle-exclamation" style="color:#d63031;"></i> Could not process audio - please try again or use text instead.';
+                        recordedBlob = null;
+                    }
+                };
+                mediaRecorder.start();
+                isRecording = true;
+                btn.innerHTML = '<i class="fas fa-stop"></i> Stop';
+                status.innerHTML = '<span style="color:#e17055;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#e17055;animation:pulse 1s infinite;vertical-align:middle;margin-right:6px;"></span> Recording...</span>';
+                waveContainer.style.display = 'flex';
+                setTimeout(() => { if (isRecording) toggleRecording(); }, 15000);
+            } catch(err) { alert('Microphone access required.'); }
+        }
+    }
+
+    async function handleAudioUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const status = document.getElementById('recordingStatus');
+
+        // If it's already a WAV file, no conversion needed. Otherwise (MP3,
+        // M4A, OGG, etc.) it has the same problem as browser recordings -
+        // the backend's node-wav decoder can only parse real PCM WAV bytes.
+        if (file.type === 'audio/wav' || file.name.toLowerCase().endsWith('.wav')) {
+            recordedBlob = new Blob([file], { type: 'audio/wav' });
+            const url = URL.createObjectURL(recordedBlob);
+            document.getElementById('audioPlayback').src = url;
+            document.getElementById('audioPlayback').style.display = 'block';
+            status.innerHTML = '<i class="fas fa-check-circle" style="color:#00b894;"></i> File loaded!';
+            return;
+        }
+
+        status.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Converting audio...';
+        try {
+            recordedBlob = await convertBlobToWav(file);
+            const url = URL.createObjectURL(recordedBlob);
+            document.getElementById('audioPlayback').src = url;
+            document.getElementById('audioPlayback').style.display = 'block';
+            status.innerHTML = '<i class="fas fa-check-circle" style="color:#00b894;"></i> File loaded!';
+        } catch (err) {
+            console.error('Audio conversion failed:', err);
+            status.innerHTML = '<i class="fas fa-circle-exclamation" style="color:#d63031;"></i> Could not process this audio file - try a WAV file or use text instead.';
+            recordedBlob = null;
+        }
+    }
+
+    function updateCharCount() {
+        const text = document.getElementById('textInput').value;
+        const len = text.length;
+        document.getElementById('charCount').textContent = `${len} character${len === 1 ? '' : 's'}`;
+        if (len > 0) {
+            document.getElementById('emptyInputError').style.display = 'none';
+            document.getElementById('textInput').style.borderColor = '';
+        }
+        // ✅ NEW: survives an unexpected page reload (e.g. Live Server's
+        // auto-refresh firing on a file save while testing) - see
+        // restoreSession() below, called on page load.
+        try { sessionStorage.setItem('nhaa_draft_text', text); } catch (e) {}
+    }
+
+    const SAMPLE_TEXTS = {
+        workplace: 'My supervisor keeps making sexual comments about my appearance and touched my shoulder inappropriately during a meeting last week. I feel uncomfortable going to work now.',
+        dv: 'My husband has been hitting me for the past two years. Last night he grabbed me by the throat and threatened to take our children if I tried to leave.',
+        scst: 'A Dalit woman in our village was denied entry to the local temple and was verbally abused with casteist slurs by upper-caste residents when she protested.'
+    };
+    function fillSample(type) {
+        const input = document.getElementById('textInput');
+        input.value = SAMPLE_TEXTS[type] || '';
+        updateCharCount();
+        input.focus();
+    }
+
+    async function runAssessment() {
+        const errorBox = document.getElementById('emptyInputError');
+        try {
+            const text = document.getElementById('textInput').value;
+            const textInput = document.getElementById('textInput');
+
+            if (!text.trim() && !recordedBlob) {
+                errorBox.style.display = 'block';
+                errorBox.innerHTML = '<i class="fas fa-circle-exclamation"></i> Please type something above, or click one of the "Try:" samples below, before analyzing.';
+                textInput.style.borderColor = '#d63031';
+                textInput.focus();
+                return;
+            }
+            errorBox.style.display = 'none';
+            textInput.style.borderColor = '';
+
+            document.getElementById('resultsCard').style.display = 'block';
+            document.getElementById('gaugeText').textContent = '...';
+            // ✅ NEW: skeleton placeholder while waiting, instead of a
+            // blank/stale card sitting there with no feedback.
+            const hero = document.getElementById('resultsHero');
+            hero.className = 'results-hero sev-low skeleton';
+            hero.style.minHeight = '70px';
+            document.getElementById('resultsHeroIcon').textContent = '';
+            document.getElementById('resultsHeroTitle').textContent = '';
+            document.getElementById('plainLanguageText').textContent = 'Analyzing...';
+            document.getElementById('quickIndicators').innerHTML = '';
+
+            const formData = new FormData();
+            if (text.trim()) formData.append('text', text);
+            if (recordedBlob) formData.append('audio', new File([recordedBlob], 'recording.wav', { type: 'audio/wav' }));
+
+            const response = await fetch(`${API_URL}/hybrid/assess`, { method: 'POST', body: formData });
+            if (!response.ok) {
+                throw new Error(`Server returned status ${response.status}. Is the backend running? (API_URL: ${API_URL})`);
+            }
+            const result = await response.json();
+            if (!result.success) throw new Error(result.error || 'Assessment failed');
+
+            // ✅ NEW: cache the result BEFORE rendering it, so even if the
+            // page reloads a fraction of a second later (e.g. Live Server's
+            // auto-refresh), restoreSession() on the next load can put it
+            // straight back on screen instead of it vanishing.
+            try {
+                sessionStorage.setItem('nhaa_last_result', JSON.stringify({
+                    data: result.data, caseId: result.caseId, timestamp: Date.now()
+                }));
+            } catch (e) {}
+
+            displayResults(result.data, result.caseId);
+            saveToHistory(result.data);
+            cacheAndOfferLegalGuidance(result.data.legalGuidance, 'your last assessment');
+            const legalLink = document.getElementById('assessLegalLink');
+            legalLink.innerHTML = (result.data.legalGuidance && result.data.legalGuidance.applicable) ? `
+                <button class="btn btn-outline btn-sm" onclick="switchTab('legal')">
+                    <i class="fas fa-balance-scale"></i> View Legal Redressal &amp; Provisions
+                </button>
+            ` : '';
+        } catch (error) {
+            // ✅ FIX: this used to be alert('Error: ' + error.message), and
+            // separately, the code that revealed resultsCard sat OUTSIDE
+            // the try/catch entirely - so a failure at that exact point
+            // produced an unhandled promise rejection with NOTHING shown on
+            // the page (visible only in the browser console, which most
+            // people never open). Every failure path now surfaces the same
+            // always-visible inline banner instead of relying on alert(),
+            // which some browsers/embedded views silently suppress.
+            console.error('NHAA assessment error:', error);
+            document.getElementById('resultsCard').style.display = 'none';
+            errorBox.style.display = 'block';
+            errorBox.innerHTML = `<i class="fas fa-circle-exclamation"></i> Something went wrong: ${error.message}. Check that the server is running (node server.js) and reachable at <code>${API_URL}</code>.`;
+            errorBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+
+    let lastAssessmentData = null;
+    let lastCaseId = null;
+
+    function displayResults(data, caseId) {
+        lastAssessmentData = data;
+        lastCaseId = caseId;
+
+        const hybrid = data.hybridDecision || {};
+        const severity = hybrid.severity || { level: 'Low', emoji: '🟢', color: '#00b894' };
+        // ✅ FIX: was `hybrid.svi || 50` - since 0 is falsy in JavaScript,
+        // a genuinely zero SVI (correct for neutral text) was being
+        // replaced with a fake 50, showing a half-full gauge and "50" for
+        // text with no detected concern at all. ?? only falls back when
+        // the value is actually missing (null/undefined), not when it's
+        // a real, legitimate 0.
+        const svi = hybrid.svi ?? 50;
+
+        // Case confirmation + honest "what happens next" messaging. This is
+        // NOT empty reassurance - Critical/Severe cases genuinely do sort
+        // first in the authority dashboard's case list and touch panel (see
+        // authority_dashboard.html's priority ordering), so "prioritized for
+        // review" is literally true given how the system works, not a
+        // fabricated promise. No specific turnaround time is claimed since
+        // there's no real SLA/staffing behind this to promise one honestly.
+        document.getElementById('caseIdDisplay').textContent = caseId ? `Case #${caseId}` : 'Case recorded';
+        const nextStepsCopy = {
+            Critical: '🚨 This has been flagged as the highest priority in our system and will appear first for review. That said, please do not wait on a review - if you are in immediate danger, contact emergency services (112) or a helpline directly right now. This system supports follow-up; it is not a substitute for emergency response.',
+            Severe: 'This case has been flagged as high priority and will be prioritized for review ahead of lower-severity cases. Please also consider reaching out to one of the helplines below directly - you don\'t need to wait for a review to get support.',
+            Moderate: 'Your case has been logged and is visible for review. You can also explore the legal information and support resources below right away, without waiting.',
+            Mild: 'Your submission has been recorded for reference. You\'re welcome to return anytime to add more detail, and support resources remain available below.',
+            Minimal: 'Your submission has been recorded. Support resources and legal information remain available below whenever you\'d like them.'
+        };
+        document.getElementById('whatHappensNext').innerHTML =
+            `<strong>What happens next:</strong> ${nextStepsCopy[severity.level] || nextStepsCopy.Minimal}`;
+
+        // Plain-language summary - the technical grid below still shows
+        // every raw indicator, this just adds a human-readable framing on
+        // top of it rather than replacing it.
+        const plainMessages = {
+            Critical: 'This sounds serious, and immediate support is available. Please see the emergency banner and recommendations below.',
+            Severe: 'What you\'ve shared points to a serious situation. Support and clear next steps are outlined below - please don\'t face this alone.',
+            Moderate: 'What you\'ve described is worth taking seriously. Review the recommendations and legal information below for support options.',
+            Mild: 'Thank you for sharing this. The details below may still be useful, even if this doesn\'t feel like an emergency.',
+            Minimal: 'Thank you for sharing this. Support resources remain available below whenever you want them.'
+        };
+        // ✅ REDESIGN: drives the new hero treatment - severity now sets a
+        // background/border color class and a large icon, not just a small
+        // colored word buried in a paragraph.
+        const heroClassMap = { Critical: 'sev-critical', Severe: 'sev-high', Moderate: 'sev-moderate', Mild: 'sev-low', Minimal: 'sev-low' };
+        const hero = document.getElementById('resultsHero');
+        hero.className = `results-hero ${heroClassMap[severity.level] || 'sev-low'}`;
+        hero.style.minHeight = '';
+        document.getElementById('resultsHeroIcon').textContent = severity.emoji || '🟢';
+        document.getElementById('resultsHeroTitle').textContent = severity.level || 'Minimal';
+        document.getElementById('resultsCard').classList.remove('results-reveal');
+        void document.getElementById('resultsCard').offsetWidth; // restart animation
+        document.getElementById('resultsCard').classList.add('results-reveal');
+
+        document.getElementById('plainLanguageText').innerHTML =
+            `<strong>${severity.emoji || ''} ${severity.level}:</strong> ${plainMessages[severity.level] || plainMessages.Minimal}`;
+
+        // ✅ NEW: at-a-glance pills for the 2-3 highest-scoring indicators,
+        // so scanning the result doesn't require opening the full
+        // breakdown below - everything is still in the breakdown too,
+        // this is purely an additional quick-read layer.
+        const scoresForPills = hybrid.finalScores || {};
+        const pillLabels = { trauma: 'Trauma', depression: 'Depression', anxiety: 'Anxiety', suicidal_ideation: 'Suicide Risk', vulnerability: 'Vulnerability', intimidation: 'Intimidation', stress: 'Stress', fear: 'Fear', social_isolation: 'Social Isolation', dissociation: 'Dissociation', hyperarousal: 'Hyperarousal', avoidance: 'Avoidance' };
+        const topIndicators = Object.entries(scoresForPills)
+            .filter(([k, v]) => k !== 'protective_factors' && v > 0.15)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 3);
+        const quickEl = document.getElementById('quickIndicators');
+        if (topIndicators.length > 0) {
+            quickEl.innerHTML = topIndicators.map(([key, val]) => {
+                const pct = Math.round(val * 100);
+                const color = pct >= 60 ? 'var(--sev-critical)' : pct >= 30 ? 'var(--sev-moderate)' : 'var(--sev-low)';
+                return `<span class="quick-indicator-pill" style="color:${color}; border-color:${color}44;">${pillLabels[key] || key} ${pct}%</span>`;
+            }).join('');
+        } else {
+            quickEl.innerHTML = `<span class="quick-indicator-pill" style="color:var(--sev-low);">No significant indicators detected</span>`;
+        }
+
+        const circle = document.getElementById('gaugeCircle');
+        const circumference = 301.6;
+        circle.style.strokeDashoffset = circumference - (svi / 100) * circumference;
+        circle.style.stroke = severity.color || '#6c5ce7';
+        document.getElementById('gaugeText').textContent = Math.round(svi);
+
+        const badge = document.getElementById('severityBadge');
+        const severityMap = { 'Minimal': 'badge-low', 'Mild': 'badge-low', 'Moderate': 'badge-moderate', 'Severe': 'badge-high', 'Critical': 'badge-critical' };
+        badge.className = `badge ${severityMap[severity.level] || 'badge-low'}`;
+        badge.textContent = `${severity.emoji || '🟢'} ${severity.level}`;
+
+        const scores = hybrid.finalScores || {};
+        document.getElementById('sviScore').textContent = Math.round(svi);
+        document.getElementById('stressScore').textContent = Math.round((scores.stress || 0) * 100);
+        document.getElementById('traumaScore').textContent = Math.round((scores.trauma || 0) * 100);
+        document.getElementById('suicideRisk').textContent = Math.round((scores.suicidal_ideation || 0) * 100);
+        document.getElementById('fearScore').textContent = Math.round((scores.fear || 0) * 100);
+        document.getElementById('anxietyScore').textContent = Math.round((scores.anxiety || 0) * 100);
+        document.getElementById('vulnerabilityScore').textContent = Math.round((scores.vulnerability || 0) * 100);
+        document.getElementById('languageDisplay').textContent = (data.language || 'EN').toUpperCase();
+
+        const emergency = document.getElementById('emergencyBanner');
+        emergency.style.display = (severity.level === 'Critical' || severity.level === 'Severe') ? 'block' : 'none';
+
+        const recs = hybrid.recommendations || [];
+        const recBox = document.getElementById('recBox');
+        recBox.className = `rec-box ${severity.level.toLowerCase()}`;
+        document.getElementById('recAction').textContent = recs.length > 0 ? recs[0] : 'Assessment Complete';
+        document.getElementById('recDetails').textContent = recs.slice(1).join(' · ') || 'No significant issues.';
+        document.getElementById('recHelpline').textContent = '📞 Helpline: 1800-599-0019 | 14566';
+
+        document.getElementById('confidenceDisplay').textContent = `Confidence: ${Math.round((hybrid.confidence || 0.7) * 100)}%`;
+
+        const grid = document.getElementById('dimensionGrid');
+        grid.innerHTML = '';
+        const labels = { stress: 'Stress', trauma: 'Trauma', fear: 'Fear', anxiety: 'Anxiety', suicidal_ideation: 'Suicide Risk', vulnerability: 'Vulnerability' };
+        const colors = { 'Critical': '#d63031', 'Severe': '#e17055', 'Moderate': '#fdcb6e', 'Low': '#00b894' };
+        for (const [key, value] of Object.entries(scores)) {
+            if (key === 'suicidal_ideation') continue;
+            const score = Math.round(value * 100);
+            const level = score > 75 ? 'Critical' : score > 50 ? 'Severe' : score > 30 ? 'Moderate' : 'Low';
+            const color = colors[level] || '#00b894';
+            const div = document.createElement('div');
+            div.className = 'dimension-tag';
+            div.innerHTML = `
+                <span class="name">${labels[key] || key}</span>
+                <span style="display:flex; align-items:center; gap:6px;">
+                    <span class="score" style="color:${color}">${score}</span>
+                    <div class="dimension-bar"><div class="fill" style="width:${score}%; background:${color};"></div></div>
+                </span>
+            `;
+            grid.appendChild(div);
+        }
+    }
+
+    // Generates a real, downloadable report the person can save or print -
+    // gives them something tangible to keep, not just an on-screen result
+    // that disappears when they close the tab.
+    function downloadReport() {
+        if (!lastAssessmentData) { alert('Run an assessment first.'); return; }
+        const hybrid = lastAssessmentData.hybridDecision || {};
+        const severity = hybrid.severity || {};
+        const scores = hybrid.finalScores || {};
+        const legal = lastAssessmentData.legalGuidance;
+        const scst = lastAssessmentData.scstAnalysis;
+
+        const lines = [];
+        lines.push('NHAA ASSESSMENT REPORT');
+        lines.push('='.repeat(50));
+        lines.push(`Case ID: ${lastCaseId || 'N/A'}`);
+        lines.push(`Date: ${new Date(lastAssessmentData.timestamp || Date.now()).toLocaleString()}`);
+        lines.push(`Language: ${(lastAssessmentData.language || 'en').toUpperCase()}`);
+        lines.push('');
+        lines.push(`SEVERITY: ${severity.level || 'N/A'} (SVI: ${Math.round(hybrid.svi || 0)})`);
+        lines.push(`Primary Concern: ${(hybrid.primaryConcern || 'N/A').replace(/_/g, ' ')}`);
+        if (severity.escalatedBy) lines.push(`Escalation factor: ${severity.escalatedBy.replace(/_/g, ' ')}`);
+        lines.push('');
+        lines.push('EVALUATION BREAKDOWN');
+        lines.push('-'.repeat(50));
+        for (const [key, value] of Object.entries(scores)) {
+            if (key === 'protective_factors') continue;
+            lines.push(`  ${key.replace(/_/g, ' ')}: ${Math.round((value || 0) * 100)}%`);
+        }
+        lines.push('');
+        lines.push('RECOMMENDATIONS');
+        lines.push('-'.repeat(50));
+        (hybrid.recommendations || []).forEach(r => lines.push(`  - ${r}`));
+        lines.push('');
+
+        if (scst && scst.patterns && scst.patterns.length > 0) {
+            lines.push('SC/ST ANALYSIS');
+            lines.push('-'.repeat(50));
+            lines.push(`  Severity: ${scst.severityLevel} (${scst.severity}/100)`);
+            lines.push(`  Patterns: ${scst.patterns.map(p => p.description).join('; ')}`);
+            if (scst.communities.length) lines.push(`  Communities: ${scst.communities.join(', ')}`);
+            lines.push('');
+        }
+
+        if (legal && legal.applicable) {
+            lines.push('LEGAL INFORMATION');
+            lines.push('-'.repeat(50));
+            const allProvisions = [
+                ...(legal.scstGuidance?.matchedProvisions || []),
+                ...(legal.clinicalGuidance?.matchedProvisions || [])
+            ];
+            for (const p of allProvisions) {
+                lines.push(`  ${p.primaryLaw || p.description}`);
+                (p.keyProtections || []).forEach(k => lines.push(`    * ${k}`));
+            }
+            lines.push('');
+            lines.push(`  ${legal.disclaimer || ''}`);
+            lines.push('');
+        }
+
+        lines.push('HELPLINES');
+        lines.push('-'.repeat(50));
+        lines.push('  Emergency: 112 | Women\'s Helpline: 181 | Crisis: 1800-599-0019');
+        lines.push('  Childline: 1098 | Free Legal Aid (NALSA): 15100');
+        lines.push('');
+        lines.push('This report is generated by an automated system and is not a');
+        lines.push('substitute for professional medical, psychological, or legal advice.');
+
+        const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `NHAA_Report_${lastCaseId || Date.now()}.txt`;
+        link.click();
+    }
+
+    async function analyzeSCST() {
+        const text = document.getElementById('scstInput').value;
+        if (!text.trim()) { alert('Please enter text to analyze.'); return; }
+        const resultsDiv = document.getElementById('scstResults');
+        resultsDiv.innerHTML = '<div style="text-align:center; padding:20px; color:rgba(255,255,255,0.4);"><i class="fas fa-spinner fa-spin" style="font-size:24px;"></i><p>Analyzing...</p></div>';
+        try {
+            const response = await fetch(`${API_URL}/scst/analyze`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text })
+            });
+            const result = await response.json();
+            if (!result.success) throw new Error('Analysis failed');
+            const data = result.data;
+            const scst = data.scstAnalysis || {};
+            resultsDiv.innerHTML = `
+                <div class="scst-result-card">
+                    <h4 style="margin-bottom:8px; font-size:14px;">📊 SC/ST Analysis Results</h4>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
+                        <div style="padding:8px; background:rgba(255,255,255,0.02); border-radius:6px;">
+                            <span style="font-size:11px; color:rgba(255,255,255,0.4);">Severity</span>
+                            <div class="severity-display" style="color:${scst.severityLevel === 'Critical' ? '#d63031' : scst.severityLevel === 'Severe' ? '#e17055' : scst.severityLevel === 'Moderate' ? '#fdcb6e' : '#00b894'}">${scst.severityLevel || 'Low'}</div>
+                            <div style="font-size:12px; color:rgba(255,255,255,0.6);">Score: ${Math.round(scst.severity || 0)}/100</div>
+                        </div>
+                        <div style="padding:8px; background:rgba(255,255,255,0.02); border-radius:6px;">
+                            <span style="font-size:11px; color:rgba(255,255,255,0.4);">Confidence</span>
+                            <div class="severity-display">${Math.round((scst.confidence || 0) * 100)}%</div>
+                            <div style="font-size:12px; color:rgba(255,255,255,0.6);">${scst.patterns ? scst.patterns.length : 0} patterns detected</div>
+                        </div>
+                    </div>
+                    ${scst.patterns && scst.patterns.length > 0 ? `
+                        <div style="margin-top:8px;">
+                            <span style="font-size:12px; font-weight:600; color:rgba(255,255,255,0.6);">🔍 Patterns Detected:</span>
+                            <div style="margin-top:4px;">${scst.patterns.map(p => `<span class="scst-pattern-tag">${p.name}</span>`).join('')}</div>
+                        </div>
+                    ` : ''}
+                    ${scst.communities && scst.communities.length > 0 ? `
+                        <div style="margin-top:8px;">
+                            <span style="font-size:12px; font-weight:600; color:rgba(255,255,255,0.6);">🏘️ Communities:</span>
+                            <div style="margin-top:4px;">${scst.communities.map(c => `<span class="scst-community-tag">${c}</span>`).join('')}</div>
+                        </div>
+                    ` : ''}
+                    ${scst.escalation && scst.escalation.length > 0 ? `
+                        <div style="margin-top:8px; padding:8px; background:rgba(214,48,49,0.08); border:1px solid rgba(214,48,49,0.2); border-radius:6px;">
+                            <span style="font-size:12px; font-weight:600; color:#e17055;">⚠️ Escalation Factors:</span>
+                            <ul style="margin:4px 0 0 18px; padding:0; font-size:12px; color:rgba(255,255,255,0.7);">
+                                ${scst.escalation.map(e => `<li>${e}</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                    ${scst.keywords && scst.keywords.length > 0 ? `
+                        <div style="margin-top:8px;">
+                            <span style="font-size:12px; font-weight:600; color:rgba(255,255,255,0.6);">🔑 Matched Keywords:</span>
+                            <div style="margin-top:4px;">${scst.keywords.map(k => `<span class="scst-pattern-tag" style="color:rgba(255,255,255,0.6); border-color:rgba(255,255,255,0.15); background:rgba(255,255,255,0.04);">${k}</span>`).join('')}</div>
+                        </div>
+                    ` : ''}
+                    ${data.textScores ? `
+                        <div style="margin-top:8px;">
+                            <span style="font-size:12px; font-weight:600; color:rgba(255,255,255,0.6);">🧩 Other Evaluation Parameters:</span>
+                            <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:6px; margin-top:4px;">
+                                ${Object.entries(data.textScores)
+                                    .map(([key, value]) => `
+                                    <div style="padding:6px; background:rgba(255,255,255,0.02); border-radius:6px; text-align:center;">
+                                        <div style="font-size:14px; font-weight:700; color:${value > 0.5 ? '#e17055' : '#a29bfe'};">${Math.round((value || 0) * 100)}</div>
+                                        <div style="font-size:9px; color:rgba(255,255,255,0.4); text-transform:capitalize;">${key.replace(/_/g, ' ')}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                    <div style="margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.06); font-size:12px; color:rgba(255,255,255,0.4);">${data.summary || 'Analysis complete.'}</div>
+                    ${data.legalGuidance ? `
+                        <div style="margin-top:10px;">
+                            <button class="btn btn-outline btn-sm" onclick="switchTab('legal')">
+                                <i class="fas fa-balance-scale"></i> View Legal Redressal &amp; Provisions
+                            </button>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+            cacheAndOfferLegalGuidance(data.legalGuidance, 'your SC/ST analysis');
+        } catch(error) { resultsDiv.innerHTML = `<div style="padding:16px; color:#d63031;">❌ Error: ${error.message}</div>`; }
+    }
+
+    // ===== LEGAL REDRESSAL TAB =====
+    // Caches the legalGuidance object from whichever assessment ran most
+    // recently (full assessment or SC/ST-only), so switching to the Legal
+    // tab shows it immediately without a second network call. A standalone
+    // lookup (fetchLegalGuidance) is also available for checking a
+    // situation on its own.
+    let latestLegalGuidance = null;
+    let latestLegalSource = null;
+
+    function cacheAndOfferLegalGuidance(legalGuidance, sourceLabel) {
+        if (!legalGuidance) return;
+        latestLegalGuidance = legalGuidance;
+        latestLegalSource = sourceLabel;
+        // If the Legal tab is already open, refresh it immediately.
+        if (document.getElementById('page-legal').classList.contains('active')) {
+            renderLegalGuidance(latestLegalGuidance, latestLegalSource);
+        }
+    }
+
+    async function fetchLegalGuidance() {
+        const text = document.getElementById('legalInput').value;
+        const resultsDiv = document.getElementById('legalResults');
+
+        if (!text.trim() && !latestLegalGuidance) {
+            alert('Describe an incident above, or run an Assessment / SC/ST Analysis first.');
+            return;
+        }
+
+        if (!text.trim() && latestLegalGuidance) {
+            renderLegalGuidance(latestLegalGuidance, latestLegalSource);
+            return;
+        }
+
+        resultsDiv.innerHTML = '<div style="text-align:center; padding:20px; color:rgba(255,255,255,0.4);"><i class="fas fa-spinner fa-spin" style="font-size:24px;"></i><p>Checking applicable redressal &amp; provisions...</p></div>';
+        try {
+            const response = await fetch(`${API_URL}/legal/guidance`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text })
+            });
+            const result = await response.json();
+            if (!result.success) throw new Error('Lookup failed');
+            latestLegalGuidance = result.data.legalGuidance;
+            latestLegalSource = 'this description';
+            renderLegalGuidance(latestLegalGuidance, latestLegalSource);
+        } catch(error) {
+            resultsDiv.innerHTML = `<div style="padding:16px; color:#d63031;">❌ Error: ${error.message}</div>`;
+        }
+    }
+
+    function renderLegalGuidance(legal, sourceLabel) {
+        const resultsDiv = document.getElementById('legalResults');
+        if (!legal) {
+            resultsDiv.innerHTML = `
+                <div style="text-align:center; padding:20px; color:rgba(255,255,255,0.4);">
+                    <i class="fas fa-balance-scale" style="font-size:32px;"></i>
+                    <p style="margin-top:8px;">Run an assessment, or describe an incident above, to see applicable redressal and provisions</p>
+                </div>`;
+            return;
+        }
+
+        if (!legal.applicable) {
+            resultsDiv.innerHTML = `
+                <div class="scst-result-card">
+                    <p style="font-size:13px; color:rgba(255,255,255,0.7);">${legal.message || 'No specific legal pattern detected.'}</p>
+                    ${renderAuthoritiesGrid(legal.authorities)}
+                    <div class="legal-disclaimer"><i class="fas fa-info-circle"></i> ${legal.disclaimer}</div>
+                </div>`;
+            return;
+        }
+
+        const priorityBanner = legal.priorityReview ? `
+            <div class="legal-priority-banner">
+                <i class="fas fa-flag"></i> Priority review: this looks like a firsthand account of a severe/critical
+                incident - the redressal steps below should be treated as time-sensitive.
+            </div>` : '';
+
+        const scst = legal.scstGuidance;
+        const clinical = legal.clinicalGuidance;
+
+        const scstBlock = scst ? `
+            <div class="legal-section-title"><i class="fas fa-gavel"></i> SC/ST Atrocities Act - Baseline Rights</div>
+            <ul class="legal-baseline-rights">
+                ${scst.baselineRights.map(r => `<li>${r}</li>`).join('')}
+            </ul>
+            <div class="legal-section-title"><i class="fas fa-file-contract"></i> Provisions for What Was Detected</div>
+            ${scst.matchedProvisions.map(p => `
+                <div class="legal-provision-card">
+                    <div class="incident-tag">${p.incidentType.replace(/_/g, ' ')}</div>
+                    <div class="primary-law">${p.primaryLaw}</div>
+                    <ul>${p.keyProtections.map(k => `<li>${k}</li>`).join('')}</ul>
+                </div>
+            `).join('')}
+        ` : '';
+
+        const clinicalBlock = clinical ? `
+            <div class="legal-section-title"><i class="fas fa-heartbeat"></i> Related Rights &amp; Protections</div>
+            ${clinical.matchedProvisions.map(p => `
+                <div class="legal-provision-card">
+                    <div class="incident-tag">${p.incidentType.replace(/_/g, ' ')}</div>
+                    <div class="primary-law">${p.primaryLaw}</div>
+                    <ul>${p.keyProtections.map(k => `<li>${k}</li>`).join('')}</ul>
+                </div>
+            `).join('')}
+        ` : '';
+
+        resultsDiv.innerHTML = `
+            <div class="scst-result-card">
+                ${sourceLabel ? `<div class="legal-source-note"><i class="fas fa-link"></i> Based on ${sourceLabel}</div>` : ''}
+                ${priorityBanner}
+                ${scstBlock}
+                ${clinicalBlock}
+                <div class="legal-section-title"><i class="fas fa-map-marker-alt"></i> Where to Go</div>
+                ${renderAuthoritiesGrid(legal.allAuthorities)}
+                <div class="legal-disclaimer"><i class="fas fa-info-circle"></i> ${legal.disclaimer}</div>
+            </div>
+        `;
+    }
+
+    function renderAuthoritiesGrid(authorities) {
+        if (!authorities || authorities.length === 0) return '';
+        return `
+            <div class="legal-authorities-grid">
+                ${authorities.map(a => `
+                    <div class="legal-authority-card">
+                        <div class="name">${a.name}</div>
+                        <div class="detail">${a.detail}</div>
+                        ${a.website ? `<span class="website"><i class="fas fa-globe"></i> ${a.website}</span>` : ''}
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+
+    // ✅ FIX: the backend returns a 5-tier severity ('Minimal','Mild','Moderate',
+    // 'Severe','Critical') but the history/authority views were built around an
+    // older 4-tier scheme ('Low','Moderate','High','Critical'). Because the
+    // strings never matched, counts/filters silently matched nothing for
+    // 'Mild'/'Minimal'/'Severe' cases. This maps consistently everywhere below.
+    function mapSeverityTier(level) {
+        if (level === 'Critical') return 'Critical';
+        if (level === 'Severe') return 'High';
+        if (level === 'Moderate') return 'Moderate';
+        return 'Low'; // Mild, Minimal
+    }
+
+    function saveToHistory(data) {
+        const hybrid = data.hybridDecision || {};
+        const entry = {
+            id: Date.now().toString(36),
+            timestamp: new Date().toISOString(),
+            svi: hybrid.svi ?? 50,
+            severity: hybrid.severity?.level || 'Minimal',
+            scores: hybrid.finalScores || {},
+            language: data.language || 'en'
+        };
+        assessmentHistory.unshift(entry);
+        if (assessmentHistory.length > 100) assessmentHistory = assessmentHistory.slice(0, 100);
+        localStorage.setItem('nhaa_history', JSON.stringify(assessmentHistory));
+
+        // ✅ FIX: previously nothing ever wrote to 'nhaa_authority_cases', so the
+        // authority dashboard only ever showed its 3 hardcoded demo rows and never
+        // reflected a real detected case, critical or otherwise. Bridge every
+        // assessment into that same store the authority dashboard reads from.
+        try {
+            const authorityCases = JSON.parse(localStorage.getItem('nhaa_authority_cases') || '[]');
+            authorityCases.unshift({
+                id: data.caseId || `NHAA-${Date.now().toString().slice(-8)}`,
+                title: `${hybrid.primaryConcern ? hybrid.primaryConcern.replace(/_/g, ' ') : 'General'} case (auto-detected)`,
+                severity: mapSeverityTier(hybrid.severity?.level || 'Minimal'),
+                svi: Math.round(hybrid.svi || 0),
+                officer: 'Unassigned',
+                status: 'Pending',
+                timestamp: entry.timestamp
+            });
+            localStorage.setItem('nhaa_authority_cases', JSON.stringify(authorityCases.slice(0, 200)));
+        } catch (e) {
+            console.warn('Could not sync case to authority dashboard:', e.message);
+        }
+    }
+
+    function loadHistory() {
+        const total = assessmentHistory.length;
+        const critical = assessmentHistory.filter(c => c.severity === 'Critical').length;
+        const high = assessmentHistory.filter(c => c.severity === 'Severe').length;
+        document.getElementById('totalAssessments').textContent = total;
+        document.getElementById('criticalAssessments').textContent = critical;
+        document.getElementById('highAssessments').textContent = high;
+        const svs = assessmentHistory.map(c => c.svi || 0);
+        if (svs.length > 0) {
+            const sorted = [...svs].sort((a, b) => a - b);
+            document.getElementById('avgSvi').textContent = (svs.reduce((a, b) => a + b, 0) / svs.length).toFixed(1);
+            document.getElementById('maxSvi').textContent = Math.max(...svs);
+            document.getElementById('minSvi').textContent = Math.min(...svs);
+            document.getElementById('medSvi').textContent = sorted[Math.floor(sorted.length / 2)];
+        }
+        // Chart
+        const ctx = document.getElementById('riskChart');
+        if (ctx) {
+            if (chartInstances['riskChart']) chartInstances['riskChart'].destroy();
+            const counts = { 'Low': 0, 'Moderate': 0, 'High': 0, 'Critical': 0 };
+            assessmentHistory.forEach(c => {
+                const tier = mapSeverityTier(c.severity);
+                counts[tier]++;
+            });
+            chartInstances['riskChart'] = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Low', 'Moderate', 'High', 'Critical'],
+                    datasets: [{
+                        data: [counts.Low, counts.Moderate, counts.High, counts.Critical],
+                        backgroundColor: ['#00b894', '#fdcb6e', '#e17055', '#d63031'],
+                        borderWidth: 2,
+                        borderColor: 'rgba(255,255,255,0.1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { color: 'rgba(255,255,255,0.6)', padding: 8, boxWidth: 12, font: { size: 10 } } }
+                    },
+                    cutout: '60%'
+                }
+            });
+        }
+        const tbody = document.getElementById('historyTableBody');
+        if (assessmentHistory.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:rgba(255,255,255,0.4); padding:30px 0;">No cases yet.</td></tr>';
+            return;
+        }
+        let html = '';
+        const priority = { 'Critical': 0, 'Severe': 1, 'Moderate': 2, 'Mild': 3, 'Minimal': 4 };
+        const sorted = [...assessmentHistory].sort((a, b) => (priority[a.severity] ?? 5) - (priority[b.severity] ?? 5));
+        sorted.slice(0, 50).forEach(c => {
+            const config = { critical: 'badge-critical', high: 'badge-high', moderate: 'badge-moderate', low: 'badge-low' };
+            const badgeClass = config[mapSeverityTier(c.severity).toLowerCase()] || 'badge-low';
+            html += `
+                <tr>
+                    <td style="padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.06);">${new Date(c.timestamp).toLocaleString()}</td>
+                    <td style="padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.06);"><span class="badge ${badgeClass}" style="font-size:10px; padding:2px 10px;">${c.severity || 'Unknown'}</span></td>
+                    <td style="padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.06); font-weight:700;">${Math.round(c.svi)}</td>
+                    <td style="padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.06);">${Math.round((c.scores?.stress || 0) * 100)}</td>
+                    <td style="padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.06);">${Math.round((c.scores?.trauma || 0) * 100)}</td>
+                </tr>
+            `;
+        });
+        tbody.innerHTML = html;
+    }
+
+    function exportCSV() {
+        if (assessmentHistory.length === 0) { alert('No data to export.'); return; }
+        const headers = ['Timestamp', 'Severity', 'SVI', 'Stress', 'Trauma'];
+        const rows = assessmentHistory.map(c => [
+            c.timestamp,
+            c.severity || 'Unknown',
+            c.svi || 0,
+            Math.round((c.scores?.stress || 0) * 100),
+            Math.round((c.scores?.trauma || 0) * 100)
+        ]);
+        const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `nhaa_assessment_${new Date().toISOString().slice(0,10)}.csv`;
+        link.click();
+    }
+
+    function clearHistory() {
+        if (!confirm('Delete all history?')) return;
+        assessmentHistory = [];
+        localStorage.removeItem('nhaa_history');
+        loadHistory();
+        alert('History cleared.');
+    }
+
+    function clearAll() {
+        document.getElementById('textInput').value = '';
+        document.getElementById('audioPlayback').src = '';
+        document.getElementById('audioPlayback').style.display = 'none';
+        document.getElementById('recordingStatus').innerHTML = '<i class="fas fa-info-circle"></i> Press Record to speak';
+        recordedBlob = null;
+        document.getElementById('resultsCard').style.display = 'none';
+        document.getElementById('waveContainer').style.display = 'none';
+        document.getElementById('recordBtn').innerHTML = '<i class="fas fa-circle"></i> Record';
+        // Explicit clear = don't restore this on the next reload.
+        try {
+            sessionStorage.removeItem('nhaa_draft_text');
+            sessionStorage.removeItem('nhaa_last_result');
+        } catch (e) {}
+    }
+
+    // ✅ NEW: restores whatever was in progress before an unexpected page
+    // reload - draft text and/or the last analysis result. This is what
+    // actually solves the "Live Server auto-refresh wiped my results"
+    // problem: instead of preventing the reload (which this app can't
+    // control, since Live Server's watcher is external to it), the app
+    // survives it by putting the same result straight back on screen.
+    function restoreSession() {
+        try {
+            const draftText = sessionStorage.getItem('nhaa_draft_text');
+            if (draftText) {
+                document.getElementById('textInput').value = draftText;
+                updateCharCount();
+            }
+
+            const cached = sessionStorage.getItem('nhaa_last_result');
+            if (cached) {
+                const parsed = JSON.parse(cached);
+                // Only auto-restore if it's recent (5 minutes) - an old
+                // cached result from a previous, unrelated session
+                // shouldn't reappear out of nowhere much later.
+                if (Date.now() - parsed.timestamp < 5 * 60 * 1000) {
+                    document.getElementById('resultsCard').style.display = 'block';
+                    displayResults(parsed.data, parsed.caseId);
+                }
+            }
+        } catch (e) {
+            console.warn('Could not restore previous session:', e);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        loadHistory();
+        restoreSession();
+        document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
+        console.log('🧠 NHAA Advanced Dashboard loaded.');
+        console.log(`📡 API: ${API_URL}`);
+        console.log(`📊 ${assessmentHistory.length} cases loaded`);
+    });
+    setInterval(() => {
+        document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
+    }, 30000);
+</script>
+</body>
+</html>

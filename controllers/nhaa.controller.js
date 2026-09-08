@@ -1,0 +1,646 @@
+// ================================================================
+//  NHAA CONTROLLER - Complete Request Handler
+// ================================================================
+
+import fs from 'fs';
+import HybridAIService from '../models/hybridAI.js';
+import ClinicalScales from '../models/clinicalScales.js';
+import ExpertSystem from '../models/expertSystem.js';
+import HumanIntelligence from '../models/humanIntelligence.js';
+import ConsensusBuilder from '../models/consensusBuilder.js';
+import FeedbackLearning from '../models/feedbackLearning.js';
+import SCSTTrainer from '../models/scstTrainer.js';
+import LegalGuidance from '../models/legalGuidance.js';
+import TextAnalyzer from '../services/textAnalyzer.js';
+import AudioAnalyzer from '../services/audioAnalyzer.js';
+import LanguageDetector from '../utils/languageDetector.js';
+import Database from '../utils/database.js';
+
+class NHHAController {
+    constructor() {
+        this.hybridAI = new HybridAIService();
+        this.clinicalScales = new ClinicalScales();
+        this.expertSystem = new ExpertSystem();
+        this.humanIntelligence = new HumanIntelligence();
+        this.consensusBuilder = new ConsensusBuilder();
+        this.feedbackLearning = new FeedbackLearning();
+        this.textAnalyzer = new TextAnalyzer();
+        this.audioAnalyzer = new AudioAnalyzer();
+        this.languageDetector = new LanguageDetector();
+        this.scstTrainer = new SCSTTrainer();
+        this.legalGuidance = new LegalGuidance();
+        // ✅ NEW: Database already existed (utils/database.js) but nothing
+        // ever instantiated or called it - every case only ever lived in
+        // the browser's localStorage, which is why the authority dashboard
+        // could never show a case submitted from a different browser/device.
+        // Wiring this in makes cases real, server-side, shared records.
+        this.db = new Database();
+        this.caseCounter = 0;
+    }
+
+    // Shared by hybridAssessment and scstAnalyze so both entry points
+    // (the victim-facing assessment AND the SC/ST-specific tab) create a
+    // real, server-side case record an authority can actually see.
+    _persistCase({ caseId, text, language, hybridDecision, scstAnalysis, legalGuidance, source }) {
+        try {
+            const severityLevel = hybridDecision?.severity?.level ||
+                scstAnalysis?.severityLevel || 'Minimal';
+            const svi = hybridDecision?.svi ?? scstAnalysis?.severity ?? 0;
+            const primaryConcern = hybridDecision?.primaryConcern ||
+                (scstAnalysis?.patterns?.[0]?.name) || 'general';
+
+            this.db.saveCase({
+                id: caseId,
+                source: source || 'assessment',
+                language: language || 'en',
+                text: text || '',
+                severity: severityLevel,
+                svi: Math.round(svi),
+                primaryConcern,
+                // ✅ NEW: the authority dashboard previously only ever saw
+                // the single SVI number and primaryConcern label - not the
+                // full per-category breakdown that actually produced them.
+                // Storing it here is what lets the case detail view show
+                // every evaluation indicator, not just the headline score.
+                finalScores: hybridDecision?.finalScores || {},
+                escalatedBy: hybridDecision?.severity?.escalatedBy || null,
+                scstSummary: scstAnalysis ? {
+                    severityLevel: scstAnalysis.severityLevel,
+                    severity: scstAnalysis.severity,
+                    patterns: (scstAnalysis.patterns || []).map(p => p.name),
+                    communities: scstAnalysis.communities || [],
+                    escalation: scstAnalysis.escalation || [],
+                    priorityReview: !!scstAnalysis.requiresPriorityReview
+                } : null,
+                legalApplicable: !!(legalGuidance && legalGuidance.applicable),
+                status: 'Pending',
+                officer: 'Unassigned'
+            });
+        } catch (err) {
+            // Persistence failure should never break the response the
+            // victim/authority is waiting on - log and move on.
+            console.warn('Could not persist case:', err.message);
+        }
+    }
+
+    async hybridAssessment(req, res) {
+        try {
+            const { text } = req.body;
+            const audioFile = req.file;
+
+            const lang = text ? this.languageDetector.detect(text) : 'en';
+            const textAnalysis = text ? this.textAnalyzer.analyze(text, lang) : null;
+
+            let audioAnalysis = null;
+            if (audioFile) {
+                try {
+                    audioAnalysis = await this.audioAnalyzer.analyze(audioFile.path);
+                    fs.unlinkSync(audioFile.path);
+                } catch (err) {
+                    console.warn('Audio analysis failed:', err.message);
+                }
+            }
+
+            // ✅ FIX: SC/ST analysis was computed AFTER (and completely
+            // separate from) the main severity decision, so a Critical
+            // caste-atrocity finding never affected the headline severity a
+            // victim or authority actually sees on the main assessment.
+            // Compute it first so it can feed into _hybridDecision below.
+            const scstResult = text ? this.scstTrainer.analyze(text) : null;
+
+            const aiResult = this.hybridAI.assess(textAnalysis, audioAnalysis, this.feedbackLearning.getLearnedParameters());
+            const scales = this.clinicalScales.calculate(aiResult);
+            const expertRules = this.expertSystem.applyRules(aiResult);
+            const humanIntelligence = this.humanIntelligence.synthesize(aiResult, expertRules, text);
+            const expertOpinions = this.consensusBuilder.getExpertOpinions(aiResult, expertRules);
+            const consensus = this.consensusBuilder.buildConsensus(expertOpinions);
+            const hybridDecision = this._hybridDecision(aiResult, humanIntelligence, consensus, scstResult);
+
+            // Legal tab: redressal channels + provisions, combining SC/ST
+            // pattern matches with any clinical crisis findings (e.g.
+            // suicide risk) from the same case.
+            const legalGuidance = this.legalGuidance.getCombinedGuidance(
+                scstResult,
+                hybridDecision.finalScores || {},
+                expertRules
+            );
+
+            const caseId = `NHAA-${Date.now().toString().slice(-8)}`;
+
+            this._persistCase({
+                caseId, text, language: lang, hybridDecision, scstAnalysis: scstResult,
+                legalGuidance, source: 'assessment'
+            });
+
+            res.status(200).json({
+                success: true,
+                caseId: caseId,
+                data: {
+                    timestamp: new Date().toISOString(),
+                    language: lang,
+                    hybridDecision: hybridDecision,
+                    clinicalScales: scales,
+                    scstAnalysis: scstResult,
+                    legalGuidance: legalGuidance,
+                    // ⚠️ Renamed from { aiContribution, humanIntelligence,
+                    // expertConsensus } - those labels implied a real
+                    // clinician and a real expert panel reviewed this case.
+                    // Both "humanIntelligence" and "expertConsensus" are
+                    // deterministic heuristic layers (see the warnings in
+                    // humanIntelligence.js / consensusBuilder.js) with no
+                    // external human input. Relabeled to say what they
+                    // actually are.
+                    scoreComposition: {
+                        primaryModelSignal: '60%',
+                        ruleBasedHeuristicAdjustment: '30%',
+                        multiProfileHeuristicConsensus: '10%',
+                        note: 'All layers are automated heuristics. No human clinician has reviewed this case.'
+                    }
+                }
+            });
+
+        } catch (error) {
+            console.error('Hybrid assessment error:', error);
+            if (req.file && fs.existsSync(req.file.path)) {
+                fs.unlinkSync(req.file.path);
+            }
+            res.status(500).json({ success: false, error: error.message });
+        }
+    }
+
+    async scstAnalyze(req, res) {
+        try {
+            const { text } = req.body;
+            if (!text) {
+                return res.status(400).json({ success: false, error: 'Text required' });
+            }
+
+            const result = this.scstTrainer.analyze(text);
+            const lang = this.languageDetector.detect(text);
+            const textAnalysis = this.textAnalyzer.analyze(text, lang);
+            const legalGuidance = this.legalGuidance.getGuidanceForSCST(result);
+
+            const caseId = `NHAA-${Date.now().toString().slice(-8)}`;
+            this._persistCase({
+                caseId, text, language: lang,
+                hybridDecision: { finalScores: textAnalysis.scores },
+                scstAnalysis: result, legalGuidance, source: 'scst_tab'
+            });
+
+            res.status(200).json({
+                success: true,
+                caseId,
+                data: {
+                    scstAnalysis: result,
+                    legalGuidance: legalGuidance,
+                    textScores: textAnalysis.scores,
+                    summary: textAnalysis.summary,
+                    language: lang
+                }
+            });
+
+        } catch (error) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    }
+
+    // Standalone "Legal tab" endpoint - lets the frontend show redressal
+    // channels and provisions on their own, without running the full
+    // clinical assessment. Accepts either raw text (runs SC/ST + light
+    // clinical scoring itself) or previously-computed scores, so the legal
+    // tab can also be refreshed from an assessment the user already ran.
+    async legalGuidanceLookup(req, res) {
+        try {
+            const { text, finalScores } = req.body;
+
+            if (!text && !finalScores) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Provide either text to analyze, or finalScores from a prior assessment'
+                });
+            }
+
+            let scstResult = null;
+            let scores = finalScores || {};
+            let expertRules = [];
+
+            if (text) {
+                scstResult = this.scstTrainer.analyze(text);
+                const lang = this.languageDetector.detect(text);
+                const textAnalysis = this.textAnalyzer.analyze(text, lang);
+                const aiResult = this.hybridAI.assess(textAnalysis, null, this.feedbackLearning.getLearnedParameters());
+                scores = aiResult.scores;
+                expertRules = this.expertSystem.applyRules(aiResult);
+            }
+
+            const legalGuidance = this.legalGuidance.getCombinedGuidance(scstResult, scores, expertRules);
+
+            res.status(200).json({
+                success: true,
+                data: { legalGuidance: legalGuidance }
+            });
+
+        } catch (error) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    }
+
+    async textAssessment(req, res) {
+        try {
+            const { text } = req.body;
+            if (!text) {
+                return res.status(400).json({ success: false, error: 'Text required' });
+            }
+
+            const lang = this.languageDetector.detect(text);
+            const textAnalysis = this.textAnalyzer.analyze(text, lang);
+            const scstResult = this.scstTrainer.analyze(text);
+
+            res.status(200).json({
+                success: true,
+                data: {
+                    scores: textAnalysis.scores,
+                    language: lang,
+                    summary: textAnalysis.summary,
+                    scstAnalysis: scstResult
+                }
+            });
+
+        } catch (error) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    }
+
+    _hybridDecision(aiResult, humanIntelligence, consensus, scstResult = null) {
+        const aiScores = aiResult.scores || {};
+        const humanScores = humanIntelligence.scores || {};
+        const consensusScores = consensus.concerns || {};
+
+        const finalScores = {};
+        const allKeys = new Set([
+            ...Object.keys(aiScores),
+            ...Object.keys(humanScores),
+            ...Object.keys(consensusScores)
+        ]);
+
+        for (const key of allKeys) {
+            const ai = aiScores[key] || 0;
+            const human = humanScores[key] || 0;
+            const consensusScore = consensusScores[key] || 0;
+            finalScores[key] = (ai * 0.6) + (human * 0.3) + (consensusScore * 0.1);
+        }
+
+        // ✅ FIX: the old svi was a flat, unweighted average across ALL 12
+        // categories - including dissociation/hyperarousal/avoidance, which
+        // text-only analysis never populates and are always 0. So a text that
+        // was 100% on a single dangerous category (e.g. suicidal_ideation)
+        // still got diluted down to ~8% ("Minimal") by 11 empty categories.
+        // Use the same clinical weights as HybridAIService instead, which
+        // only spreads weight across the categories that are actually scored.
+        const svi = this._calculateWeightedSVI(finalScores);
+        const severity = this._getSeverity(svi, finalScores, scstResult, humanIntelligence.dangerAssessment);
+        // ✅ FIX: broken tie-breaking - `finalScores[a] > finalScores[b] ? a
+        // : b` returns `b` on every tie, so the accumulator drifts to
+        // whichever key is defined LAST in the object whenever scores are
+        // equal (very common when most categories are 0). Combined with
+        // protective_factors being the last-defined key, this meant a text
+        // with weak/no signal would report "protective_factors" - a
+        // POSITIVE indicator - as the primary *concern*. Fixed the tie-
+        // break (>=, keeps the earlier/more clinically-relevant key) and
+        // excluded protective_factors from candidacy entirely.
+        const concernKeys = Object.keys(finalScores).filter(k => k !== 'protective_factors');
+        const maxConcernValue = concernKeys.length > 0 ? Math.max(...concernKeys.map(k => finalScores[k])) : 0;
+        const primaryConcern = maxConcernValue > 0
+            ? concernKeys.reduce((a, b) => finalScores[a] >= finalScores[b] ? a : b)
+            : 'none';
+
+        return {
+            finalScores: finalScores,
+            severity: severity,
+            primaryConcern: primaryConcern,
+            // ✅ FIX: previously scstAnalysis ran entirely separately from
+            // the headline SVI, so a Critical caste-atrocity finding never
+            // showed up in the main score a victim or authority sees. Only
+            // blend it in when backed by an actual matched pattern (see
+            // _getSeverity note) - not a lone auto-extracted keyword hit.
+            // ✅ FIX: same community-evidence requirement as _getSeverity's
+            // scst_atrocity check below - a matched pattern alone (e.g.
+            // coercive_silencing on general threat language) isn't enough
+            // to blend the SC/ST severity number into the headline SVI.
+            svi: Math.max(severity.displaySvi, ((scstResult?.patterns?.length > 0 && scstResult?.communities?.length > 0) ? scstResult.severity : 0)),
+            confidence: Math.min(((aiResult.confidence || 0.7) + (humanIntelligence.confidence || 0)) / 2, 1),
+            recommendations: this._generateRecommendations(severity, primaryConcern, finalScores, humanIntelligence.dangerAssessment),
+            // ✅ NEW: surfaces the two clinical-methodology integrations
+            // (see humanIntelligence.js header) so the frontend can show
+            // them, clearly labeled as automated approximations.
+            clinicalReasoning: {
+                impressions: humanIntelligence.impressions,
+                symptomPattern: humanIntelligence.symptomPattern,
+                dangerAssessment: humanIntelligence.dangerAssessment
+            }
+        };
+    }
+
+    // ✅ UPDATED: dissociation/hyperarousal/avoidance now DO have real
+    // keyword-driven signal (see textAnalyzer.js's DSM-5 symptom-cluster
+    // categories) - they're still excluded from the headline SVI weighting
+    // below to avoid having to rebalance every existing weight, but they
+    // now feed humanIntelligence.js's cross-cluster PTSD pattern check
+    // instead, which is a more clinically meaningful use of them than
+    // folding them into one more weighted average term.
+    _calculateWeightedSVI(finalScores) {
+        const weights = {
+            trauma: 0.25,
+            depression: 0.20,
+            anxiety: 0.15,
+            suicidal_ideation: 0.15,
+            vulnerability: 0.10,
+            intimidation: 0.10,
+            stress: 0.05
+        };
+        let svi = 0;
+        for (const [key, weight] of Object.entries(weights)) {
+            svi += (finalScores[key] || 0) * weight * 100;
+        }
+        return svi;
+    }
+
+    _getSeverity(svi, finalScores = {}, scstResult = null, dangerAssessment = null) {
+        const levelOrder = ['Minimal', 'Mild', 'Moderate', 'Severe', 'Critical'];
+        const meta = {
+            Critical: { emoji: '🔴', color: '#d63031', priority: 'emergency' },
+            Severe: { emoji: '🟠', color: '#e17055', priority: 'high' },
+            Moderate: { emoji: '🟡', color: '#fdcb6e', priority: 'medium' },
+            Mild: { emoji: '🟢', color: '#00b894', priority: 'low' },
+            Minimal: { emoji: '🟢', color: '#00b894', priority: 'normal' }
+        };
+
+        const tierFor = (score) => {
+            if (score > 75) return 'Critical';
+            if (score > 50) return 'Severe';
+            if (score > 30) return 'Moderate';
+            if (score > 15) return 'Mild';
+            return 'Minimal';
+        };
+
+        let level = tierFor(svi);
+        const originalLevel = level;
+
+        // ✅ FIX: clinical escalation. A high score in a single dangerous
+        // domain (especially suicidal ideation) must never be able to hide
+        // behind a low blended average - this mirrors how the C-SSRS field
+        // already behaves. Whichever gives the WORSE (higher) outcome wins.
+        const escalationRules = [
+            { key: 'suicidal_ideation', threshold: 0.7, minLevel: 'Critical' },
+            { key: 'suicidal_ideation', threshold: 0.35, minLevel: 'Severe' },
+            { key: 'suicidal_ideation', threshold: 0.15, minLevel: 'Moderate' },
+            { key: 'trauma', threshold: 0.75, minLevel: 'Severe' },
+            // ✅ NEW: closes a real gap - a credible single-domain
+            // disclosure in the 50-74% range (e.g. "supervisor made sexual
+            // comments and touched me inappropriately" scored 60% trauma)
+            // previously sat wherever the raw blended average landed
+            // ("Mild"), since it fell just under the 75% Severe threshold.
+            // A high-but-not-extreme reading in one dangerous domain still
+            // deserves more than "Mild".
+            { key: 'trauma', threshold: 0.5, minLevel: 'Moderate' },
+            { key: 'intimidation', threshold: 0.75, minLevel: 'Severe' },
+            { key: 'intimidation', threshold: 0.5, minLevel: 'Moderate' },
+            // ✅ NEW: coercive-control language ("controls my finances",
+            // "won't let me see my friends", "walking on eggshells") is a
+            // well-documented independent risk marker in domestic-violence
+            // research - controlling behavior often predicts escalation to
+            // violence even before any has occurred yet. Without this rule,
+            // detecting this language had no effect on the actual outcome.
+            { key: 'vulnerability', threshold: 0.75, minLevel: 'Moderate' }
+        ];
+
+        let escalatedBy = null;
+        for (const rule of escalationRules) {
+            const score = finalScores[rule.key];
+            if (score !== undefined && score >= rule.threshold &&
+                levelOrder.indexOf(rule.minLevel) > levelOrder.indexOf(level)) {
+                level = rule.minLevel;
+                escalatedBy = rule.key;
+            }
+        }
+
+        // ✅ FIX: SC/ST atrocity detection previously ran completely
+        // separately from this headline severity, so a Critical caste-
+        // based atrocity finding never surfaced on the main assessment a
+        // victim, authority, or dashboard actually looks at. Same worst-
+        // case-wins rule as above, on the same 0-100 scale.
+        // Requires an actual matched PATTERN (curated, reviewed keyword
+        // sets) AND identified community evidence - patterns alone are not
+        // enough, because several patterns (coercive_silencing,
+        // police_brutality, sexual_abuse_indirect) use general threat/abuse
+        // language that legitimately matches ANY context, caste-related or
+        // not. E.g. "he threatened to kill me" alone matched
+        // coercive_silencing and mislabeled a plain domestic-violence case
+        // as a caste atrocity, with no community ever identified. The Act's
+        // protections hinge on the victim's caste/tribal identity, so
+        // that identification should be required, not just an abuse
+        // pattern that happens to overlap.
+        if (scstResult && scstResult.severity > 0 &&
+            scstResult.patterns && scstResult.patterns.length > 0 &&
+            scstResult.communities && scstResult.communities.length > 0) {
+            const scstLevel = tierFor(scstResult.severity);
+            if (levelOrder.indexOf(scstLevel) > levelOrder.indexOf(level)) {
+                level = scstLevel;
+                escalatedBy = 'scst_atrocity';
+            }
+        }
+
+        // ✅ NEW: Danger Assessment-inspired escalation. Strangulation and
+        // similar high-lethality IPV markers are validated predictors of
+        // future serious/lethal violence even when no single distress
+        // category (trauma, fear, etc.) alone crosses a high threshold -
+        // the danger lives in the specific risk factor, not necessarily in
+        // how distressed the person currently sounds. See
+        // humanIntelligence.js for methodology and caveats.
+        if (dangerAssessment && dangerAssessment.elevatedLethalityRisk &&
+            levelOrder.indexOf('Severe') > levelOrder.indexOf(level)) {
+            level = 'Severe';
+            escalatedBy = 'danger_assessment';
+        }
+
+        // ✅ FIX: escalation rules above only ever changed the LABEL
+        // (level). The numeric SVI kept showing the raw pre-escalation
+        // weighted average - e.g. 87% suicide risk correctly escalated
+        // the badge to "Critical", but the gauge/number still showed "17"
+        // (the blended average across mostly-zero categories), which
+        // looks flatly contradictory next to a "Critical" badge and
+        // undermines trust in the whole result. If escalation actually
+        // moved the tier, the displayed number now moves with it.
+        const TIER_FLOOR = { Critical: 80, Severe: 60, Moderate: 40, Mild: 20, Minimal: 0 };
+        const displaySvi = level !== originalLevel ? Math.max(svi, TIER_FLOOR[level]) : svi;
+
+        return { level, ...meta[level], escalatedBy, displaySvi };
+    }
+
+    _generateRecommendations(severity, primaryConcern, scores, dangerAssessment = null) {
+        const recs = [];
+
+        if (severity.level === 'Critical') {
+            recs.push('🚨 EMERGENCY: Immediate intervention required. Call 112');
+            recs.push('Activate crisis intervention protocol');
+        }
+
+        if (severity.level === 'Severe') {
+            recs.push('Immediate trauma-informed counseling required');
+            recs.push('Contact mental health helpline: 1800-599-0019');
+        }
+
+        if (scores.suicidal_ideation && scores.suicidal_ideation > 0.6) {
+            recs.push('⚠️ Suicide risk detected - Immediate crisis intervention');
+            recs.push('Contact suicide prevention helpline: 1800-599-0019');
+        }
+
+        if (scores.trauma && scores.trauma > 0.6) {
+            recs.push('Refer to trauma-informed therapy (CBT/EMDR)');
+        }
+
+        // ✅ NEW: safety-planning guidance, triggered specifically by the
+        // Danger Assessment-inspired lethality risk check - this is
+        // standard content used by DV advocates (identify a safe exit,
+        // keep essential documents/items accessible, agree a code word),
+        // not generic advice, and is surfaced separately from general
+        // trauma-therapy recommendations since the priority here is
+        // physical safety, not processing/treatment.
+        if (dangerAssessment && dangerAssessment.elevatedLethalityRisk) {
+            recs.push('⚠️ Elevated safety risk indicators present - connect with a domestic violence advocate for safety planning');
+            recs.push('Contact Women\'s Helpline (181) for confidential safety planning support');
+            recs.push('Consider: a safe place to go, essential documents/phone accessible, a trusted contact who knows the situation');
+        }
+
+        if (recs.length === 0) {
+            recs.push('Continued monitoring and supportive therapy');
+        }
+
+        return recs;
+    }
+
+    // Helplines and resources
+    getHelplines(req, res) {
+        res.status(200).json({
+            success: true,
+            data: {
+                nhaa: '14566',
+                national: '1800-599-0019',
+                emergency: '112',
+                police: '100',
+                ambulance: '102',
+                women: '1091',
+                child: '1098',
+                suicide: '1800-599-0019',
+                legal: '15100'
+            }
+        });
+    }
+
+    getResources(req, res) {
+        res.status(200).json({
+            success: true,
+            data: {
+                mentalHealth: 'www.nimhans.ac.in',
+                legalAid: 'www.nalsa.gov.in',
+                // ⚠️ FIX: NCSC (Scheduled Castes) and NCST (Scheduled
+                // Tribes) are two separate constitutional commissions with
+                // separate websites - the old single 'ncscst.nic.in' entry
+                // was not a real, correct URL for either body.
+                scCommission: 'www.ncsc.nic.in',
+                stCommission: 'www.ncst.nic.in',
+                crisisSupport: 'www.helplineindia.in'
+            }
+        });
+    }
+
+    // Full redressal-channel directory for a static "Legal tab" panel,
+    // independent of any specific case analysis.
+    getRedressalChannels(req, res) {
+        res.status(200).json({
+            success: true,
+            data: {
+                channels: this.legalGuidance.redressalChannels,
+                disclaimer: this.legalGuidance.disclaimer
+            }
+        });
+    }
+
+    getLanguages(req, res) {
+        res.status(200).json({
+            success: true,
+            data: this.languageDetector.getSupportedLanguages()
+        });
+    }
+
+    // ============================================================
+    //  CASE MANAGEMENT (authority dashboard)
+    // ============================================================
+    listCases(req, res) {
+        try {
+            let cases = this.db.getAllCases();
+
+            const { severity, status, search } = req.query;
+            if (severity) {
+                cases = cases.filter(c => (c.severity || '').toLowerCase() === severity.toLowerCase());
+            }
+            if (status) {
+                cases = cases.filter(c => (c.status || '').toLowerCase() === status.toLowerCase());
+            }
+            if (search) {
+                const q = search.toLowerCase();
+                cases = cases.filter(c =>
+                    (c.text || '').toLowerCase().includes(q) ||
+                    (c.id || '').toLowerCase().includes(q) ||
+                    (c.primaryConcern || '').toLowerCase().includes(q)
+                );
+            }
+
+            res.status(200).json({
+                success: true,
+                data: { cases, total: cases.length, stats: this.db.getStats() }
+            });
+        } catch (error) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    }
+
+    getCaseById(req, res) {
+        const caseRecord = this.db.getCase(req.params.id);
+        if (!caseRecord) {
+            return res.status(404).json({ success: false, error: 'Case not found' });
+        }
+        res.status(200).json({ success: true, data: caseRecord });
+    }
+
+    updateCase(req, res) {
+        try {
+            const caseRecord = this.db.getCase(req.params.id);
+            if (!caseRecord) {
+                return res.status(404).json({ success: false, error: 'Case not found' });
+            }
+            const { status, officer, notes } = req.body;
+            const updated = {
+                ...caseRecord,
+                status: status || caseRecord.status,
+                officer: officer || caseRecord.officer,
+                notes: notes !== undefined ? notes : caseRecord.notes,
+                lastUpdated: new Date().toISOString()
+            };
+            // Database.saveCase() prepends a new record rather than editing
+            // in place, so remove the old one first to avoid a duplicate.
+            this.db.deleteCase(req.params.id);
+            const saved = this.db.saveCase(updated);
+            res.status(200).json({ success: true, data: saved });
+        } catch (error) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    }
+
+    deleteCaseRecord(req, res) {
+        this.db.deleteCase(req.params.id);
+        res.status(200).json({ success: true });
+    }
+}
+
+export default NHHAController;
