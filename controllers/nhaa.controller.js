@@ -15,6 +15,7 @@ import TextAnalyzer from '../services/textAnalyzer.js';
 import AudioAnalyzer from '../services/audioAnalyzer.js';
 import LanguageDetector from '../utils/languageDetector.js';
 import Database from '../utils/database.js';
+import { verifyAuthorityCode } from '../middleware/authorityAccess.js';
 
 class NHHAController {
     constructor() {
@@ -571,6 +572,24 @@ class NHHAController {
             success: true,
             data: this.languageDetector.getSupportedLanguages()
         });
+    }
+
+    // Authority dashboard's login gate calls this once on submit so it can
+    // show "wrong code" immediately, rather than the user only discovering
+    // it's wrong when the case list silently fails to load.
+    verifyAuthorityAccess(req, res) {
+        const { code } = req.body || {};
+        const result = verifyAuthorityCode(code);
+        if (!result.configured) {
+            return res.status(503).json({
+                success: false,
+                error: 'Authority access is not configured on this server. Set AUTHORITY_ACCESS_CODE in the environment and restart.'
+            });
+        }
+        if (!result.valid) {
+            return res.status(401).json({ success: false, error: 'Invalid access code.' });
+        }
+        res.status(200).json({ success: true });
     }
 
     // ============================================================

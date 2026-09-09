@@ -8,6 +8,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import NHHAController from '../controllers/nhaa.controller.js';
+import { requireAuthorityAccess } from '../middleware/authorityAccess.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -64,12 +65,20 @@ router.get('/helplines', controller.getHelplines.bind(controller));
 router.get('/resources', controller.getResources.bind(controller));
 router.get('/languages', controller.getLanguages.bind(controller));
 
+// Authority access gate - lets the dashboard's login screen tell the user
+// "wrong code" up front, instead of only finding out when the first /cases
+// request 401s. See middleware/authorityAccess.js for why this exists.
+router.post('/authority/verify', controller.verifyAuthorityAccess.bind(controller));
+
 // Case management (authority dashboard) - real server-side records,
-// shared across browsers/devices, replacing the old localStorage-only demo data.
-router.get('/cases', controller.listCases.bind(controller));
-router.get('/cases/:id', controller.getCaseById.bind(controller));
-router.patch('/cases/:id', controller.updateCase.bind(controller));
-router.delete('/cases/:id', controller.deleteCaseRecord.bind(controller));
+// shared across browsers/devices, replacing the old localStorage-only demo
+// data. Gated behind requireAuthorityAccess: these return victim case text,
+// SC/ST atrocity details, and suicide-risk assessments, so they must never
+// be reachable without the authority access code.
+router.get('/cases', requireAuthorityAccess, controller.listCases.bind(controller));
+router.get('/cases/:id', requireAuthorityAccess, controller.getCaseById.bind(controller));
+router.patch('/cases/:id', requireAuthorityAccess, controller.updateCase.bind(controller));
+router.delete('/cases/:id', requireAuthorityAccess, controller.deleteCaseRecord.bind(controller));
 
 // Test endpoint
 router.get('/test', (req, res) => {
