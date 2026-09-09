@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚖️ NHAA Lawyer Assistant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --sev-critical: #d63031; --sev-high: #e17055;
+            --sev-moderate: #fdcb6e; --sev-low: #00b894;
+            --accent: #6c5ce7; --accent-light: #a29bfe;
+            --text-dim: rgba(255,255,255,0.6); --text-faint: rgba(255,255,255,0.4);
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0a0a1a;
+            color: white;
+            min-height: 100vh;
+            background-image: radial-gradient(ellipse at 15% 0%, rgba(108,92,231,0.08), transparent 55%),
+                              radial-gradient(ellipse at 85% 20%, rgba(0,184,148,0.05), transparent 55%);
+        }
+        .container { max-width: 1280px; margin: 0 auto; padding: 20px; }
+
+        /* Header */
+        .header {
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px; padding: 16px 24px; margin-bottom: 20px;
+        }
+        .header-left { display: flex; align-items: center; gap: 14px; }
+        .header-logo { font-size: 32px; }
+        .header-title { font-size: 20px; font-weight: 800; background: linear-gradient(135deg, #6c5ce7, #a29bfe); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .header-subtitle { font-size: 12px; color: var(--text-dim); }
+        .header-right { display: flex; align-items: center; gap: 12px; }
+        .live-pill {
+            display: inline-flex; align-items: center; gap: 6px; padding: 5px 14px;
+            background: rgba(0,184,148,0.12); border: 1px solid rgba(0,184,148,0.25);
+            border-radius: 30px; font-size: 11px; font-weight: 700; color: #00b894;
+        }
+        .live-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: #00b894; animation: pulse-dot 1.5s infinite; }
+        @keyframes pulse-dot { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        .home-link {
+            display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px;
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px; color: var(--text-dim); text-decoration: none; font-size: 13px; font-weight: 600;
+            transition: 0.2s;
+        }
+        .home-link:hover { background: rgba(255,255,255,0.08); color: white; }
+
+        /* Mode selector - two large cards, not a small pill toggle */
+        .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+        @media (max-width: 760px) { .mode-grid { grid-template-columns: 1fr; } }
+        .mode-card {
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px; padding: 20px 22px; cursor: pointer; transition: 0.25s;
+            display: flex; align-items: center; gap: 16px;
+        }
+        .mode-card:hover { border-color: rgba(108,92,231,0.35); transform: translateY(-2px); }
+        .mode-card.active {
+            border-color: var(--accent); background: rgba(108,92,231,0.1);
+            box-shadow: 0 8px 32px rgba(108,92,231,0.15);
+        }
+        .mode-card .mode-icon {
+            width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+            font-size: 20px; background: rgba(108,92,231,0.15); color: var(--accent-light); flex-shrink: 0;
+        }
+        .mode-card.active .mode-icon { background: var(--accent); color: white; }
+        .mode-card .mode-title { font-size: 15px; font-weight: 700; margin-bottom: 3px; }
+        .mode-card .mode-desc { font-size: 12px; color: var(--text-dim); line-height: 1.4; }
+
+        /* Work area */
+        .work-grid { display: grid; grid-template-columns: 1fr 1.3fr; gap: 20px; align-items: start; }
+        @media (max-width: 900px) { .work-grid { grid-template-columns: 1fr; } }
+        .card {
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px; padding: 20px;
+        }
+        .card-title { font-size: 14px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+        .card-title i { color: var(--accent-light); }
+        label.field-label { font-size: 12px; font-weight: 600; color: var(--text-dim); display: block; margin-bottom: 8px; }
+        textarea {
+            width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.03); color: #fff; font-family: inherit; font-size: 13px; resize: vertical;
+        }
+        textarea:focus { outline: none; border-color: var(--accent); }
+
+        .dropzone {
+            border: 2px dashed rgba(255,255,255,0.15); border-radius: 12px; padding: 24px;
+            text-align: center; cursor: pointer; transition: 0.2s; position: relative;
+        }
+        .dropzone:hover { border-color: var(--accent); background: rgba(108,92,231,0.04); }
+        .dropzone i { font-size: 26px; color: var(--accent-light); margin-bottom: 8px; display: block; }
+        .dropzone .dz-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+        .dropzone .dz-sub { font-size: 11px; color: var(--text-faint); }
+        .dropzone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+        .dropzone.has-file { border-style: solid; border-color: #00b894; background: rgba(0,184,148,0.06); }
+        .dropzone .dz-filename { font-size: 12px; color: #00b894; font-weight: 600; margin-top: 6px; }
+
+        .divider-or { text-align: center; font-size: 11px; color: var(--text-faint); margin: 14px 0; position: relative; }
+        .divider-or::before, .divider-or::after { content: ''; position: absolute; top: 50%; width: 42%; height: 1px; background: rgba(255,255,255,0.08); }
+        .divider-or::before { left: 0; } .divider-or::after { right: 0; }
+
+        .btn {
+            padding: 12px 20px; border: none; border-radius: 10px; font-weight: 700; font-size: 13px;
+            cursor: pointer; font-family: inherit; transition: 0.2s; display: inline-flex; align-items: center; gap: 8px;
+        }
+        .btn-primary { background: linear-gradient(135deg, #6c5ce7, #5a4bd1); color: white; width: 100%; justify-content: center; padding: 13px; margin-top: 12px; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(108,92,231,0.4); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .disclaimer-note { font-size: 11px; color: var(--text-faint); margin-top: 10px; line-height: 1.5; }
+
+        .empty-state { text-align: center; padding: 50px 20px; color: var(--text-faint); }
+        .empty-state i { font-size: 36px; margin-bottom: 10px; display: block; opacity: 0.6; }
+
+        /* Results snapshot bar */
+        .case-snapshot {
+            display: flex; align-items: center; gap: 16px; padding: 14px 18px; border-radius: 12px;
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); margin-bottom: 16px;
+        }
+        .case-snapshot .snap-severity { font-size: 30px; font-weight: 800; line-height: 1; }
+        .case-snapshot .snap-meta { font-size: 12px; color: var(--text-dim); }
+        .case-snapshot .snap-source { font-size: 11px; color: var(--text-faint); margin-top: 2px; }
+
+        .scst-result-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 16px; }
+        .scst-result-card .severity-display { font-size: 24px; font-weight: 800; }
+        .legal-priority-banner {
+            display: flex; align-items: center; gap: 10px; padding: 12px 16px; margin-bottom: 14px;
+            background: rgba(214,48,49,0.1); border: 1px solid rgba(214,48,49,0.3); border-radius: 12px;
+            font-size: 13px; font-weight: 700; color: #ff7675;
+        }
+        .legal-section-title { font-size: 13px; font-weight: 700; color: var(--accent-light); margin: 18px 0 10px; display: flex; align-items: center; gap: 8px; }
+        .legal-section-title:first-child { margin-top: 0; }
+        .legal-provision-card {
+            background: rgba(255,255,255,0.02); border: 1px solid rgba(108,92,231,0.15); border-radius: 12px;
+            padding: 14px 16px; margin-bottom: 10px;
+        }
+        .legal-provision-card .incident-tag {
+            display: inline-block; padding: 2px 10px; background: rgba(108,92,231,0.2); border-radius: 20px;
+            font-size: 10px; font-weight: 700; color: var(--accent-light); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 6px;
+        }
+        .legal-provision-card .primary-law { font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+        .legal-provision-card ul { margin: 0 0 0 18px; padding: 0; font-size: 12px; color: rgba(255,255,255,0.75); line-height: 1.6; }
+        .legal-baseline-rights { font-size: 12px; color: rgba(255,255,255,0.75); line-height: 1.7; margin: 0 0 4px 18px; padding: 0; }
+        .legal-disclaimer {
+            margin-top: 16px; padding: 10px 14px; background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.15);
+            border-radius: 10px; font-size: 11px; color: var(--text-faint); line-height: 1.6;
+        }
+        .scst-pattern-tag { display: inline-block; padding: 3px 12px; background: rgba(108,92,231,0.15); border: 1px solid rgba(108,92,231,0.2); border-radius: 30px; font-size: 11px; font-weight: 600; color: var(--accent-light); margin: 3px; }
+        .scst-community-tag { display: inline-block; padding: 3px 12px; background: rgba(0,184,148,0.15); border: 1px solid rgba(0,184,148,0.2); border-radius: 30px; font-size: 11px; font-weight: 600; color: #00b894; margin: 3px; }
+
+        .footer { text-align: center; margin-top: 24px; color: var(--text-faint); font-size: 12px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header class="header">
+        <div class="header-left">
+            <span class="header-logo">⚖️</span>
+            <div>
+                <div class="header-title">NHAA Lawyer Assistant</div>
+                <div class="header-subtitle">Case pattern check & document summary - not the victim assessment tool</div>
+            </div>
+        </div>
+        <div class="header-right">
+            <span class="live-pill"><span class="dot"></span> Live</span>
+            <a href="/" class="home-link"><i class="fas fa-house"></i> Home</a>
+        </div>
+    </header>
+
+    <div class="mode-grid">
+        <div class="mode-card active" id="modeCardQuick" onclick="switchMode('quick')">
+            <div class="mode-icon"><i class="fas fa-bolt"></i></div>
+            <div>
+                <div class="mode-title">Quick Pattern Check</div>
+                <div class="mode-desc">Paste a short description and instantly see matched SC/ST atrocity patterns, severity, and applicable law.</div>
+            </div>
+        </div>
+        <div class="mode-card" id="modeCardDoc" onclick="switchMode('doc')">
+            <div class="mode-icon"><i class="fas fa-file-contract"></i></div>
+            <div>
+                <div class="mode-title">Case Document Summary</div>
+                <div class="mode-desc">Upload an FIR, chargesheet, or judgment (PDF/DOCX/TXT) and get a full structured summary, ready to present.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="work-grid">
+        <!-- INPUT COLUMN -->
+        <div>
+            <!-- QUICK MODE INPUT -->
+            <div id="inputQuick" class="card">
+                <div class="card-title"><i class="fas fa-bolt"></i> Describe the incident</div>
+                <label class="field-label">Short description or excerpt:</label>
+                <textarea id="scstInput" rows="8" placeholder="e.g. A Dalit man was falsely convicted after fabricated evidence..."></textarea>
+                <button class="btn btn-primary" onclick="analyzeSCST()">
+                    <i class="fas fa-search"></i> Analyze Pattern
+                </button>
+                <div class="disclaimer-note"><i class="fas fa-info-circle"></i> Best for a short excerpt or summary. For a full case document, switch to Case Document Summary.</div>
+            </div>
+
+            <!-- DOC MODE INPUT -->
+            <div id="inputDoc" class="card" style="display:none;">
+                <div class="card-title"><i class="fas fa-file-contract"></i> Upload or paste the case</div>
+                <label class="field-label">Case document (PDF, DOCX, or TXT):</label>
+                <div class="dropzone" id="dropzone">
+                    <i class="fas fa-cloud-arrow-up"></i>
+                    <div class="dz-title">Click to upload</div>
+                    <div class="dz-sub">PDF, DOCX, or TXT · up to 25MB</div>
+                    <div class="dz-filename" id="lawyerFileName"></div>
+                    <input type="file" id="lawyerFileInput" accept=".pdf,.docx,.txt" onchange="handleLawyerFileSelect(event)">
+                </div>
+                <div class="divider-or">OR PASTE TEXT</div>
+                <label class="field-label">Paste the case text directly:</label>
+                <textarea id="lawyerTextInput" rows="6" placeholder="Paste FIR / chargesheet / judgment text here..."></textarea>
+                <button class="btn btn-primary" onclick="summarizeCaseDocument()" id="lawyerSummarizeBtn">
+                    <i class="fas fa-file-contract"></i> Generate Case Summary
+                </button>
+                <div class="disclaimer-note"><i class="fas fa-info-circle"></i> An AI-assisted drafting aid (rule-based extraction, not a generative summary) - always verify against the original document before relying on it in any filing or presentation.</div>
+            </div>
+        </div>
+
+        <!-- RESULTS COLUMN -->
+        <div class="card" id="resultsCard">
+            <div class="card-title"><i class="fas fa-chart-simple"></i> Results</div>
+            <div id="resultsBody">
+                <div class="empty-state">
+                    <i class="fas fa-scale-balanced"></i>
+                    <p>Run a quick check or generate a case summary to see results here</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <i class="fas fa-shield-alt"></i> National Helpline Against Atrocities (14566) · All data encrypted · v3.0
+    </div>
+</div>
+
+<script>
+    // ✅ Same origin-detection pattern used across every page in this app -
+    // see authority_dashboard.html's identical comment for why.
+    const API_URL = (() => {
+        const staticPreviewPorts = ['5500', '5501', '3000', '5173', '8080'];
+        const isStaticPreview = staticPreviewPorts.includes(window.location.port) ||
+            window.location.protocol === 'file:';
+        return isStaticPreview
+            ? 'http://localhost:8000/api/v1'
+            : window.location.origin + '/api/v1';
+    })();
+
+    let lawyerSelectedFile = null;
+
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str == null ? '' : String(str);
+        return div.innerHTML;
+    }
+
+    function switchMode(mode) {
+        document.getElementById('inputQuick').style.display = mode === 'quick' ? 'block' : 'none';
+        document.getElementById('inputDoc').style.display = mode === 'doc' ? 'block' : 'none';
+        document.getElementById('modeCardQuick').classList.toggle('active', mode === 'quick');
+        document.getElementById('modeCardDoc').classList.toggle('active', mode === 'doc');
+        document.getElementById('resultsBody').innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-scale-balanced"></i>
+                <p>${mode === 'quick' ? 'Enter text and analyze to see results here' : 'Upload a document or paste case text to generate a summary'}</p>
+            </div>
+        `;
+    }
+
+    function handleLawyerFileSelect(event) {
+        const file = event.target.files[0];
+        lawyerSelectedFile = file || null;
+        const dz = document.getElementById('dropzone');
+        document.getElementById('lawyerFileName').textContent = file ? file.name : '';
+        dz.classList.toggle('has-file', !!file);
+    }
+
+    // ============================================================
+    //  QUICK PATTERN CHECK
+    // ============================================================
+    async function analyzeSCST() {
+        const text = document.getElementById('scstInput').value;
+        if (!text.trim()) { alert('Please enter text to analyze.'); return; }
+        const resultsBody = document.getElementById('resultsBody');
+        resultsBody.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Analyzing...</p></div>';
+        try {
+            const response = await fetch(`${API_URL}/scst/analyze`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text })
+            });
+            const result = await response.json();
+            if (!result.success) throw new Error('Analysis failed');
+            const data = result.data;
+            const scst = data.scstAnalysis || {};
+            resultsBody.innerHTML = `
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px;">
+                    <div style="padding:8px; background:rgba(255,255,255,0.02); border-radius:6px;">
+                        <span style="font-size:11px; color:var(--text-faint);">Severity</span>
+                        <div class="severity-display" style="color:${scst.severityLevel === 'Critical' ? '#d63031' : scst.severityLevel === 'Severe' ? '#e17055' : scst.severityLevel === 'Moderate' ? '#fdcb6e' : '#00b894'}">${scst.severityLevel || 'Low'}</div>
+                        <div style="font-size:12px; color:var(--text-dim);">Score: ${Math.round(scst.severity || 0)}/100</div>
+                    </div>
+                    <div style="padding:8px; background:rgba(255,255,255,0.02); border-radius:6px;">
+                        <span style="font-size:11px; color:var(--text-faint);">Confidence</span>
+                        <div class="severity-display">${Math.round((scst.confidence || 0) * 100)}%</div>
+                        <div style="font-size:12px; color:var(--text-dim);">${scst.patterns ? scst.patterns.length : 0} patterns detected</div>
+                    </div>
+                </div>
+                ${scst.patterns && scst.patterns.length > 0 ? `
+                    <div style="margin-top:8px;">
+                        <span style="font-size:12px; font-weight:600; color:var(--text-dim);">🔍 Patterns Detected:</span>
+                        <div style="margin-top:4px;">${scst.patterns.map(p => `<span class="scst-pattern-tag">${escapeHtml(p.name)}</span>`).join('')}</div>
+                    </div>
+                ` : ''}
+                ${scst.communities && scst.communities.length > 0 ? `
+                    <div style="margin-top:8px;">
+                        <span style="font-size:12px; font-weight:600; color:var(--text-dim);">🏘️ Communities:</span>
+                        <div style="margin-top:4px;">${scst.communities.map(c => `<span class="scst-community-tag">${escapeHtml(c)}</span>`).join('')}</div>
+                    </div>
+                ` : ''}
+                ${scst.escalation && scst.escalation.length > 0 ? `
+                    <div style="margin-top:8px; padding:8px; background:rgba(214,48,49,0.08); border:1px solid rgba(214,48,49,0.2); border-radius:6px;">
+                        <span style="font-size:12px; font-weight:600; color:#e17055;">⚠️ Escalation Factors:</span>
+                        <ul style="margin:4px 0 0 18px; padding:0; font-size:12px; color:rgba(255,255,255,0.7);">
+                            ${scst.escalation.map(e => `<li>${escapeHtml(e)}</li>`).join('')}
+                        </ul>
+                    </div>
+                ` : ''}
+                ${scst.keywords && scst.keywords.length > 0 ? `
+                    <div style="margin-top:8px;">
+                        <span style="font-size:12px; font-weight:600; color:var(--text-dim);">🔑 Matched Keywords:</span>
+                        <div style="margin-top:4px;">${scst.keywords.map(k => `<span class="scst-pattern-tag" style="color:rgba(255,255,255,0.6); border-color:rgba(255,255,255,0.15); background:rgba(255,255,255,0.04);">${escapeHtml(k)}</span>`).join('')}</div>
+                    </div>
+                ` : ''}
+                <div style="margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.06); font-size:12px; color:var(--text-dim);">${escapeHtml(data.summary || 'Analysis complete.')}</div>
+                ${data.legalGuidance && data.legalGuidance.applicable ? renderQuickLegalGuidance(data.legalGuidance) : ''}
+            `;
+        } catch (error) {
+            resultsBody.innerHTML = `<div style="padding:16px; color:#d63031;">❌ Error: ${escapeHtml(error.message)}</div>`;
+        }
+    }
+
+    function renderQuickLegalGuidance(legal) {
+        const scst = legal.scstGuidance;
+        if (!scst) return '';
+        return `
+            <div class="legal-section-title"><i class="fas fa-gavel"></i> Applicable Law</div>
+            ${scst.matchedProvisions.map(p => `
+                <div class="legal-provision-card">
+                    <div class="incident-tag">${escapeHtml(p.incidentType.replace(/_/g, ' '))}</div>
+                    <div class="primary-law">${escapeHtml(p.primaryLaw)}</div>
+                    <ul>${p.keyProtections.map(k => `<li>${escapeHtml(k)}</li>`).join('')}</ul>
+                </div>
+            `).join('')}
+            ${scst.relevantCaseLaw && scst.relevantCaseLaw.length > 0 ? `
+                <div class="legal-section-title"><i class="fas fa-scroll"></i> Relevant Case Law</div>
+                ${scst.relevantCaseLaw.map(c => `
+                    <div class="legal-provision-card">
+                        <div class="primary-law">${escapeHtml(c.caseName)}</div>
+                        <div style="font-size:12px; color:rgba(255,255,255,0.75); line-height:1.6;">${escapeHtml(c.holding)}</div>
+                    </div>
+                `).join('')}
+            ` : ''}
+            <div class="legal-disclaimer"><i class="fas fa-info-circle"></i> ${escapeHtml(legal.disclaimer)}</div>
+        `;
+    }
+
+    // ============================================================
+    //  CASE DOCUMENT SUMMARY
+    // ============================================================
+    async function summarizeCaseDocument() {
+        const text = document.getElementById('lawyerTextInput').value;
+        const resultsBody = document.getElementById('resultsBody');
+        const btn = document.getElementById('lawyerSummarizeBtn');
+
+        if (!lawyerSelectedFile && !text.trim()) {
+            alert('Upload a case document or paste case text first.');
+            return;
+        }
+
+        btn.disabled = true;
+        resultsBody.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Generating case summary...</p></div>';
+
+        try {
+            const formData = new FormData();
+            if (lawyerSelectedFile) {
+                formData.append('document', lawyerSelectedFile);
+            } else {
+                formData.append('text', text);
+            }
+
+            const response = await fetch(`${API_URL}/lawyer/summarize`, {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+
+            if (!result.success) {
+                throw new Error(result.error || 'Could not summarize this document.');
+            }
+
+            renderCaseSummary(result.data);
+        } catch (error) {
+            resultsBody.innerHTML = `<div style="padding:16px; color:#d63031;">❌ ${escapeHtml(error.message)}</div>`;
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    function renderCaseSummary(data) {
+        const resultsBody = document.getElementById('resultsBody');
+        const s = data.summary;
+
+        const severityColor = s.overallSeverity > 75 ? 'var(--sev-critical)' : s.overallSeverity > 50 ? 'var(--sev-high)' : s.overallSeverity > 25 ? 'var(--sev-moderate)' : 'var(--sev-low)';
+
+        const snapshot = `
+            <div class="case-snapshot">
+                <div class="snap-severity" style="color:${severityColor};">${s.overallSeverity}</div>
+                <div>
+                    <div class="snap-meta"><i class="fas fa-file"></i> ${escapeHtml(data.sourceName)} - ${s.documentStats.wordCount} words
+                        ${s.communitiesIdentified.length > 0 ? ` · Community: ${s.communitiesIdentified.map(c => escapeHtml(c)).join(', ')}` : ''}
+                        ${s.extractedEntities.firNumbers.length > 0 ? ` · FIR ${escapeHtml(s.extractedEntities.firNumbers[0])}` : ''}
+                    </div>
+                    <div class="snap-source">Overall severity out of 100</div>
+                </div>
+            </div>
+        `;
+
+        const priorityBanner = s.requiresPriorityReview ? `
+            <div class="legal-priority-banner">
+                <i class="fas fa-flag"></i> Flagged for priority review based on the severity of the matched pattern(s).
+            </div>` : '';
+
+        const extractionWarning = data.extractionWarning ? `
+            <div class="legal-priority-banner" style="border-color:rgba(253,203,110,0.4); background:rgba(253,203,110,0.08); color:#fdcb6e;">
+                <i class="fas fa-triangle-exclamation"></i> ${escapeHtml(data.extractionWarning)}
+            </div>` : '';
+
+        const categoriesBlock = s.detectedOffenseCategories.length > 0 ? `
+            <div class="legal-section-title"><i class="fas fa-gavel"></i> Detected Offense Categories</div>
+            ${s.detectedOffenseCategories.map(c => `
+                <div class="legal-provision-card">
+                    <div class="incident-tag">${escapeHtml(c.name.replace(/_/g, ' '))}</div>
+                    <div class="primary-law">${escapeHtml(c.description)} <span style="color:var(--text-faint); font-weight:400;">(severity ${c.severity}/100)</span></div>
+                </div>
+            `).join('')}
+        ` : '<p style="font-size:12px; color:var(--text-dim);">No specific atrocity pattern was matched in this document.</p>';
+
+        const entities = s.extractedEntities;
+        const entityRow = (label, values) => values && values.length > 0 ? `
+            <div style="margin-bottom:8px;"><strong style="color:var(--accent-light); font-size:11px;">${label}:</strong>
+            <span style="font-size:12px; color:rgba(255,255,255,0.75);"> ${values.map(v => escapeHtml(v)).join(' &nbsp;|&nbsp; ')}</span></div>
+        ` : '';
+
+        const entitiesBlock = `
+            <div class="legal-section-title"><i class="fas fa-list-check"></i> Extracted Details</div>
+            <div class="scst-result-card">
+                ${entityRow('FIR No.', entities.firNumbers) || '<div style="font-size:12px; color:var(--text-faint);">No FIR number detected</div>'}
+                ${entityRow('Sections / Acts cited', entities.sectionsAndActsCited)}
+                ${entityRow('Dates mentioned', entities.dates)}
+                ${entityRow('Parties', entities.parties)}
+                ${entityRow('Courts mentioned', entities.courtsMentioned)}
+            </div>
+        `;
+
+        const keyFactsBlock = `
+            <div class="legal-section-title"><i class="fas fa-list"></i> Key Facts</div>
+            <ul class="legal-baseline-rights">
+                ${s.keyFacts.map(f => `<li>${escapeHtml(f)}</li>`).join('')}
+            </ul>
+        `;
+
+        const lawBlock = s.applicableLaw ? `
+            <div class="legal-section-title"><i class="fas fa-balance-scale"></i> Applicable Law</div>
+            <ul class="legal-baseline-rights">
+                ${s.applicableLaw.baselineRights.map(r => `<li>${escapeHtml(r)}</li>`).join('')}
+            </ul>
+            ${s.applicableLaw.matchedProvisions.map(p => `
+                <div class="legal-provision-card">
+                    <div class="incident-tag">${escapeHtml(p.incidentType.replace(/_/g, ' '))}</div>
+                    <div class="primary-law">${escapeHtml(p.primaryLaw)}</div>
+                    <ul>${p.keyProtections.map(k => `<li>${escapeHtml(k)}</li>`).join('')}</ul>
+                </div>
+            `).join('')}
+        ` : '';
+
+        const caseLawBlock = s.applicableLaw && s.applicableLaw.relevantCaseLaw.length > 0 ? `
+            <div class="legal-section-title"><i class="fas fa-scroll"></i> Relevant Case Law</div>
+            ${s.applicableLaw.relevantCaseLaw.map(c => `
+                <div class="legal-provision-card">
+                    <div class="primary-law">${escapeHtml(c.caseName)}</div>
+                    <div style="font-size:12px; color:rgba(255,255,255,0.75); line-height:1.6;">${escapeHtml(c.holding)}</div>
+                </div>
+            `).join('')}
+        ` : '';
+
+        const nextStepsBlock = `
+            <div class="legal-section-title"><i class="fas fa-forward"></i> Suggested Next Steps</div>
+            <ul class="legal-baseline-rights">
+                ${s.suggestedNextSteps.map(step => `<li>${escapeHtml(step)}</li>`).join('')}
+            </ul>
+        `;
+
+        resultsBody.innerHTML = `
+            ${snapshot}
+            ${extractionWarning}
+            ${priorityBanner}
+            <div class="legal-section-title" style="margin-top:0;"><i class="fas fa-file-lines"></i> Overview</div>
+            <p style="font-size:13px; color:rgba(255,255,255,0.8); line-height:1.6;">${escapeHtml(s.caseOverview)}</p>
+            ${keyFactsBlock}
+            ${categoriesBlock}
+            ${entitiesBlock}
+            ${lawBlock}
+            ${caseLawBlock}
+            ${nextStepsBlock}
+            <div class="legal-disclaimer"><i class="fas fa-info-circle"></i> ${escapeHtml(s.disclaimer)}</div>
+            <button class="btn btn-primary" onclick="downloadCaseSummary()"><i class="fas fa-download"></i> Download Summary</button>
+        `;
+
+        window._lastCaseSummary = data;
+    }
+
+    function downloadCaseSummary() {
+        const data = window._lastCaseSummary;
+        if (!data) return;
+        const s = data.summary;
+        const lines = [];
+        lines.push('CASE SUMMARY (AI-Assisted Drafting Aid)');
+        lines.push('Source: ' + data.sourceName);
+        lines.push('Generated: ' + new Date().toLocaleString());
+        lines.push('');
+        lines.push('OVERVIEW');
+        lines.push(s.caseOverview);
+        lines.push('');
+        lines.push('KEY FACTS');
+        s.keyFacts.forEach(f => lines.push('- ' + f));
+        lines.push('');
+        lines.push('DETECTED OFFENSE CATEGORIES');
+        s.detectedOffenseCategories.forEach(c => lines.push(`- ${c.name.replace(/_/g, ' ')} (severity ${c.severity}/100): ${c.description}`));
+        lines.push('');
+        lines.push('EXTRACTED DETAILS');
+        lines.push('FIR No.: ' + (s.extractedEntities.firNumbers.join(', ') || 'none detected'));
+        lines.push('Sections/Acts cited: ' + (s.extractedEntities.sectionsAndActsCited.join(', ') || 'none detected'));
+        lines.push('Dates: ' + (s.extractedEntities.dates.join(', ') || 'none detected'));
+        lines.push('Parties: ' + (s.extractedEntities.parties.join(', ') || 'none detected'));
+        lines.push('Courts mentioned: ' + (s.extractedEntities.courtsMentioned.join(', ') || 'none detected'));
+        lines.push('');
+        if (s.applicableLaw) {
+            lines.push('APPLICABLE LAW');
+            s.applicableLaw.matchedProvisions.forEach(p => {
+                lines.push(`[${p.incidentType.replace(/_/g, ' ')}] ${p.primaryLaw}`);
+                p.keyProtections.forEach(k => lines.push('  - ' + k));
+            });
+            lines.push('');
+            if (s.applicableLaw.relevantCaseLaw.length > 0) {
+                lines.push('RELEVANT CASE LAW');
+                s.applicableLaw.relevantCaseLaw.forEach(c => lines.push(`- ${c.caseName}: ${c.holding}`));
+                lines.push('');
+            }
+        }
+        lines.push('SUGGESTED NEXT STEPS');
+        s.suggestedNextSteps.forEach(step => lines.push('- ' + step));
+        lines.push('');
+        lines.push('DISCLAIMER: ' + s.disclaimer);
+
+        const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `case-summary-${Date.now()}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const hash = window.location.hash.replace('#', '');
+        if (hash === 'doc') switchMode('doc');
+    });
+</script>
+</body>
+</html>
