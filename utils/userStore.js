@@ -10,6 +10,7 @@
 
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -52,6 +53,16 @@ class UserStore {
         return this._readAll().find(u => u.email === normalized) || null;
     }
 
+    // Used by the "My Cases" lookup (see controllers/nhaa.controller.js's
+    // getMyCases) to identify who's asking. This is a per-user random
+    // token generated at signup, not a server-wide secret - unlike the
+    // earlier authority access code, there's nothing here to configure on
+    // the deployment; it's self-contained in the user's own record.
+    findByToken(token) {
+        if (!token) return null;
+        return this._readAll().find(u => u.sessionToken === token) || null;
+    }
+
     // `passwordHash` must already be a bcrypt hash - this store never
     // hashes or verifies passwords itself, see services/auth.js.
     createUser({ email, mobile, passwordHash }) {
@@ -62,6 +73,7 @@ class UserStore {
             email: normalizedEmail,
             mobile: (mobile || '').trim(),
             passwordHash,
+            sessionToken: crypto.randomBytes(24).toString('hex'),
             createdAt: new Date().toISOString()
         };
         users.push(user);

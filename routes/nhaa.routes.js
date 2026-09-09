@@ -51,6 +51,10 @@ router.post('/assess/text', controller.textAssessment.bind(controller));
 // returned in a response.
 router.post('/auth/register', controller.registerUser.bind(controller));
 router.post('/auth/login', controller.loginUser.bind(controller));
+// "My Cases" - status tracking for cases submitted while logged in. Must be
+// registered before the generic '/cases/:id' route below, or Express would
+// match 'mine' as an :id instead of this route.
+router.get('/cases/mine', controller.getMyCases.bind(controller));
 
 // SC/ST endpoints
 router.post('/scst/analyze', controller.scstAnalyze.bind(controller));

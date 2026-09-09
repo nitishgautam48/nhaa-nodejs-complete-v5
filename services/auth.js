@@ -1,13 +1,16 @@
 // ================================================================
 //  AUTH SERVICE - Optional Victim/User Accounts
 //
-//  Deliberately lightweight: no sessions, JWTs, or tokens. A successful
-//  register/login just returns { id, email, mobile } and the frontend
-//  keeps that in sessionStorage (see advanced_dashboard.html) - it
-//  clears when the browser tab closes, which matters here since some
-//  people using this tool are on a shared or unsafe device (e.g.
-//  fleeing an abuser) and should never have a signed-in session persist
-//  past their visit.
+//  Deliberately lightweight: a successful register/login returns
+//  { id, email, mobile, token } and the frontend keeps that in
+//  sessionStorage (see advanced_dashboard.html) - it clears when the
+//  browser tab closes, which matters here since some people using this
+//  tool are on a shared or unsafe device (e.g. fleeing an abuser) and
+//  should never have a signed-in session persist past their visit.
+//  `token` is a per-user random value (see UserStore.createUser), sent
+//  back as the x-user-token header on requests like "My Cases" that need
+//  to know who's asking - not a server-wide secret, so there's nothing to
+//  configure on the deployment.
 //
 //  Password hashing uses bcryptjs (pure JS, no native build step) -
 //  this needs no server configuration or environment variable, unlike
@@ -49,7 +52,7 @@ class AuthService {
 
         const passwordHash = await bcrypt.hash(password, 10);
         const user = this.users.createUser({ email: cleanEmail, mobile: cleanMobile, passwordHash });
-        return { success: true, user: { id: user.id, email: user.email, mobile: user.mobile } };
+        return { success: true, user: { id: user.id, email: user.email, mobile: user.mobile, token: user.sessionToken } };
     }
 
     async login({ email, password }) {
@@ -65,7 +68,15 @@ class AuthService {
         if (!matches) {
             return { success: false, status: 401, error: 'Incorrect email or password.' };
         }
-        return { success: true, user: { id: user.id, email: user.email, mobile: user.mobile } };
+        return { success: true, user: { id: user.id, email: user.email, mobile: user.mobile, token: user.sessionToken } };
+    }
+
+    // Resolves the user identified by an x-user-token header (see
+    // getMyCases in the controller). Returns null for a missing/unknown
+    // token rather than throwing, so callers can treat it as "not logged in".
+    getUserByToken(token) {
+        const user = this.users.findByToken(token);
+        return user ? { id: user.id, email: user.email, mobile: user.mobile } : null;
     }
 }
 

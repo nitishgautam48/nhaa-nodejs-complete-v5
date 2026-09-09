@@ -570,6 +570,34 @@
 
     <!-- PAGE 4: HISTORY -->
     <div id="page-history" class="page">
+        <div class="card" id="myCasesCard">
+            <div class="card-title">
+                <i class="fas fa-user-check"></i> My Cases
+                <span style="margin-left:auto; font-size:11px; color:rgba(255,255,255,0.4); font-weight:400;">Status of cases you submitted while logged in</span>
+            </div>
+            <div id="myCasesLoggedOut" style="padding:16px; text-align:center; color:rgba(255,255,255,0.5); font-size:13px;">
+                <i class="fas fa-lock" style="margin-right:6px;"></i>
+                <a onclick="openAccountModal()" style="color:#a29bfe; cursor:pointer; text-decoration:underline;">Log in or create an account</a>
+                to see status updates (Pending, Assigned, Escalated, Resolved) on cases you've submitted - completely optional, the tool works fine without it.
+            </div>
+            <div id="myCasesLoggedIn" style="display:none; overflow-x:auto;">
+                <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                    <thead>
+                        <tr>
+                            <th style="text-align:left; padding:8px 12px; color:rgba(255,255,255,0.4); border-bottom:1px solid rgba(255,255,255,0.06);">Case ID</th>
+                            <th style="text-align:left; padding:8px 12px; color:rgba(255,255,255,0.4); border-bottom:1px solid rgba(255,255,255,0.06);">Date</th>
+                            <th style="text-align:left; padding:8px 12px; color:rgba(255,255,255,0.4); border-bottom:1px solid rgba(255,255,255,0.06);">Severity</th>
+                            <th style="text-align:left; padding:8px 12px; color:rgba(255,255,255,0.4); border-bottom:1px solid rgba(255,255,255,0.06);">Status</th>
+                            <th style="text-align:left; padding:8px 12px; color:rgba(255,255,255,0.4); border-bottom:1px solid rgba(255,255,255,0.06);">Officer</th>
+                        </tr>
+                    </thead>
+                    <tbody id="myCasesTableBody">
+                        <tr><td colspan="5" style="text-align:center; color:rgba(255,255,255,0.4); padding:20px 0;">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <div class="card">
             <div class="card-title">
                 <i class="fas fa-list"></i> Assessment History
@@ -660,6 +688,61 @@
             label.textContent = 'Sign up / Log in';
             btn.onclick = openAccountModal;
             btn.removeAttribute('title');
+        }
+        loadMyCases();
+    }
+
+    // "My Cases" - status tracking for cases submitted while logged in
+    // (see getMyCases in the backend controller). Shows a log-in prompt
+    // instead of a table when there's no account, same optional-not-
+    // required principle as everywhere else this account system appears.
+    const MY_CASES_SEVERITY_COLOR = {
+        Critical: '#d63031', Severe: '#e17055', Moderate: '#fdcb6e', Mild: '#00b894', Minimal: '#00b894'
+    };
+
+    async function loadMyCases() {
+        const identity = getUserIdentity();
+        const loggedOutEl = document.getElementById('myCasesLoggedOut');
+        const loggedInEl = document.getElementById('myCasesLoggedIn');
+        if (!identity) {
+            loggedOutEl.style.display = 'block';
+            loggedInEl.style.display = 'none';
+            return;
+        }
+        loggedOutEl.style.display = 'none';
+        loggedInEl.style.display = 'block';
+        const tbody = document.getElementById('myCasesTableBody');
+        try {
+            const response = await fetch(`${API_URL}/cases/mine`, {
+                headers: { 'x-user-token': identity.token }
+            });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok || !result.success) {
+                // A stale/invalid token (e.g. server data was reset) -
+                // fall back to the logged-out prompt rather than an error.
+                if (response.status === 401) {
+                    logoutUser();
+                    return;
+                }
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#ff8787; padding:20px 0;">Could not load your cases.</td></tr>';
+                return;
+            }
+            const myCases = result.data.cases || [];
+            if (myCases.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:rgba(255,255,255,0.4); padding:20px 0;">No cases submitted yet while logged in.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = myCases.map(c => `
+                <tr>
+                    <td style="padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.04);">${c.id}</td>
+                    <td style="padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.04);">${new Date(c.timestamp).toLocaleString()}</td>
+                    <td style="padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.04); color:${MY_CASES_SEVERITY_COLOR[c.severity] || '#fff'};">${c.severity}</td>
+                    <td style="padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.04);">${c.status || 'Pending'}</td>
+                    <td style="padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.04);">${c.officer || 'Unassigned'}</td>
+                </tr>
+            `).join('');
+        } catch (err) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#ff8787; padding:20px 0;">Could not reach the server.</td></tr>';
         }
     }
 
@@ -755,6 +838,7 @@
         document.getElementById('page-' + tab).classList.add('active');
         document.querySelector(`.tab-btn[onclick*="${tab}"]`).classList.add('active');
         if (tab === 'dashboard' || tab === 'history') loadHistory();
+        if (tab === 'history') loadMyCases();
         if (tab === 'legal' && typeof latestLegalGuidance !== 'undefined' && latestLegalGuidance) {
             renderLegalGuidance(latestLegalGuidance, latestLegalSource);
         }
