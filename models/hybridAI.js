@@ -78,7 +78,23 @@ class HybridAIService {
             // ✅ NEW: passthrough for textAnalyzer's protective-factor score,
             // so humanIntelligence.js's reduction (previously always 0 - see
             // its note) has a real signal to read.
-            protective_factors: 0
+            protective_factors: 0,
+            // ✅ NEW: same silent-drop bug as dissociation/hyperarousal/
+            // avoidance/protective_factors above - textAnalyzer.js started
+            // producing these six DSM-5 symptom scores (flashbacks,
+            // anhedonia, fatigue, panic, hopelessness, worthlessness) so
+            // models/expertSystem.js's rule conditions could finally be
+            // measured, but this whitelist (a second, separate copy of
+            // "which score keys survive") would have silently filtered
+            // every one of them right back out before expertSystem.js ever
+            // saw them - `key in scores` below only keeps keys already
+            // listed here.
+            flashbacks: 0,
+            anhedonia: 0,
+            fatigue: 0,
+            panic: 0,
+            hopelessness: 0,
+            worthlessness: 0
         };
 
         if (textAnalysis && textAnalysis.scores) {

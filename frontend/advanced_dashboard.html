@@ -1162,7 +1162,7 @@
         // breakdown below - everything is still in the breakdown too,
         // this is purely an additional quick-read layer.
         const scoresForPills = hybrid.finalScores || {};
-        const pillLabels = { trauma: 'Trauma', depression: 'Depression', anxiety: 'Anxiety', suicidal_ideation: 'Suicide Risk', vulnerability: 'Vulnerability', intimidation: 'Intimidation', stress: 'Stress', fear: 'Fear', social_isolation: 'Social Isolation', dissociation: 'Dissociation', hyperarousal: 'Hyperarousal', avoidance: 'Avoidance' };
+        const pillLabels = { trauma: 'Trauma', depression: 'Depression', anxiety: 'Anxiety', suicidal_ideation: 'Suicide Risk', vulnerability: 'Vulnerability', intimidation: 'Intimidation', stress: 'Stress', fear: 'Fear', social_isolation: 'Social Isolation', dissociation: 'Dissociation', hyperarousal: 'Hyperarousal', avoidance: 'Avoidance', flashbacks: 'Flashbacks', anhedonia: 'Anhedonia', fatigue: 'Fatigue', panic: 'Panic', hopelessness: 'Hopelessness', worthlessness: 'Worthlessness' };
         const topIndicators = Object.entries(scoresForPills)
             .filter(([k, v]) => k !== 'protective_factors' && v > 0.15)
             .sort((a, b) => b[1] - a[1])
@@ -1213,7 +1213,7 @@
 
         const grid = document.getElementById('dimensionGrid');
         grid.innerHTML = '';
-        const labels = { stress: 'Stress', trauma: 'Trauma', fear: 'Fear', anxiety: 'Anxiety', suicidal_ideation: 'Suicide Risk', vulnerability: 'Vulnerability' };
+        const labels = { stress: 'Stress', trauma: 'Trauma', fear: 'Fear', anxiety: 'Anxiety', suicidal_ideation: 'Suicide Risk', vulnerability: 'Vulnerability', intimidation: 'Intimidation', social_isolation: 'Social Isolation', dissociation: 'Dissociation', hyperarousal: 'Hyperarousal', avoidance: 'Avoidance', protective_factors: 'Protective Factors', flashbacks: 'Flashbacks', anhedonia: 'Anhedonia', fatigue: 'Fatigue', panic: 'Panic', hopelessness: 'Hopelessness', worthlessness: 'Worthlessness' };
         const colors = { 'Critical': '#d63031', 'Severe': '#e17055', 'Moderate': '#fdcb6e', 'Low': '#00b894' };
         for (const [key, value] of Object.entries(scores)) {
             if (key === 'suicidal_ideation') continue;
