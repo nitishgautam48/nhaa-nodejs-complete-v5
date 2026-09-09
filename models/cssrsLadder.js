@@ -96,6 +96,13 @@ class CSSRSLadder {
                     'not want to continue my life', 'not want to continue his life',
                     'not want to continue her life', 'not to continue my life',
                     'not to continue his life', 'not to continue her life',
+                    // ✅ NEW: same phrasing, contraction form - "don't/
+                    // doesn't want to continue..." is the more common
+                    // everyday way this gets typed than the two-word "do
+                    // not"/"does not" form above.
+                    "don't want to continue anymore", "don't want to continue any longer",
+                    "don't want to continue living", "don't want to continue my life",
+                    "doesn't want to continue anymore", "doesn't want to continue living",
                     'want not to live', 'want not to be alive', 'want not to exist'],
                 hi: ['आत्महत्या', 'मर जाना', 'जान ले लेना', 'मरना चाहता हूँ', 'खत्म कर देना']
             },

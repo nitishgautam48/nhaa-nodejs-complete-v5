@@ -414,7 +414,13 @@ class TextAnalyzer {
                         // of the same life-ending terminal phrases as the
                         // pattern above (same "this" guard, same
                         // unguarded "life" reasoning, see above).
-                        { regex: /\bnot\s+want(?:s|ing|ed)?\s+to\s+continue\s+(?:anymore|any\s*longer|living|(?:in\s+)?(?:my|his|her)?\s*life|this\s+(?:anymore|any\s*longer)|this(?!\s+\w))\b/i, weight: 32 },
+                        // ✅ FIX: this originally only accepted literal
+                        // "not" ("do not/does not want to continue..."),
+                        // missing the plain contraction "don't want to
+                        // continue my life anymore" entirely - arguably
+                        // the MORE common everyday phrasing than the
+                        // two-word "do not" form it already covered.
+                        { regex: /\b(?:not|don'?t|doesn'?t)\s+want(?:s|ing|ed)?\s+to\s+continue\s+(?:anymore|any\s*longer|living|(?:in\s+)?(?:my|his|her)?\s*life|this\s+(?:anymore|any\s*longer)|this(?!\s+\w))\b/i, weight: 32 },
                         { regex: /\bdone\s+with\s+(?:my\s+)?life\b/i, weight: 35 },
                         { regex: /\bno\s+longer\s+want(?:s|ing|ed)?\s+to\s+(?:live|be\s+alive|exist)\b/i, weight: 30 },
                         { regex: /\bwant(?:s|ing|ed)?\s+to\s+stop\s+living\b/i, weight: 30 },
@@ -680,6 +686,113 @@ class TextAnalyzer {
                 multiplier: 1.0
             },
 
+            // ✅ NEW: models/expertSystem.js's clinical rules (PTSD,
+            // depression, anxiety, suicide) reference these six DSM-5
+            // symptom names directly as condition keys - 'flashbacks',
+            // 'anhedonia', 'fatigue', 'panic', 'hopelessness',
+            // 'worthlessness' - but nothing upstream ever produced a
+            // `scores.<name>` for any of them. The literal words
+            // ('flashback', 'hopeless', 'worthless', 'anhedonia',
+            // 'fatigue', 'panic') were already being matched, but only
+            // buried inside trauma/depression/anxiety's blended totals -
+            // expertSystem.js's `scores[condition]` lookup came back
+            // `undefined` for all six, so those conditions could never be
+            // measured, capping every rule's real confidence regardless of
+            // how strong the underlying signal was (see the "✅ FIX"
+            // comment in expertSystem.js). Giving each its own small,
+            // independently-scored category - deliberately overlapping
+            // with trauma/depression/anxiety's existing words, the same
+            // established pattern already used elsewhere in this file
+            // (e.g. "tease"/"teased" scored under both intimidation here
+            // and caste-based discrimination in scstTrainer.js) - closes
+            // that gap without changing how the parent categories score.
+            flashbacks: {
+                keywords: {
+                    en: {
+                        'flashback': 25, 'flashbacks': 25, 'reliving it': 22,
+                        'relive it': 20, "feels like it's happening again": 24,
+                        "like it's happening all over again": 24,
+                        'intrusive memories': 22, "can't stop thinking about it": 18,
+                        'keeps replaying in my head': 20, 'keeps coming back to me': 16,
+                        'see it happening in my head': 20, 'still see it': 16
+                    },
+                    hi: {
+                        'फ्लैशबैक': 20, 'फिर से जी रहा हूं': 18
+                    }
+                },
+                multiplier: 1.0
+            },
+            anhedonia: {
+                keywords: {
+                    en: {
+                        'anhedonia': 20, 'lost interest in everything': 22,
+                        "don't enjoy anything anymore": 22, "can't find joy in anything": 20,
+                        'nothing feels enjoyable anymore': 22,
+                        'stopped enjoying things i used to love': 20,
+                        'nothing excites me anymore': 18, "don't feel happy about anything": 16
+                    },
+                    hi: {
+                        'किसी चीज़ में मन नहीं लगता': 18, 'खुशी महसूस नहीं होती': 16
+                    }
+                },
+                multiplier: 1.0
+            },
+            fatigue: {
+                keywords: {
+                    en: {
+                        'fatigue': 15, 'exhausted': 15, 'exhausted all the time': 20,
+                        'no energy': 16, 'constantly tired': 16, 'drained all the time': 18,
+                        'tired all the time': 16, "can't get out of bed": 18,
+                        'so tired of everything': 14
+                    },
+                    hi: {
+                        'हमेशा थका हुआ': 16, 'थकान महसूस होती है': 14
+                    }
+                },
+                multiplier: 1.0
+            },
+            panic: {
+                keywords: {
+                    en: {
+                        'panic attack': 25, 'panic attacks': 25, 'having a panic attack': 25,
+                        'having panic attacks': 25, "feel like i'm going to die": 22,
+                        "heart pounding and can't breathe": 20, 'chest tightening': 16,
+                        'panicking': 15, 'panic mode': 14
+                    },
+                    hi: {
+                        'पैनिक अटैक': 22, 'घबराहट का दौरा': 20
+                    }
+                },
+                multiplier: 1.0
+            },
+            hopelessness: {
+                keywords: {
+                    en: {
+                        'hopeless': 20, 'no hope': 18, 'no hope left': 20,
+                        'nothing will ever change': 18, 'it will never get better': 18,
+                        'things will never get better': 18, 'feel completely hopeless': 22,
+                        "there's no hope for me": 20, "i've lost all hope": 20
+                    },
+                    hi: {
+                        'कोई उम्मीद नहीं': 18, 'निराशा महसूस होती है': 15
+                    }
+                },
+                multiplier: 1.0
+            },
+            worthlessness: {
+                keywords: {
+                    en: {
+                        'worthless': 20, 'feel worthless': 22, "i'm worthless": 22,
+                        'feel like nothing': 16, "i'm nothing": 14, "i don't matter": 16,
+                        'i mean nothing': 16, 'feel like a failure': 15,
+                        'not good enough': 14, 'feel inadequate': 14
+                    },
+                    hi: {
+                        'बेकार महसूस होता हूं': 18, 'खुद को बेकार समझता हूं': 18
+                    }
+                },
+                multiplier: 1.0
+            },
 
             // humanIntelligence.js has a protective-factor reduction to
             // clinical distress scores, but it was checking for score keys
@@ -1078,7 +1191,17 @@ class TextAnalyzer {
             // ✅ NEW: feeds humanIntelligence.js's protective-factor
             // reduction, which was previously always inert (see note above
             // the `protective` keyword category).
-            protective_factors: scores.protective || 0
+            protective_factors: scores.protective || 0,
+            // ✅ NEW: closes the expertSystem.js measurability gap - see
+            // the comment above the six keyword categories defined earlier
+            // in this file (flashbacks, anhedonia, fatigue, panic,
+            // hopelessness, worthlessness).
+            flashbacks: scores.flashbacks || 0,
+            anhedonia: scores.anhedonia || 0,
+            fatigue: scores.fatigue || 0,
+            panic: scores.panic || 0,
+            hopelessness: scores.hopelessness || 0,
+            worthlessness: scores.worthlessness || 0
         };
 
         // ✅ FIX: Generate summary based on actual scores
@@ -1149,7 +1272,16 @@ class TextAnalyzer {
             stress: 0,
             fear: 0,
             social_isolation: 0,
-            protective_factors: 0
+            dissociation: 0,
+            hyperarousal: 0,
+            avoidance: 0,
+            protective_factors: 0,
+            flashbacks: 0,
+            anhedonia: 0,
+            fatigue: 0,
+            panic: 0,
+            hopelessness: 0,
+            worthlessness: 0
         };
         return {
             scores: neutralScores,

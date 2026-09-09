@@ -218,7 +218,19 @@ class NHHAController {
                         ruleBasedHeuristicAdjustment: '30%',
                         multiProfileHeuristicConsensus: '10%',
                         note: 'All layers are automated heuristics. No human clinician has reviewed this case.'
-                    }
+                    },
+                    // ✅ NEW: expertSystem.js's rule activations (which
+                    // DSM-pattern rule fired, its confidence, and its
+                    // suggested intervention) were fully computed above but
+                    // only ever fed into humanIntelligence's confidence
+                    // nudge and consensusBuilder's blended opinions -
+                    // never actually included in the response, so none of
+                    // that detail (e.g. "PTSD Detection activated,
+                    // confidence 0.75, suggests trauma-focused CBT/EMDR")
+                    // ever reached a caseworker or the frontend. Same
+                    // automated-heuristic labeling discipline as
+                    // scoreComposition above.
+                    expertRules: expertRules
                 }
             });
 
