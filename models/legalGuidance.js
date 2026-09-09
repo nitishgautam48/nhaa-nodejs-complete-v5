@@ -170,6 +170,26 @@ class LegalGuidance {
                 caseName: 'Shakti Vahini v. Union of India (2018)',
                 relevance: 'honor_based_violence',
                 holding: 'Supreme Court issued detailed preventive and remedial directions against honor-based violence by khap panchayats or families, including a dedicated police protection protocol for threatened couples.'
+            },
+            {
+                caseName: 'State of M.P. v. Ram Krishna Balothia (1995)',
+                relevance: 'general SC/ST Act procedure',
+                holding: 'Supreme Court upheld the constitutional validity of Section 18 of the Atrocities Act (the bar on anticipatory bail for scheduled offences), holding that offences arising from caste-based "untouchability" and atrocity form a distinct class where anticipatory bail is regularly misused to threaten and intimidate victims and witnesses - the special, more restrictive procedural treatment was held reasonable, not discriminatory.'
+            },
+            {
+                caseName: 'Kailas & Others v. State of Maharashtra (2011)',
+                relevance: 'public_humiliation, general SC/ST Act procedure',
+                holding: 'In a case where a tribal woman was assaulted, stripped, and paraded, the Supreme Court made strong observations on the continued exploitation of Dalits/Adivasis and enhanced her compensation - but the conviction specifically under the Atrocities Act itself was set aside because the investigation had not been conducted by an officer of at least Deputy Superintendent of Police rank as the Act requires, and the victim\'s caste had not been formally proved. A caution that correct procedure at the investigation stage (right-rank investigating officer, caste proof on record) is essential for an Atrocities Act charge to hold, separate from the underlying IPC/BNS offence.'
+            },
+            {
+                caseName: 'Samatha v. State of Andhra Pradesh (1997)',
+                relevance: 'land_and_livelihood_dispossession',
+                holding: 'Supreme Court held that government, tribal, and forest land in Fifth Schedule "Scheduled Areas" cannot be leased to non-tribal persons or private companies for mining - such activity may only be carried out by a state mineral development corporation or a cooperative of tribal persons themselves - to protect tribal land, livelihood, and self-governance rights guaranteed by the Fifth Schedule.'
+            },
+            {
+                caseName: 'Arumugam Servai v. State of Tamil Nadu (2011)',
+                relevance: 'honor_based_violence, denial_of_access_and_social_boycott, discrimination',
+                holding: 'Supreme Court condemned khap/katta panchayats that decree or encourage honor killings, or impose social boycotts, over inter-caste or inter-religious marriage as "wholly illegal" and directed that they be "ruthlessly stamped out." Administrative and police officers were held directly, departmentally accountable if they fail to act against such practices in their jurisdiction despite having knowledge of them.'
             }
         ];
 
