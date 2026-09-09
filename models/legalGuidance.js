@@ -136,10 +136,30 @@ class LegalGuidance {
         //  in any filing.
         // ============================================================
         this.landmarkCaseLaw = [
+            // ✅ BUG FIX: this entry's old relevance tag ('workplace_discrimination,
+            // sexual_violence') matched NEITHER a real scstTrainer.js pattern
+            // name (gang_rape, sexual_abuse_indirect, discrimination, etc.)
+            // NOR the 'general SC/ST Act procedure' catch-all - so despite
+            // being one of the most well-known Indian judgments in this
+            // entire list, it could never actually be surfaced by either
+            // getGuidanceForSCST() or getGuidanceForClinical() (which didn't
+            // surface case law at all until this fix). Retagged to the real
+            // pattern names it's actually relevant to, plus the new
+            // 'workplace_sexual_harassment' clinical guidance key below.
             {
                 caseName: 'Vishaka v. State of Rajasthan (1997)',
-                relevance: 'workplace_discrimination, sexual_violence',
+                relevance: 'workplace_sexual_harassment, gang_rape, sexual_abuse_indirect',
                 holding: 'Supreme Court laid down guidelines against workplace sexual harassment in the absence of specific legislation - these guidelines directly led to the POSH Act, 2013.'
+            },
+            {
+                caseName: 'Apparel Export Promotion Council v. A.K. Chopra (1999)',
+                relevance: 'workplace_sexual_harassment',
+                holding: 'Supreme Court held that sexual harassment does not require physical contact - unwelcome conduct that fails the test of decency and modesty is enough - and upheld the dismissal of an employee for workplace sexual harassment, holding that leniency in such cases sends a demoralizing message to women employees. Reaffirmed that workplace sexual harassment violates fundamental rights under Articles 14, 19, and 21 of the Constitution.'
+            },
+            {
+                caseName: 'Medha Kotwal Lele v. Union of India (2012)',
+                relevance: 'workplace_sexual_harassment',
+                holding: 'Fifteen years after the Vishaka guidelines, the Supreme Court found their implementation still grossly inadequate in many states and institutions, and directed every state to ensure Complaints Committees are actually constituted and functioning at the taluka, district, and state levels, with a strict two-month compliance deadline - directly reinforcing what became the POSH Act, 2013\'s Internal/Local Committee structure.'
             },
             {
                 caseName: 'State of Karnataka v. Appa Balu Ingale (1995)',
@@ -352,6 +372,48 @@ class LegalGuidance {
                     'A Protection Officer must be appointed in every district to assist with filing a complaint - this can be a civil remedy alongside or instead of a criminal one'
                 ],
                 authorities: ['women_helpline', 'nalsa_legal_aid', 'police_fir']
+            },
+            // ✅ NEW: workplace sexual harassment had no legal guidance
+            // reachable anywhere in this file - a real, common disclosure
+            // type (textAnalyzer.js's trauma category already has real-world
+            // phrasing like "supervisor made comments and touched me
+            // inappropriately"). Section numbers verified against the POSH
+            // Act, 2013 directly - it's a standalone special Act like the
+            // Atrocities Act, not renumbered by the BNS/IPC transition, so
+            // citing its section numbers is safe under this file's own
+            // scope rule (see the file header).
+            workplace_sexual_harassment: {
+                primaryLaw: 'Sexual Harassment of Women at Workplace (Prevention, Prohibition and Redressal) Act, 2013 (POSH Act)',
+                keyProtections: [
+                    'Every workplace with 10 or more employees must have an Internal Committee (IC) to receive and inquire into complaints (Section 4); smaller establishments, and complaints against the employer, go to the district\'s Local Committee instead (Section 6)',
+                    'A complaint can ordinarily be filed within 3 months of the incident, extendable by another 3 months if the Committee is satisfied the delay was justified (Section 9)',
+                    'The Committee must complete its inquiry within 90 days, and the employer must act on its recommendations within 60 days after that (Section 11)',
+                    'Physical contact is not required for conduct to count as sexual harassment - unwelcome remarks, conduct, or a hostile environment are enough (Apparel Export Promotion Council v. A.K. Chopra, 1999)',
+                    'The complainant can request interim relief during the inquiry, such as transfer of either party or leave'
+                ],
+                authorities: ['nalsa_legal_aid', 'police_fir', 'women_helpline']
+            },
+            // ✅ NEW: intimidation/stalking is one of this tool's detected
+            // categories (textAnalyzer.js already matches phrases like
+            // "tracks my location", "follows me everywhere", "stalking my
+            // socials"), but had no standalone legal guidance of its own
+            // outside the SC/ST-specific cyber_caste_harassment entry -
+            // meaning a stalking disclosure with no caste dimension got no
+            // legal information at all. IT Act section numbers verified
+            // directly - it's a standalone special Act, not renumbered by
+            // the BNS/IPC transition. Deliberately does NOT cite a BNS/IPC
+            // stalking/criminal-intimidation section number, consistent
+            // with this file's stated policy on general (non-special-Act)
+            // offenses (see file header).
+            stalking_and_intimidation: {
+                primaryLaw: 'General criminal law on stalking and criminal intimidation + Information Technology Act, 2000 for online conduct',
+                keyProtections: [
+                    'Repeatedly following, contacting, or monitoring someone against their wishes, or threatening them to cause alarm, are criminal offences that can be reported to the police regardless of the relationship to the person doing it',
+                    'Online stalking, non-consensual sharing of images, or transmitting obscene/sexually explicit content electronically are separately covered by the Information Technology Act, 2000 (Section 66E - violation of privacy; Sections 67 and 67A - obscene or sexually explicit electronic content)',
+                    'The National Cyber Crime Reporting Portal (1930 / cybercrime.gov.in) accepts complaints without an in-person police visit first and can request platform takedowns',
+                    'Screenshots, messages, and call logs should be preserved before reporting - evidence can otherwise be deleted by the person responsible or the platform'
+                ],
+                authorities: ['police_fir', 'cybercrime_portal', 'nalsa_legal_aid', 'women_helpline']
             }
         };
     }
@@ -415,14 +477,35 @@ class LegalGuidance {
         };
     }
 
+    _isLetterOrDigit(ch) {
+        return !!ch && /[\p{L}\p{N}]/u.test(ch);
+    }
+
+    // Same word-boundary phrase matching used throughout this codebase
+    // (humanIntelligence.js, cssrsLadder.js each keep their own small copy
+    // rather than sharing a module - this follows that existing pattern).
+    _containsPhrase(textLower, phrase) {
+        let fromIndex = 0;
+        while (true) {
+            const pos = textLower.indexOf(phrase, fromIndex);
+            if (pos === -1) return false;
+            const before = pos > 0 ? textLower[pos - 1] : '';
+            const after = pos + phrase.length < textLower.length ? textLower[pos + phrase.length] : '';
+            if (!this._isLetterOrDigit(before) && !this._isLetterOrDigit(after)) return true;
+            fromIndex = pos + 1;
+        }
+    }
+
     /**
      * Build guidance from clinical findings (e.g. the hybridDecision /
-     * expertSystem output). Currently covers suicide risk, general mental
-     * health rights, and can be extended with additional keys as
-     * clinicalLegalGuidance grows.
+     * expertSystem output). `text` and `dangerAssessment` are optional -
+     * omitting them keeps every existing caller working exactly as before,
+     * just without the workplace-context disambiguation and the
+     * Danger-Assessment-informed domestic_violence trigger below.
      */
-    getGuidanceForClinical(finalScores = {}, expertRules = []) {
+    getGuidanceForClinical(finalScores = {}, expertRules = [], text = '', dangerAssessment = null) {
         const applicableKeys = [];
+        const textLower = (text || '').toLowerCase();
 
         if ((finalScores.suicidal_ideation || 0) > 0.3) {
             applicableKeys.push('suicide_risk');
@@ -436,6 +519,41 @@ class LegalGuidance {
             applicableKeys.push('suicide_risk');
         }
 
+        // ✅ BUG FIX: clinicalLegalGuidance.domestic_violence was fully
+        // written but NOTHING here ever added 'domestic_violence' to
+        // applicableKeys - it was completely unreachable, silently, since
+        // the day it was written. Gated on humanIntelligence.js's Danger-
+        // Assessment-inspired lethality check (strangulation, weapon,
+        // death threats, etc.) when available - a much stronger, validated
+        // signal than a generic score threshold - or, as a fallback for
+        // lower-severity cases that don't cross that bar, the combination
+        // of high vulnerability + intimidation that indicates coercive
+        // control.
+        if ((dangerAssessment && dangerAssessment.elevatedLethalityRisk) ||
+            ((finalScores.vulnerability || 0) > 0.5 && (finalScores.intimidation || 0) > 0.4)) {
+            applicableKeys.push('domestic_violence');
+        }
+
+        // ✅ NEW: workplace sexual harassment (POSH Act) had no legal
+        // guidance reachable anywhere - see clinicalLegalGuidance's note.
+        // Gated on an explicit workplace-context word alongside
+        // trauma/intimidation, since the score pattern alone can't
+        // distinguish workplace harassment from domestic or
+        // stranger-perpetrated harassment.
+        const workplaceContextWords = ['workplace', 'office', 'supervisor', 'manager', 'boss',
+            'coworker', 'co-worker', 'colleague', 'my job', 'at work'];
+        if (((finalScores.trauma || 0) > 0.3 || (finalScores.intimidation || 0) > 0.3) &&
+            workplaceContextWords.some(w => this._containsPhrase(textLower, w))) {
+            applicableKeys.push('workplace_sexual_harassment');
+        }
+
+        // ✅ NEW: stalking/intimidation guidance, applicable regardless of
+        // who is doing it - stranger, ex-partner, or coworker - see
+        // clinicalLegalGuidance's note.
+        if ((finalScores.intimidation || 0) > 0.3) {
+            applicableKeys.push('stalking_and_intimidation');
+        }
+
         if (applicableKeys.length === 0) return null;
 
         const authoritySet = new Set();
@@ -445,10 +563,20 @@ class LegalGuidance {
             return { incidentType: key, ...g };
         });
 
+        // ✅ NEW: clinical guidance never surfaced relevant case law at all
+        // before this fix - only the SC/ST path did, so e.g. Vishaka could
+        // never appear for a workplace-harassment-only disclosure with no
+        // caste dimension. Reuses the same landmarkCaseLaw list, filtered
+        // by the clinical guidance keys that matched.
+        const relevantCaseLaw = this.landmarkCaseLaw.filter(c =>
+            applicableKeys.some(key => c.relevance.includes(key))
+        );
+
         return {
             applicable: true,
             matchedProvisions: matchedProvisions,
             authorities: Array.from(authoritySet).map(key => this.redressalChannels[key]),
+            relevantCaseLaw: relevantCaseLaw,
             disclaimer: this.disclaimer
         };
     }
@@ -456,10 +584,11 @@ class LegalGuidance {
     /**
      * Combined "Legal tab" payload: SC/ST guidance + clinical/rights
      * guidance in one response, deduplicating authorities across both.
+     * `text` and `dangerAssessment` are optional - see getGuidanceForClinical.
      */
-    getCombinedGuidance(scstResult, finalScores = {}, expertRules = []) {
+    getCombinedGuidance(scstResult, finalScores = {}, expertRules = [], text = '', dangerAssessment = null) {
         const scst = this.getGuidanceForSCST(scstResult);
-        const clinical = this.getGuidanceForClinical(finalScores, expertRules);
+        const clinical = this.getGuidanceForClinical(finalScores, expertRules, text, dangerAssessment);
 
         if (!scst && !clinical) {
             return {
