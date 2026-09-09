@@ -655,6 +655,21 @@
     let mediaRecorder = null;
     let audioChunks = [];
     let recordedBlob = null;
+    // ✅ NEW: services/audioAnalyzer.js only ever measured ACOUSTIC
+    // features (loudness/RMS, zero-crossing rate, pitch variance) - it
+    // never transcribes speech, so voice input never ran through
+    // textAnalyzer.js's carefully-tuned keyword/pattern engine at all.
+    // Someone could say "I want to die" out loud and it would score
+    // however calm or agitated their voice sounded, with zero suicide-
+    // risk detection whatsoever, because the words themselves were never
+    // read. Building real server-side speech-to-text hit the same
+    // network-sandboxed model-download wall as the semantic embedding
+    // work earlier - so instead this uses the browser's own built-in
+    // Web Speech API (free, no server model download, no API key) to
+    // transcribe alongside recording and feed the transcript into the
+    // SAME text pipeline typed input already uses.
+    let speechRecognizer = null;
+    let voiceTranscript = '';
     let chartInstances = {};
     let assessmentHistory = JSON.parse(localStorage.getItem('nhaa_history') || '[]');
 
@@ -917,12 +932,45 @@
         return new Blob([buffer], { type: 'audio/wav' });
     }
 
+    // ✅ NEW: browser-native transcription alongside recording - see the
+    // note above the `speechRecognizer`/`voiceTranscript` declarations.
+    // Returns null (silently - this is progressive enhancement, not a
+    // required feature) if the browser doesn't support the Web Speech
+    // API at all (e.g. Firefox as of this writing).
+    function _startSpeechRecognition() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) return null;
+        try {
+            const recognizer = new SpeechRecognition();
+            recognizer.lang = 'en-IN';
+            recognizer.continuous = true;
+            recognizer.interimResults = false;
+            recognizer.onresult = (event) => {
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    if (event.results[i].isFinal) {
+                        voiceTranscript += (voiceTranscript ? ' ' : '') + event.results[i][0].transcript.trim();
+                    }
+                }
+            };
+            // Not treated as an error - speech recognition is a best-effort
+            // enhancement on top of the acoustic analysis that already
+            // works, never a requirement for submitting a voice recording.
+            recognizer.onerror = (e) => console.warn('Speech recognition:', e.error);
+            recognizer.start();
+            return recognizer;
+        } catch (err) {
+            console.warn('Speech recognition unavailable:', err);
+            return null;
+        }
+    }
+
     async function toggleRecording() {
         const btn = document.getElementById('recordBtn');
         const status = document.getElementById('recordingStatus');
         const waveContainer = document.getElementById('waveContainer');
         if (isRecording) {
             isRecording = false; mediaRecorder.stop();
+            if (speechRecognizer) { try { speechRecognizer.stop(); } catch (_) {} }
             btn.innerHTML = '<i class="fas fa-circle"></i> Record';
             waveContainer.style.display = 'none';
         } else {
@@ -930,6 +978,8 @@
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 mediaRecorder = new MediaRecorder(stream);
                 audioChunks = [];
+                voiceTranscript = '';
+                speechRecognizer = _startSpeechRecognition();
                 mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
                 mediaRecorder.onstop = async () => {
                     status.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing audio...';
@@ -939,7 +989,21 @@
                         const url = URL.createObjectURL(recordedBlob);
                         document.getElementById('audioPlayback').src = url;
                         document.getElementById('audioPlayback').style.display = 'block';
-                        status.innerHTML = '<i class="fas fa-check-circle" style="color:#00b894;"></i> Audio ready!';
+                        // ✅ NEW: if we got a transcript and the person hasn't
+                        // already typed something, fill the Text Narrative
+                        // box with it so it's actually visible, editable
+                        // (speech recognition can mishear words - never
+                        // trust it silently in a crisis-detection context),
+                        // and included in the same `text` field the request
+                        // already sends alongside the audio.
+                        const textInput = document.getElementById('textInput');
+                        if (voiceTranscript.trim() && !textInput.value.trim()) {
+                            textInput.value = voiceTranscript.trim();
+                            updateCharCount();
+                            status.innerHTML = `<i class="fas fa-check-circle" style="color:#00b894;"></i> Audio ready! Transcribed: "${voiceTranscript.trim().substring(0, 80)}${voiceTranscript.trim().length > 80 ? '...' : ''}" (edit above if it misheard anything)`;
+                        } else {
+                            status.innerHTML = '<i class="fas fa-check-circle" style="color:#00b894;"></i> Audio ready!';
+                        }
                     } catch (err) {
                         console.error('Audio conversion failed:', err);
                         status.innerHTML = '<i class="fas fa-circle-exclamation" style="color:#d63031;"></i> Could not process audio - please try again or use text instead.';
@@ -1673,6 +1737,7 @@
         document.getElementById('audioPlayback').style.display = 'none';
         document.getElementById('recordingStatus').innerHTML = '<i class="fas fa-info-circle"></i> Press Record to speak';
         recordedBlob = null;
+        voiceTranscript = '';
         document.getElementById('resultsCard').style.display = 'none';
         document.getElementById('waveContainer').style.display = 'none';
         document.getElementById('recordBtn').innerHTML = '<i class="fas fa-circle"></i> Record';
