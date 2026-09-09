@@ -394,7 +394,13 @@ class TextAnalyzer {
                         // otherwise "not to continue this course"/"this
                         // conversation" would false-positive on ordinary,
                         // non-suicidal uses of "continue this <noun>".
-                        { regex: /\bnot\s+to\s+continue\s+(?:anymore|any\s*longer|living|this\s+(?:anymore|any\s*longer)|this(?!\s+\w))\b/i, weight: 32 },
+                        // "(my/his/her) life" is deliberately NOT guarded
+                        // the same way - unlike "this", it's specific
+                        // enough on its own ("not to continue my life
+                        // anymore and want to end up") that requiring it to
+                        // end the clause would reintroduce the exact false
+                        // negative this pattern exists to fix.
+                        { regex: /\bnot\s+to\s+continue\s+(?:anymore|any\s*longer|living|(?:in\s+)?(?:my|his|her)?\s*life|this\s+(?:anymore|any\s*longer)|this(?!\s+\w))\b/i, weight: 32 },
                         // ✅ FIX: real reported false negative - "I do not
                         // want to continue anymore in my life" has "want
                         // to" inserted between "not" and "continue", which
@@ -406,8 +412,9 @@ class TextAnalyzer {
                         // [living/anymore]" - distinct from "not wanting to
                         // continue [a task/conversation]" by requiring one
                         // of the same life-ending terminal phrases as the
-                        // pattern above (same "this" guard, see above).
-                        { regex: /\bnot\s+want(?:s|ing|ed)?\s+to\s+continue\s+(?:anymore|any\s*longer|living|in\s+(?:my\s+)?life|this\s+(?:anymore|any\s*longer)|this(?!\s+\w))\b/i, weight: 32 },
+                        // pattern above (same "this" guard, same
+                        // unguarded "life" reasoning, see above).
+                        { regex: /\bnot\s+want(?:s|ing|ed)?\s+to\s+continue\s+(?:anymore|any\s*longer|living|(?:in\s+)?(?:my|his|her)?\s*life|this\s+(?:anymore|any\s*longer)|this(?!\s+\w))\b/i, weight: 32 },
                         { regex: /\bdone\s+with\s+(?:my\s+)?life\b/i, weight: 35 },
                         { regex: /\bno\s+longer\s+want(?:s|ing|ed)?\s+to\s+(?:live|be\s+alive|exist)\b/i, weight: 30 },
                         { regex: /\bwant(?:s|ing|ed)?\s+to\s+stop\s+living\b/i, weight: 30 },
