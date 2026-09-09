@@ -46,7 +46,11 @@ class SCSTTrainer {
                     'inappropriate touch', 'unwanted advances', 'forced himself',
                     'forced herself', 'forced me', 'against my will', "didn't want it",
                     'did not want it', 'made me uncomfortable', 'took advantage of me',
-                    'molested', 'groped'],
+                    // ✅ FIX: 'molestation' (the noun form) scored no signal
+                    // at all - same gap as textAnalyzer.js's trauma
+                    // category, fixed the same way (explicit entries, not
+                    // relying on fuzzy/stemming across "-ation").
+                    'molested', 'molestation', 'molesting', 'molests', 'groped'],
                 severity: 85,
                 description: 'Sexual abuse described in victim\'s own indirect language'
             },
