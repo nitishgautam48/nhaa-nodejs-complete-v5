@@ -181,7 +181,16 @@ class TextAnalyzer {
                         'running on fumes': 12, 'empty husk': 16,
                         'feel like an empty husk': 18, 'existing not living': 16,
                         'surviving not living': 16, "i'm not okay bestie": 14,
-                        'not vibing with life': 14
+                        'not vibing with life': 14,
+                        // ✅ NEW: PHQ-9 concentration/psychomotor domains had
+                        // NO coverage at all in this list (see
+                        // models/clinicalDomainMapper.js phase 2 work) -
+                        // added here too so these phrases move the headline
+                        // depression score, not just the PHQ-9 sub-scale.
+                        'trouble concentrating': 14, "can't focus on anything": 14,
+                        'mind keeps wandering': 10, "can't think straight": 12,
+                        'moving in slow motion': 12, 'everything feels like effort': 14,
+                        'everything takes so much effort': 14
                     },
                     hi: {
                         'उदास': 20, 'निराश': 20, 'बेकार': 18, 'खाली': 15,
@@ -585,7 +594,13 @@ class TextAnalyzer {
                         // a vivid, commonly-used real idiom for
                         // hypervigilance that scored zero.
                         'sleep with one eye open': 20, 'always listening for the door': 16,
-                        'listening for footsteps': 14
+                        'listening for footsteps': 14,
+                        // ✅ NEW: GAD-7 irritability domain had no coverage
+                        // beyond the single word 'irritable' (see
+                        // models/clinicalDomainMapper.js phase 2 work).
+                        'snapping at everyone': 14, 'on edge with everyone': 12,
+                        'easily annoyed': 12, 'short temper lately': 12,
+                        "can't sit still": 10
                     },
                     hi: {
                         'हमेशा सतर्क': 18, 'नींद नहीं आती': 15, 'चौंक जाता हूं': 15

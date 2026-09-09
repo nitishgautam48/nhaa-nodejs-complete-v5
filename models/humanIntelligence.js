@@ -29,10 +29,20 @@
 //     which research shows sharply increases risk of future lethal
 //     violence - so a case doesn't sit at a moderate score just because no
 //     single distress category crossed a high threshold.
+//
+//  3. A structured risk/protective factor checklist (see
+//     riskFormulation.js) - replaces what used to be a flat "count how
+//     many of 12 unrelated score categories exceed 0.5" heuristic with
+//     real detection of specific static/dynamic risk factors and
+//     protective factors, the way an actual risk formulation separates
+//     them.
 // ================================================================
+
+import RiskFormulation from './riskFormulation.js';
 
 class HumanIntelligence {
     constructor() {
+        this.riskFormulation = new RiskFormulation();
         this.knowledgeBase = {
             riskFactors: [
                 'prior_trauma', 'family_history', 'substance_use',
@@ -207,15 +217,14 @@ class HumanIntelligence {
             }
         }
 
-        // Assess risk accumulation
-        // ✅ FIX: riskCount previously counted ANY score > 0.5, including
-        // protective_factors - so someone with strong protective factors
-        // (support, coping resources) got treated as having an *extra*
-        // risk factor and had their multiplier bumped up. Protective
-        // factors are the opposite of a risk domain and are excluded here.
-        const riskCount = Object.entries(scores)
-            .filter(([key, v]) => key !== 'protective_factors' && v > 0.5).length;
-        const multiplier = riskCount >= 3 ? 1.5 : riskCount >= 2 ? 1.2 : 1;
+        // ✅ FIX: this used to be `riskCount = how many of the 12 score
+        // categories exceed 0.5`, then a flat 3-tier multiplier - not a
+        // risk formulation, just a threshold count blind to WHICH factors
+        // were present (a mildly elevated anxiety score counted the same
+        // as active homelessness). Now uses a real structured risk/
+        // protective checklist - see riskFormulation.js.
+        const riskAssessment = this.riskFormulation.assess(text);
+        const multiplier = riskAssessment.multiplier;
 
         const riskScores = {};
         for (const [key, value] of Object.entries(scores)) {
@@ -259,8 +268,12 @@ class HumanIntelligence {
         if (scores.depression > 0.7 && scores.anxiety > 0.7) {
             impressions.push('Comorbid depression and anxiety');
         }
-        if (riskCount > 3) {
-            impressions.push(`Multiple risk factors present (${riskCount})`);
+        if (riskAssessment.riskFactorCount > 0) {
+            const allRisk = [...riskAssessment.staticRiskFactors, ...riskAssessment.dynamicRiskFactors];
+            impressions.push(`Risk factors present: ${allRisk.join(', ')}`);
+        }
+        if (riskAssessment.protectiveFactorCount > 0) {
+            impressions.push(`Protective factors present: ${riskAssessment.protectiveFactors.join(', ')}`);
         }
 
         // ✅ NEW: Danger Assessment-inspired lethality risk check (intimate
@@ -282,11 +295,12 @@ class HumanIntelligence {
             riskScores: riskScores,
             impressions: impressions.join('; ') || 'No significant clinical findings',
             confidence: Math.min(confidence, 0.95),
-            // ✅ NEW: structured data for the two methodology integrations
+            // ✅ NEW: structured data for the methodology integrations
             // above, so callers (controller/frontend) can act on them
             // directly rather than parsing the impressions string.
             symptomPattern: symptomPattern,
-            dangerAssessment: dangerAssessment
+            dangerAssessment: dangerAssessment,
+            riskFormulation: riskAssessment
         };
     }
 }

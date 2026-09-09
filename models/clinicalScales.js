@@ -3,10 +3,12 @@
 // ================================================================
 
 import CSSRSLadder from './cssrsLadder.js';
+import ClinicalDomainMapper from './clinicalDomainMapper.js';
 
 class ClinicalScales {
     constructor() {
         this.cssrsLadder = new CSSRSLadder();
+        this.domainMapper = new ClinicalDomainMapper();
         this.scaleRanges = {
             phq9: {
                 minimal: [0, 4],
@@ -40,24 +42,71 @@ class ClinicalScales {
 
         // Use ?? instead of || so a genuine 0 score (no signal detected) stays 0
         // instead of being silently replaced with a fake 0.5 "Moderate" baseline.
-        const phq9 = this._mapToScale(scores.depression ?? 0.5, this.scaleRanges.phq9);
-        const gad7 = this._mapToScale(scores.anxiety ?? 0.5, this.scaleRanges.gad7);
+        const phq9Fallback = this._mapToScale(scores.depression ?? 0.5, this.scaleRanges.phq9);
+        const gad7Fallback = this._mapToScale(scores.anxiety ?? 0.5, this.scaleRanges.gad7);
         const pcl5 = this._mapToScale(scores.trauma ?? 0.5, this.scaleRanges.pcl5);
 
+        const phq9 = this._calculatePHQ9(scores, text, phq9Fallback);
+        const gad7 = this._calculateGAD7(text, gad7Fallback);
+
         return {
-            phq9: {
-                score: phq9,
-                severity: this._getScaleSeverity(phq9, this.scaleRanges.phq9)
-            },
-            gad7: {
-                score: gad7,
-                severity: this._getScaleSeverity(gad7, this.scaleRanges.gad7)
-            },
+            phq9: phq9,
+            gad7: gad7,
             pcl5: {
                 score: pcl5,
                 severity: this._getScaleSeverity(pcl5, this.scaleRanges.pcl5)
             },
             cssrs: this._calculateCSSRS(scores, text)
+        };
+    }
+
+    // PHQ-9 item 9 (suicidal ideation) is sourced from the dedicated
+    // suicide scoring/C-SSRS ladder rather than re-derived from depression
+    // text - see clinicalDomainMapper.js's header for why.
+    _suicideItemScore(scores) {
+        const score = scores.suicidal_ideation || 0;
+        if (score >= 0.7) return 3;
+        if (score >= 0.35) return 2;
+        if (score >= 0.15) return 1;
+        return 0;
+    }
+
+    // ⚠️ Text-based approximation of PHQ-9's item structure - see
+    // clinicalDomainMapper.js's file header for the full methodology note.
+    // Takes the WORSE (higher) of the domain-based total and the previous
+    // linear-rescale fallback, same "never downgrade" principle as the
+    // C-SSRS ladder - domains not yet covered by a matched phrase simply
+    // contribute 0 rather than silently lowering an already-computed score.
+    _calculatePHQ9(scores, text, fallbackScore) {
+        const mapped = this.domainMapper.mapPHQ9(text);
+        const suicideItem = this._suicideItemScore(scores);
+        const domainTotal = Math.min(mapped.total + suicideItem, 27);
+        const finalScore = Math.max(domainTotal, fallbackScore);
+
+        return {
+            score: finalScore,
+            severity: this._getScaleSeverity(finalScore, this.scaleRanges.phq9),
+            domains: {
+                ...mapped.domains,
+                suicidalIdeation: { label: 'Thoughts of being better off dead or of self-harm', score: suicideItem, matchedPhrase: null }
+            },
+            methodology: 'Text-based approximation of the PHQ-9\'s 9 item domains - not the validated self-report instrument, which asks about symptom frequency over the last two weeks directly.'
+        };
+    }
+
+    // ⚠️ Text-based approximation of GAD-7's item structure - see
+    // clinicalDomainMapper.js's file header. Same never-downgrade principle
+    // as PHQ-9 above.
+    _calculateGAD7(text, fallbackScore) {
+        const mapped = this.domainMapper.mapGAD7(text);
+        const domainTotal = Math.min(mapped.total, 21);
+        const finalScore = Math.max(domainTotal, fallbackScore);
+
+        return {
+            score: finalScore,
+            severity: this._getScaleSeverity(finalScore, this.scaleRanges.gad7),
+            domains: mapped.domains,
+            methodology: 'Text-based approximation of the GAD-7\'s 7 item domains - not the validated self-report instrument, which asks about symptom frequency over the last two weeks directly.'
         };
     }
 
