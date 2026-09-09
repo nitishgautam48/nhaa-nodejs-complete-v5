@@ -151,10 +151,108 @@
         .scst-pattern-tag { display: inline-block; padding: 3px 12px; background: rgba(108,92,231,0.15); border: 1px solid rgba(108,92,231,0.2); border-radius: 30px; font-size: 11px; font-weight: 600; color: var(--accent-light); margin: 3px; }
         .scst-community-tag { display: inline-block; padding: 3px 12px; background: rgba(0,184,148,0.15); border: 1px solid rgba(0,184,148,0.2); border-radius: 30px; font-size: 11px; font-weight: 600; color: #00b894; margin: 3px; }
 
+        /* ============================================================
+           ACCOUNT MODAL - entirely optional, same pattern as
+           advanced_dashboard.html's victim-facing account widget, just
+           with lawyer-specific fields (Name, BCI No. instead of mobile).
+           A lawyer only needs one if they want to come back later and
+           check on cases they've submitted through this page.
+           ============================================================ */
+        .account-modal-overlay {
+            display: none; position: fixed; inset: 0; z-index: 1000;
+            align-items: center; justify-content: center; padding: 20px;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(2px);
+        }
+        .account-modal-overlay.open { display: flex; }
+        .account-modal {
+            width: 100%; max-width: 380px; background: #14142c;
+            border: 1px solid rgba(255,255,255,0.08); border-radius: 20px;
+            padding: 28px; position: relative;
+        }
+        .account-modal-close {
+            position: absolute; top: 14px; right: 14px; background: none; border: none;
+            color: rgba(255,255,255,0.4); font-size: 16px; cursor: pointer; padding: 6px;
+        }
+        .account-modal-close:hover { color: white; }
+        .account-modal-title { font-size: 17px; font-weight: 800; margin-bottom: 4px; }
+        .account-modal-subtitle { font-size: 12px; color: rgba(255,255,255,0.5); margin-bottom: 18px; line-height: 1.5; }
+        .account-modal-tabs { display: flex; gap: 4px; background: rgba(255,255,255,0.04); border-radius: 12px; padding: 4px; margin-bottom: 18px; }
+        .account-modal-tab {
+            flex: 1; padding: 8px; border: none; border-radius: 8px; background: transparent;
+            color: rgba(255,255,255,0.6); font-weight: 600; font-size: 12px; cursor: pointer; font-family: inherit;
+        }
+        .account-modal-tab.active { background: linear-gradient(135deg, #6c5ce7, #5a4bd1); color: white; }
+        .account-modal-label { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.5); margin: 0 0 6px 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .account-modal-input {
+            width: 100%; padding: 11px 14px; background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 10px;
+            color: #ffffff; font-size: 13px; font-family: inherit; margin-bottom: 12px;
+        }
+        .account-modal-input:focus { outline: none; border-color: #6c5ce7; box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.1); }
+        .account-modal-error { display: none; font-size: 12px; color: #ff8787; margin-bottom: 10px; }
+        .account-modal-btn {
+            width: 100%; padding: 11px; border: none; border-radius: 10px; font-weight: 700; font-size: 13px;
+            cursor: pointer; background: linear-gradient(135deg, #6c5ce7, #5a4bd1); color: white; font-family: inherit;
+        }
+        .account-modal-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .account-modal-skip { text-align: center; margin-top: 14px; font-size: 11px; color: rgba(255,255,255,0.4); }
+        .account-modal-skip a { color: #a29bfe; cursor: pointer; text-decoration: underline; }
+        .account-widget-btn {
+            display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border: none;
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px; color: var(--text-dim); font-size: 12px; font-weight: 600; cursor: pointer;
+            font-family: inherit; transition: 0.2s;
+        }
+        .account-widget-btn:hover { background: rgba(255,255,255,0.08); color: white; }
+
+        .track-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; margin-bottom: 14px; }
+        .track-fields input {
+            width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.03); color: #fff; font-family: inherit; font-size: 12px;
+        }
+        .track-fields input:focus { outline: none; border-color: var(--accent); }
+        .track-fields-hint { font-size: 11px; color: var(--text-faint); margin-bottom: 10px; }
+
         .footer { text-align: center; margin-top: 24px; color: var(--text-faint); font-size: 12px; }
     </style>
 </head>
 <body>
+<div id="accountModalOverlay" class="account-modal-overlay">
+    <div class="account-modal">
+        <button class="account-modal-close" onclick="closeAccountModal()"><i class="fas fa-xmark"></i></button>
+        <div class="account-modal-title">Track your cases for follow-up</div>
+        <div class="account-modal-subtitle">Completely optional - quick checks and summaries work fine without an account. Create one only if you want to come back later and check on cases you've submitted.</div>
+        <div class="account-modal-tabs">
+            <button class="account-modal-tab active" id="tabSignup" onclick="switchAccountMode('signup')">Sign Up</button>
+            <button class="account-modal-tab" id="tabLogin" onclick="switchAccountMode('login')">Log In</button>
+        </div>
+
+        <form id="signupForm" onsubmit="return submitRegister(event)">
+            <div class="account-modal-label">Name</div>
+            <input type="text" id="suName" class="account-modal-input" placeholder="Your full name" autocomplete="off" required>
+            <div class="account-modal-label">Email ID</div>
+            <input type="email" id="suEmail" class="account-modal-input" placeholder="you@example.com" autocomplete="off" required>
+            <div class="account-modal-label">Create Password</div>
+            <input type="password" id="suPassword" class="account-modal-input" placeholder="At least 8 characters" autocomplete="new-password" required minlength="8">
+            <div class="account-modal-label">BCI Enrollment No.</div>
+            <input type="text" id="suBci" class="account-modal-input" placeholder="e.g. MAH/1234/2020" autocomplete="off" required>
+            <div id="signupError" class="account-modal-error"></div>
+            <button type="submit" id="signupSubmit" class="account-modal-btn">Create Account</button>
+        </form>
+
+        <form id="loginForm" onsubmit="return submitLogin(event)" style="display:none;">
+            <div class="account-modal-label">Email ID</div>
+            <input type="email" id="liEmail" class="account-modal-input" placeholder="you@example.com" autocomplete="off" required>
+            <div class="account-modal-label">Password</div>
+            <input type="password" id="liPassword" class="account-modal-input" placeholder="Password" autocomplete="current-password" required>
+            <div id="loginError" class="account-modal-error"></div>
+            <button type="submit" id="loginSubmit" class="account-modal-btn">Log In</button>
+        </form>
+
+        <div class="account-modal-skip"><a onclick="closeAccountModal()">Continue without an account</a></div>
+    </div>
+</div>
+
 <div class="container">
     <header class="header">
         <div class="header-left">
@@ -166,6 +264,9 @@
         </div>
         <div class="header-right">
             <span class="live-pill"><span class="dot"></span> Live</span>
+            <button class="account-widget-btn" id="accountWidgetBtn" onclick="openAccountModal()">
+                <i class="fas fa-user"></i> <span id="accountWidgetLabel">Sign up / Log in</span>
+            </button>
             <a href="/" class="home-link"><i class="fas fa-house"></i> Home</a>
         </div>
     </header>
@@ -195,6 +296,13 @@
                 <div class="card-title"><i class="fas fa-bolt"></i> Describe the incident</div>
                 <label class="field-label">Short description or excerpt:</label>
                 <textarea id="scstInput" rows="8" placeholder="e.g. A Dalit man was falsely convicted after fabricated evidence..."></textarea>
+                <div id="quickTrackFields" style="display:none;">
+                    <div class="track-fields-hint"><i class="fas fa-bookmark"></i> Logged in as a lawyer - optionally tag this check to a case for follow-up.</div>
+                    <div class="track-fields">
+                        <input type="text" id="quickCaseNumber" placeholder="Case No. (optional)">
+                        <input type="text" id="quickCourt" placeholder="Court (optional)">
+                    </div>
+                </div>
                 <button class="btn btn-primary" onclick="analyzeSCST()">
                     <i class="fas fa-search"></i> Analyze Pattern
                 </button>
@@ -215,6 +323,13 @@
                 <div class="divider-or">OR PASTE TEXT</div>
                 <label class="field-label">Paste the case text directly:</label>
                 <textarea id="lawyerTextInput" rows="6" placeholder="Paste FIR / chargesheet / judgment text here..."></textarea>
+                <div id="docTrackFields" style="display:none;">
+                    <div class="track-fields-hint"><i class="fas fa-bookmark"></i> Logged in as a lawyer - optionally tag this summary to a case for follow-up.</div>
+                    <div class="track-fields">
+                        <input type="text" id="docCaseNumber" placeholder="Case No. (optional)">
+                        <input type="text" id="docCourt" placeholder="Court (optional)">
+                    </div>
+                </div>
                 <button class="btn btn-primary" onclick="summarizeCaseDocument()" id="lawyerSummarizeBtn">
                     <i class="fas fa-file-contract"></i> Generate Case Summary
                 </button>
@@ -231,6 +346,35 @@
                     <p>Run a quick check or generate a case summary to see results here</p>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div class="card" id="myCasesCard" style="margin-top:20px;">
+        <div class="card-title">
+            <i class="fas fa-user-check"></i> My Tracked Cases
+            <span style="margin-left:auto; font-size:11px; color:var(--text-faint); font-weight:400;">Checks & summaries you've submitted while logged in</span>
+        </div>
+        <div id="myCasesLoggedOut" style="padding:16px; text-align:center; color:var(--text-dim); font-size:13px;">
+            <i class="fas fa-lock" style="margin-right:6px;"></i>
+            <a onclick="openAccountModal()" style="color:var(--accent-light); cursor:pointer; text-decoration:underline;">Log in or create an account</a>
+            to see status updates on checks and case summaries you've submitted - completely optional, this page works fine without it.
+        </div>
+        <div id="myCasesLoggedIn" style="display:none; overflow-x:auto;">
+            <table style="width:100%; border-collapse:collapse; font-size:13px;">
+                <thead>
+                    <tr>
+                        <th style="text-align:left; padding:8px 12px; color:var(--text-faint); border-bottom:1px solid rgba(255,255,255,0.06);">Case ID</th>
+                        <th style="text-align:left; padding:8px 12px; color:var(--text-faint); border-bottom:1px solid rgba(255,255,255,0.06);">Date</th>
+                        <th style="text-align:left; padding:8px 12px; color:var(--text-faint); border-bottom:1px solid rgba(255,255,255,0.06);">Case No.</th>
+                        <th style="text-align:left; padding:8px 12px; color:var(--text-faint); border-bottom:1px solid rgba(255,255,255,0.06);">Court</th>
+                        <th style="text-align:left; padding:8px 12px; color:var(--text-faint); border-bottom:1px solid rgba(255,255,255,0.06);">Severity</th>
+                        <th style="text-align:left; padding:8px 12px; color:var(--text-faint); border-bottom:1px solid rgba(255,255,255,0.06);">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="myCasesTableBody">
+                    <tr><td colspan="6" style="text-align:center; color:var(--text-faint); padding:20px 0;">Loading...</td></tr>
+                </tbody>
+            </table>
         </div>
     </div>
 
@@ -252,6 +396,175 @@
     })();
 
     let lawyerSelectedFile = null;
+
+    // ============================================================
+    //  LAWYER ACCOUNT (optional) - same pattern as advanced_dashboard.html's
+    //  victim-facing account widget, kept under its own sessionStorage key
+    //  so a lawyer signed in here is never confused with a victim account
+    //  signed in on the assessment dashboard in another tab.
+    // ============================================================
+    const USER_IDENTITY_STORAGE = 'nhaa_lawyer_identity';
+
+    function getUserIdentity() {
+        try {
+            const raw = sessionStorage.getItem(USER_IDENTITY_STORAGE);
+            return raw ? JSON.parse(raw) : null;
+        } catch { return null; }
+    }
+
+    function updateAccountBadge() {
+        const identity = getUserIdentity();
+        const label = document.getElementById('accountWidgetLabel');
+        const btn = document.getElementById('accountWidgetBtn');
+        if (identity) {
+            label.textContent = identity.name || identity.email;
+            btn.onclick = logoutUser;
+            btn.title = 'Click to log out';
+        } else {
+            label.textContent = 'Sign up / Log in';
+            btn.onclick = openAccountModal;
+            btn.removeAttribute('title');
+        }
+        document.getElementById('quickTrackFields').style.display = identity ? 'block' : 'none';
+        document.getElementById('docTrackFields').style.display = identity ? 'block' : 'none';
+        loadMyCases();
+    }
+
+    const MY_CASES_SEVERITY_COLOR = {
+        Critical: '#d63031', Severe: '#e17055', Moderate: '#fdcb6e', Mild: '#00b894', Minimal: '#00b894'
+    };
+
+    async function loadMyCases() {
+        const identity = getUserIdentity();
+        const loggedOutEl = document.getElementById('myCasesLoggedOut');
+        const loggedInEl = document.getElementById('myCasesLoggedIn');
+        if (!identity) {
+            loggedOutEl.style.display = 'block';
+            loggedInEl.style.display = 'none';
+            return;
+        }
+        loggedOutEl.style.display = 'none';
+        loggedInEl.style.display = 'block';
+        const tbody = document.getElementById('myCasesTableBody');
+        try {
+            const response = await fetch(`${API_URL}/cases/mine`, {
+                headers: { 'x-user-token': identity.token }
+            });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok || !result.success) {
+                if (response.status === 401) {
+                    logoutUser();
+                    return;
+                }
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#ff8787; padding:20px 0;">Could not load your cases.</td></tr>';
+                return;
+            }
+            const myCases = result.data.cases || [];
+            if (myCases.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-faint); padding:20px 0;">No checks or summaries submitted yet while logged in.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = myCases.map(c => `
+                <tr>
+                    <td style="padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.04);">${escapeHtml(c.id)}</td>
+                    <td style="padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.04);">${new Date(c.timestamp).toLocaleString()}</td>
+                    <td style="padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.04);">${escapeHtml(c.caseNumber) || '<span style="color:var(--text-faint);">-</span>'}</td>
+                    <td style="padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.04);">${escapeHtml(c.court) || '<span style="color:var(--text-faint);">-</span>'}</td>
+                    <td style="padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.04); color:${MY_CASES_SEVERITY_COLOR[c.severity] || '#fff'};">${escapeHtml(c.severity)}</td>
+                    <td style="padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.04);">${escapeHtml(c.status || 'Pending')}</td>
+                </tr>
+            `).join('');
+        } catch (err) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#ff8787; padding:20px 0;">Could not reach the server.</td></tr>';
+        }
+    }
+
+    function openAccountModal() {
+        document.getElementById('accountModalOverlay').classList.add('open');
+    }
+
+    function closeAccountModal() {
+        document.getElementById('accountModalOverlay').classList.remove('open');
+    }
+
+    function switchAccountMode(mode) {
+        const isSignup = mode === 'signup';
+        document.getElementById('tabSignup').classList.toggle('active', isSignup);
+        document.getElementById('tabLogin').classList.toggle('active', !isSignup);
+        document.getElementById('signupForm').style.display = isSignup ? 'block' : 'none';
+        document.getElementById('loginForm').style.display = isSignup ? 'none' : 'block';
+    }
+
+    async function submitRegister(event) {
+        event.preventDefault();
+        const name = document.getElementById('suName').value.trim();
+        const email = document.getElementById('suEmail').value.trim();
+        const password = document.getElementById('suPassword').value;
+        const bciNumber = document.getElementById('suBci').value.trim();
+        const errorEl = document.getElementById('signupError');
+        const submitBtn = document.getElementById('signupSubmit');
+        errorEl.style.display = 'none';
+        submitBtn.disabled = true;
+        try {
+            const response = await fetch(`${API_URL}/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, password, bciNumber })
+            });
+            const result = await response.json().catch(() => ({}));
+            if (response.ok && result.success) {
+                try { sessionStorage.setItem(USER_IDENTITY_STORAGE, JSON.stringify(result.user)); } catch {}
+                updateAccountBadge();
+                closeAccountModal();
+            } else {
+                errorEl.textContent = result.error || 'Could not create account.';
+                errorEl.style.display = 'block';
+            }
+        } catch (err) {
+            errorEl.textContent = 'Could not reach the server. Try again.';
+            errorEl.style.display = 'block';
+        } finally {
+            submitBtn.disabled = false;
+        }
+        return false;
+    }
+
+    async function submitLogin(event) {
+        event.preventDefault();
+        const email = document.getElementById('liEmail').value.trim();
+        const password = document.getElementById('liPassword').value;
+        const errorEl = document.getElementById('loginError');
+        const submitBtn = document.getElementById('loginSubmit');
+        errorEl.style.display = 'none';
+        submitBtn.disabled = true;
+        try {
+            const response = await fetch(`${API_URL}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const result = await response.json().catch(() => ({}));
+            if (response.ok && result.success) {
+                try { sessionStorage.setItem(USER_IDENTITY_STORAGE, JSON.stringify(result.user)); } catch {}
+                updateAccountBadge();
+                closeAccountModal();
+            } else {
+                errorEl.textContent = result.error || 'Could not log in.';
+                errorEl.style.display = 'block';
+            }
+        } catch (err) {
+            errorEl.textContent = 'Could not reach the server. Try again.';
+            errorEl.style.display = 'block';
+        } finally {
+            submitBtn.disabled = false;
+        }
+        return false;
+    }
+
+    function logoutUser() {
+        try { sessionStorage.removeItem(USER_IDENTITY_STORAGE); } catch {}
+        updateAccountBadge();
+    }
 
     function escapeHtml(str) {
         const div = document.createElement('div');
@@ -288,11 +601,20 @@
         if (!text.trim()) { alert('Please enter text to analyze.'); return; }
         const resultsBody = document.getElementById('resultsBody');
         resultsBody.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Analyzing...</p></div>';
+        const identity = getUserIdentity();
+        const requestBody = { text };
+        if (identity) {
+            requestBody.email = identity.email;
+            const caseNumber = document.getElementById('quickCaseNumber').value.trim();
+            const court = document.getElementById('quickCourt').value.trim();
+            if (caseNumber) requestBody.caseNumber = caseNumber;
+            if (court) requestBody.court = court;
+        }
         try {
             const response = await fetch(`${API_URL}/scst/analyze`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text })
+                body: JSON.stringify(requestBody)
             });
             const result = await response.json();
             if (!result.success) throw new Error('Analysis failed');
@@ -340,6 +662,7 @@
                 <div style="margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.06); font-size:12px; color:var(--text-dim);">${escapeHtml(data.summary || 'Analysis complete.')}</div>
                 ${data.legalGuidance && data.legalGuidance.applicable ? renderQuickLegalGuidance(data.legalGuidance) : ''}
             `;
+            if (identity) loadMyCases();
         } catch (error) {
             resultsBody.innerHTML = `<div style="padding:16px; color:#d63031;">❌ Error: ${escapeHtml(error.message)}</div>`;
         }
@@ -393,6 +716,14 @@
             } else {
                 formData.append('text', text);
             }
+            const identity = getUserIdentity();
+            if (identity) {
+                formData.append('email', identity.email);
+                const caseNumber = document.getElementById('docCaseNumber').value.trim();
+                const court = document.getElementById('docCourt').value.trim();
+                if (caseNumber) formData.append('caseNumber', caseNumber);
+                if (court) formData.append('court', court);
+            }
 
             const response = await fetch(`${API_URL}/lawyer/summarize`, {
                 method: 'POST',
@@ -405,6 +736,7 @@
             }
 
             renderCaseSummary(result.data);
+            if (identity) loadMyCases();
         } catch (error) {
             resultsBody.innerHTML = `<div style="padding:16px; color:#d63031;">❌ ${escapeHtml(error.message)}</div>`;
         } finally {
@@ -582,6 +914,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         const hash = window.location.hash.replace('#', '');
         if (hash === 'doc') switchMode('doc');
+        updateAccountBadge();
     });
 </script>
 </body>

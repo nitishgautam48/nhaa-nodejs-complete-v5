@@ -65,13 +65,21 @@ class UserStore {
 
     // `passwordHash` must already be a bcrypt hash - this store never
     // hashes or verifies passwords itself, see services/auth.js.
-    createUser({ email, mobile, passwordHash }) {
+    // ✅ NEW: `name` and `bciNumber` (Bar Council of India enrollment
+    // number) are optional, additive fields - present for a lawyer
+    // account created via the Lawyer Assistant page, absent/empty for
+    // the original victim account flow. Same single user collection,
+    // no separate "lawyer store" - an account is just distinguished by
+    // which optional fields it has, not a hardcoded role split.
+    createUser({ email, mobile, passwordHash, name, bciNumber }) {
         const users = this._readAll();
         const normalizedEmail = (email || '').trim().toLowerCase();
         const user = {
             id: `USER-${Date.now().toString().slice(-8)}-${Math.round(Math.random() * 1e4)}`,
             email: normalizedEmail,
             mobile: (mobile || '').trim(),
+            name: (name || '').trim(),
+            bciNumber: (bciNumber || '').trim(),
             passwordHash,
             sessionToken: crypto.randomBytes(24).toString('hex'),
             createdAt: new Date().toISOString()

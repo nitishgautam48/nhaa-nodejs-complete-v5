@@ -265,7 +265,18 @@ class CaseSummarizer {
                 sentenceCount: sentences.length
             },
             methodology: 'Extractive summary (salience-scored sentence selection) + rule-based entity extraction + the same atrocity-pattern/legal-provisions engine used elsewhere in this app - not a generative AI summary. See file header for why.',
-            disclaimer: 'This is an AI-assisted DRAFTING AID, not a certified or verified case summary. It may miss context, misread ambiguous phrasing, or fail to extract details the source document states differently than expected. Always verify every fact, section number, date, and party name against the original document before relying on this in any filing, submission, or court presentation.'
+            disclaimer: 'This is an AI-assisted DRAFTING AID, not a certified or verified case summary. It may miss context, misread ambiguous phrasing, or fail to extract details the source document states differently than expected. Always verify every fact, section number, date, and party name against the original document before relying on this in any filing, submission, or court presentation.',
+            // ✅ NEW: internal-use passthrough (not meant for direct
+            // display, though harmless if shown) - lets the controller
+            // persist this result via the same _persistCase() every other
+            // case-creating endpoint uses, without a second parallel
+            // implementation of what a "scstAnalysis"-shaped object looks
+            // like. requiresPriorityReview is overridden to the corrected
+            // documentRequiresPriorityReview (see above) rather than left
+            // as scstTrainer.js's raw, first-person-gated value - a
+            // persisted case should show the same priority flag this
+            // summary itself displays, not the pre-fix one.
+            rawScstResult: { ...scstResult, requiresPriorityReview: documentRequiresPriorityReview }
         };
     }
 }

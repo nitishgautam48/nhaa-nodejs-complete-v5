@@ -33,14 +33,25 @@ class AuthService {
         this.users = new UserStore();
     }
 
-    async register({ email, password, mobile }) {
+    // ✅ NEW: `mobile` is now OPTIONAL (only format-validated if given,
+    // never required) and `name`/`bciNumber` accepted - the Lawyer
+    // Assistant page's signup form asks for Name, Email, Password, and
+    // BCI (Bar Council of India) enrollment number, not a mobile number.
+    // The original victim-facing signup still works exactly as before
+    // (mobile just happens to always be provided from that form).
+    // bciNumber is intentionally free-text, not format-validated - real
+    // BCI enrollment numbers vary by state bar council (e.g.
+    // "MAH/1234/2020", "D/1234/2015") with no single universal pattern,
+    // and rejecting a real one on a guessed format is worse than
+    // accepting it as-is.
+    async register({ email, password, mobile, name, bciNumber }) {
         const cleanEmail = (email || '').trim().toLowerCase();
         const cleanMobile = (mobile || '').replace(/[\s-]/g, '');
 
         if (!EMAIL_RE.test(cleanEmail)) {
             return { success: false, status: 400, error: 'Enter a valid email address.' };
         }
-        if (!MOBILE_RE.test(cleanMobile)) {
+        if (cleanMobile && !MOBILE_RE.test(cleanMobile)) {
             return { success: false, status: 400, error: 'Enter a valid mobile number.' };
         }
         if (!password || password.length < 8) {
@@ -51,8 +62,8 @@ class AuthService {
         }
 
         const passwordHash = await bcrypt.hash(password, 10);
-        const user = this.users.createUser({ email: cleanEmail, mobile: cleanMobile, passwordHash });
-        return { success: true, user: { id: user.id, email: user.email, mobile: user.mobile, token: user.sessionToken } };
+        const user = this.users.createUser({ email: cleanEmail, mobile: cleanMobile, passwordHash, name, bciNumber });
+        return { success: true, user: { id: user.id, email: user.email, mobile: user.mobile, name: user.name, bciNumber: user.bciNumber, token: user.sessionToken } };
     }
 
     async login({ email, password }) {
@@ -68,7 +79,7 @@ class AuthService {
         if (!matches) {
             return { success: false, status: 401, error: 'Incorrect email or password.' };
         }
-        return { success: true, user: { id: user.id, email: user.email, mobile: user.mobile, token: user.sessionToken } };
+        return { success: true, user: { id: user.id, email: user.email, mobile: user.mobile, name: user.name, bciNumber: user.bciNumber, token: user.sessionToken } };
     }
 
     // Resolves the user identified by an x-user-token header (see
@@ -76,7 +87,7 @@ class AuthService {
     // token rather than throwing, so callers can treat it as "not logged in".
     getUserByToken(token) {
         const user = this.users.findByToken(token);
-        return user ? { id: user.id, email: user.email, mobile: user.mobile } : null;
+        return user ? { id: user.id, email: user.email, mobile: user.mobile, name: user.name, bciNumber: user.bciNumber } : null;
     }
 }
 
