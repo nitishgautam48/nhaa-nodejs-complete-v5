@@ -31,13 +31,27 @@ class SCSTTrainer {
         // ============================================================
         this.abusePatterns = {
             'gang_rape': {
-                keywords: ['gang rape', 'raped', 'drugged', 'kidnapped', 'gang-raped'],
+                keywords: ['gang rape', 'raped', 'drugged', 'kidnapped', 'gang-raped',
+                    // ✅ NEW (keyword expansion): the original list required
+                    // either "gang rape" as a phrase or the bare verb
+                    // "raped" - real disclosures and case documents very
+                    // often use these equally common alternate phrasings.
+                    'sexually assaulted', 'raped her', 'raped him', 'sexually violated',
+                    'brutally raped', 'multiple men raped', 'attempted rape', 'tried to rape',
+                    'attempt to rape', 'rape attempt', 'abducted and raped', 'sexual assault'],
                 severity: 100,
                 description: 'Gang rape of SC/ST victim'
             },
             'child_abuse': {
                 keywords: ['14-year-old', '16-year-old', 'minor girl', 'minor boy',
-                    'pocso', 'child victim', 'underage'],
+                    'pocso', 'child victim', 'underage',
+                    // ✅ NEW: distinct child-specific phrasing, not just an
+                    // age number - a case document naming "the minor" or
+                    // "the child victim" without repeating the exact age
+                    // every time was previously missed.
+                    'raped the minor', 'raped the child', 'sexually abused the child',
+                    'sexually abused the minor', 'abused the child', 'child sexual abuse',
+                    'minor victim', 'school-going girl'],
                 severity: 100,
                 description: 'Child sexual abuse of SC/ST minor'
             },
@@ -68,7 +82,17 @@ class SCSTTrainer {
                     "she didn't want it", "he didn't want it",
                     'she did not want it', 'he did not want it',
                     'made her uncomfortable', 'made him uncomfortable',
-                    'took advantage of her', 'took advantage of him'],
+                    'took advantage of her', 'took advantage of him',
+                    // ✅ NEW (keyword expansion): additional common real-
+                    // world and legal-document phrasings for indirect/
+                    // attempted sexual abuse - "outraging modesty" is the
+                    // standard legal phrase used in FIRs/chargesheets
+                    // (IPC 354/BNS 74 territory), and "attempted to molest"
+                    // covers an attempt short of the completed act.
+                    'outraged her modesty', 'outraging her modesty', 'attempted to molest',
+                    'tried to molest', 'indecently touched', 'indecent touching',
+                    'unwanted physical contact', 'inappropriate contact', 'sexually harassed',
+                    'sexual harassment'],
                 severity: 85,
                 description: 'Sexual abuse or unwanted touching described indirectly, in the victim\'s own words or a case document\'s narration'
             },
@@ -77,6 +101,13 @@ class SCSTTrainer {
                     'tortured by police', 'police custody torture', 'custodial death',
                     'custodial torture', 'police assault', 'lathi charge',
                     'police station beating', 'assaulted by police', 'detained', 'released without charge',
+                    // ✅ NEW (keyword expansion): common real-world phrasings
+                    // for police/state violence not previously covered -
+                    // "thrashed", fake/staged encounters, and illegal
+                    // detention are all frequently reported forms.
+                    'thrashed by police', 'brutally beaten by police', 'illegal detention',
+                    'illegally detained', 'fake encounter', 'staged encounter',
+                    'encounter killing', 'police firing', 'baton charge',
                     // ✅ NEW: real gap found stress-testing the pipeline -
                     // forest officials assaulting Adivasi people over land/
                     // forest-rights disputes is a well-documented, common
@@ -108,18 +139,44 @@ class SCSTTrainer {
                     'denied promotion', 'workplace harassment', 'casteist remarks',
                     'denied treatment', 'refused to touch', 'healthcare denial',
                     'tease me', 'teased me', 'teasing me', 'bully me', 'bullied me',
-                    'bullying me', 'mock me', 'mocked me', 'made fun of me'],
+                    'bullying me', 'mock me', 'mocked me', 'made fun of me',
+                    // ✅ NEW (keyword expansion): direct, common phrasings
+                    // for caste-based discrimination not previously covered -
+                    // "caste-based discrimination"/"discriminated against"
+                    // are extremely common in case documents, and
+                    // caste-based name-calling is a frequent disclosure that
+                    // didn't require the word "slur" specifically.
+                    'caste-based discrimination', 'discriminated against', 'denied job',
+                    'refused service', 'refused entry due to caste', 'caste based abuse',
+                    'caste abuse', 'used casteist language', 'called by caste name',
+                    'caste name calling', 'insulted by caste name', 'lower caste',
+                    'upper caste'],
                 severity: 65,
                 description: 'Caste discrimination against SC/ST individual (workplace, healthcare, school, or general)'
             },
             'public_humiliation': {
-                keywords: ['paraded', 'stripped', 'paraded naked', 'publicly humiliated', 'humiliation'],
+                keywords: ['paraded', 'stripped', 'paraded naked', 'publicly humiliated', 'humiliation',
+                    // ✅ NEW (keyword expansion): these are specific,
+                    // well-documented forms of caste-based public humiliation
+                    // (garlanding with footwear, tonsuring, forced degrading
+                    // acts) that a generic word like "humiliated" doesn't
+                    // reliably cover.
+                    'garlanded with footwear', 'garlanded with slippers', 'tonsured',
+                    'blackened face', 'forced to eat human waste', 'forced to lick',
+                    'made to remove footwear', 'forced to remove clothes',
+                    'forced to remove clothing'],
                 severity: 80,
                 description: 'Public humiliation of SC/ST victim'
             },
             'false_conviction': {
                 keywords: ['falsely convicted', 'wrongful conviction', 'wrongfully jailed',
-                    'acquitted after', 'false charges filed against'],
+                    'acquitted after', 'false charges filed against',
+                    // ✅ NEW (keyword expansion): common phrasings for how a
+                    // false-conviction/malicious-prosecution case is
+                    // actually described, beyond the word "convicted" itself.
+                    'framed in a false case', 'falsely implicated', 'fabricated evidence',
+                    'planted evidence', 'malicious prosecution', 'wrongly accused',
+                    'wrongly implicated', 'false fir', 'foisted a false case'],
                 severity: 85,
                 description: 'False conviction of SC/ST individual'
             },
@@ -134,7 +191,16 @@ class SCSTTrainer {
                     'threatened his family', 'scared to tell', 'scared to report',
                     'afraid to tell', 'afraid to report', 'warned me not to tell',
                     'said he would', 'threatened to evict', 'blackmail', 'threatened to kill',
-                    'threatened to expose', 'threatened to release', 'told me not to tell'],
+                    'threatened to expose', 'threatened to release', 'told me not to tell',
+                    // ✅ NEW (keyword expansion): pressure to withdraw or
+                    // "compromise" a complaint is one of the most common
+                    // real-world forms of witness/victim coercion in caste
+                    // atrocity cases, distinct from an explicit threat of
+                    // violence, and wasn't covered by the phrases above.
+                    'pressured to withdraw', 'pressured to compromise', 'forced to compromise',
+                    'asked to settle', 'pressured to settle', 'witness intimidated',
+                    'threatened the witness', 'pressured to drop the case',
+                    'forced to withdraw the complaint'],
                 severity: 80,
                 description: 'Victim actively threatened or coerced into silence'
             },
@@ -147,9 +213,17 @@ class SCSTTrainer {
             'land_and_livelihood_dispossession': {
                 keywords: ['land occupied', 'forcibly occupied', 'encroachment',
                     'bonded labor', 'bonded labour', 'denied access to land',
-                    'evicted from land', 'seized their land'],
+                    'evicted from land', 'seized their land',
+                    // ✅ NEW (keyword expansion): manual scavenging is a
+                    // distinct, well-documented caste-based forced-labor
+                    // practice (prohibited by the Prohibition of Employment
+                    // as Manual Scavengers Act, 2013) that wasn't covered by
+                    // the generic "bonded labor" phrasing.
+                    'manual scavenging', 'forced to clean sewers', 'forced to clean drains',
+                    'forced sanitation work', 'denied ownership of land', 'illegally acquired land',
+                    'grabbed their land', 'land grab'],
                 severity: 78,
-                description: 'Illegal dispossession of SC/ST land or coerced/bonded labor'
+                description: 'Illegal dispossession of SC/ST land, coerced/bonded labor, or forced manual scavenging'
             },
             'denial_of_access_and_social_boycott': {
                 keywords: ['untouchability', 'denied entry', 'denied access', 'segregation',
@@ -161,13 +235,48 @@ class SCSTTrainer {
                     // existing entries ("denied entry" vs "not allowed to
                     // enter"; nothing at all covered school segregation).
                     'not allowed to enter', 'sit outside the classroom',
-                    'made to sit outside', 'denied electricity', 'denied water connection'],
+                    'made to sit outside', 'denied electricity', 'denied water connection',
+                    // ✅ NEW (keyword expansion): denial of access to a
+                    // shared water source (well, hand pump, tap) is one of
+                    // the single most common, historically documented forms
+                    // of untouchability practice in India - the original
+                    // list had no water-specific phrasing at all beyond the
+                    // unrelated "denied water connection" (a utility
+                    // hookup, not a public well), so a plain account of
+                    // being refused water/entry to a well scored no pattern
+                    // match whatsoever.
+                    'refused water', 'refused to give water', 'refused to let her drink',
+                    'refused to let him drink', 'refused to allow her to drink',
+                    'refused to allow him to drink', 'denied water from the well',
+                    'denied water from the tap', 'not allowed to draw water',
+                    'prevented from drawing water', 'refused access to the well',
+                    'stopped from using the well', 'barred from the well', 'water denied',
+                    // ✅ FIX: the phrasing above assumed "refused" would be
+                    // immediately followed by "water"/"access" - but the
+                    // single most natural real phrasing is "refused to
+                    // drink water from the well" (refused-TO-VERB, not
+                    // refused-NOUN), which none of the above actually
+                    // contain as a substring. Found stress-testing this
+                    // exact expansion against a real disclosure.
+                    'refused to drink', 'not allowed to drink', 'denied drinking water',
+                    'refused to draw water',
+                    'refused entry to the temple', 'refused temple entry', 'temple entry denied',
+                    'not allowed inside the temple', 'barred from the temple',
+                    'denied cremation ground', 'refused burial ground', 'barred from the cremation ground'],
                 severity: 68,
-                description: 'Denial of access to public resources or organized social/economic boycott'
+                description: 'Denial of access to public resources (water, temple, cremation ground, school) or organized social/economic boycott'
             },
             'election_and_political_intimidation': {
                 keywords: ['election violence', 'reserved seat', 'prevented from voting',
-                    'prevented from contesting', 'take office', 'panchayat election'],
+                    'prevented from contesting', 'take office', 'panchayat election',
+                    // ✅ NEW (keyword expansion): forced resignation of an
+                    // elected SC/ST representative (sarpanch, panch, gram
+                    // panchayat member) under pressure is a common, real
+                    // form of this intimidation not covered by "prevented
+                    // from contesting" alone.
+                    'forced to resign', 'forced resignation', 'forced her to resign',
+                    'forced him to resign', 'threatened to withdraw candidacy',
+                    'sarpanch post', 'gram panchayat seat', 'prevented from taking office'],
                 severity: 80,
                 description: 'Intimidation preventing an SC/ST person from voting, contesting, or holding office'
             },
@@ -175,13 +284,29 @@ class SCSTTrainer {
                 keywords: ['inter-caste marriage', 'inter caste marriage', 'honor killing',
                     'family threatened', 'forced to separate', 'threatened for marrying',
                     'marrying outside my caste', 'marrying outside caste', 'marrying outside our caste',
-                    'kill us both', 'disgrace to the family', 'disgracing the family'],
+                    'kill us both', 'disgrace to the family', 'disgracing the family',
+                    // ✅ NEW (keyword expansion): khap/caste-panchayat
+                    // pressure to end a relationship is a well-documented
+                    // form of this violence distinct from a direct threat
+                    // to kill or separate.
+                    'khap panchayat', 'caste panchayat', 'ordered to separate',
+                    'ostracized for marrying', 'ostracised for marrying',
+                    'social boycott for marrying', 'excommunicated for marrying'],
                 severity: 85,
                 description: 'Violence or threats over an inter-caste relationship/marriage'
             },
             'cyber_caste_harassment': {
                 keywords: ['online threat', 'cyberbullying', 'shared my photos',
-                    'social media harassment', 'posted casteist', 'trolled'],
+                    'social media harassment', 'posted casteist', 'trolled',
+                    // ✅ NEW (keyword expansion): more specific, common
+                    // real-world forms of caste-based online harassment -
+                    // morphed/manipulated images and harassment through a
+                    // specific platform or group chat, not just generic
+                    // "social media harassment".
+                    'morphed photos', 'morphed images', 'circulated my photos',
+                    'circulated her photos', 'circulated his photos', 'whatsapp group harassment',
+                    'facebook harassment', 'instagram harassment', 'caste-based trolling',
+                    'casteist comments online', 'casteist messages'],
                 severity: 65,
                 description: 'Caste-based harassment, threats, or blackmail conducted online'
             }

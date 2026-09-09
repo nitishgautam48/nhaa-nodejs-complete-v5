@@ -210,6 +210,32 @@ class LegalGuidance {
                 caseName: 'Arumugam Servai v. State of Tamil Nadu (2011)',
                 relevance: 'honor_based_violence, denial_of_access_and_social_boycott, discrimination',
                 holding: 'Supreme Court condemned khap/katta panchayats that decree or encourage honor killings, or impose social boycotts, over inter-caste or inter-religious marriage as "wholly illegal" and directed that they be "ruthlessly stamped out." Administrative and police officers were held directly, departmentally accountable if they fail to act against such practices in their jurisdiction despite having knowledge of them.'
+            },
+            // ✅ NEW (case-law expansion): police_brutality, coercive_silencing,
+            // and election_and_political_intimidation previously matched NO
+            // landmark judgment at all (only the 3 always-included "general
+            // SC/ST Act procedure" entries) despite being some of the more
+            // severe/common patterns - these fill that gap with genuinely
+            // well-known Indian judgments directly on point for each.
+            {
+                caseName: 'D.K. Basu v. State of West Bengal (1997)',
+                relevance: 'police_brutality',
+                holding: 'Supreme Court laid down eleven binding safeguards against custodial torture and death - including a right to inform a friend/relative of the arrest, a mandatory medical examination at arrest and every 48 hours in custody, and a memo of arrest countersigned by a witness - violation of which can attract departmental action and contempt of court, in addition to any criminal prosecution.'
+            },
+            {
+                caseName: 'Nilabati Behera v. State of Orissa (1993)',
+                relevance: 'police_brutality',
+                holding: 'Supreme Court held that a custodial death is a violation of the right to life under Article 21, and awarded monetary compensation directly under its constitutional jurisdiction - a "public law" remedy that is separate from, and does not require waiting for, any criminal prosecution of the officers responsible.'
+            },
+            {
+                caseName: 'Zahira Habibulla H. Sheikh v. State of Gujarat (2004) ("Best Bakery case")',
+                relevance: 'coercive_silencing',
+                holding: 'After finding that witnesses had been threatened and turned hostile, the Supreme Court ordered a retrial outside the state, holding that a fair trial is a fundamental right that cannot be allowed to be subverted by intimidation of victims and witnesses - directly reinforcing why a fresh complaint for witness/victim intimidation, and protective measures, matter even while the original case is ongoing.'
+            },
+            {
+                caseName: 'K. Krishna Murthy (Dr.) v. Union of India (2010)',
+                relevance: 'election_and_political_intimidation',
+                holding: 'Supreme Court upheld the constitutional validity of reservation for Scheduled Castes and Scheduled Tribes in panchayat and municipal elections, affirming that ensuring real political representation and participation at the local-body level for historically excluded communities is a legitimate and constitutionally protected objective.'
             }
         ];
 
@@ -259,6 +285,14 @@ class LegalGuidance {
                 keyProtections: [
                     'Illegal dispossession of SC/ST land or coerced/bonded labour is itself a scheduled offence under the Act',
                     'The Bonded Labour System (Abolition) Act, 1976 separately voids bonded-labour agreements and entitles the person to immediate release and rehabilitation',
+                    // ✅ NEW: manual scavenging keywords were added to this
+                    // pattern in scstTrainer.js, but the provision itself
+                    // said nothing about the specific law that bans it -
+                    // the Prohibition of Employment as Manual Scavengers Act,
+                    // 2013 both bans the practice outright and entitles a
+                    // person forced into it to rehabilitation, not just a
+                    // criminal remedy against whoever compelled it.
+                    'Manual scavenging is banned outright under the Prohibition of Employment as Manual Scavengers and their Rehabilitation Act, 2013 - anyone forced into it is entitled to identification, rehabilitation assistance, and alternative livelihood support, separate from any criminal case against whoever compelled it',
                     'District administration and NCSC/NCST can be approached for land-record disputes alongside a criminal complaint'
                 ],
                 authorities: ['police_fir', 'ncsc', 'ncst', 'nalsa_legal_aid']
