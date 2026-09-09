@@ -65,14 +65,7 @@ app.listen(PORT, () => {
     console.log(`   🏠 Landing: http://localhost:${PORT}/`);
     console.log(`   📝 Assessment: http://localhost:${PORT}/assessment`);
     console.log(`   🏛️ Authority: http://localhost:${PORT}/authority`);
-    console.log('='.repeat(60));
-    if (!process.env.AUTHORITY_ACCESS_CODE) {
-        console.warn('\n⚠️  AUTHORITY_ACCESS_CODE is not set - the authority');
-        console.warn('   dashboard\'s case data endpoints will refuse every');
-        console.warn('   request (fail closed) until it is configured.');
-        console.warn('   Set it in your environment (see .env.example) and restart.');
-    }
-    console.log('');
+    console.log('='.repeat(60) + '\n');
 });
 
 export default app;
