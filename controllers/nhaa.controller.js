@@ -181,11 +181,18 @@ class NHHAController {
 
             // Legal tab: redressal channels + provisions, combining SC/ST
             // pattern matches with any clinical crisis findings (e.g.
-            // suicide risk) from the same case.
+            // suicide risk) from the same case. text/dangerAssessment
+            // passed through so legalGuidance can distinguish workplace-
+            // context harassment (POSH Act) from domestic violence, and use
+            // the Danger-Assessment-inspired lethality signal (see
+            // humanIntelligence.js) rather than a generic score threshold
+            // for domestic_violence guidance.
             const legalGuidance = this.legalGuidance.getCombinedGuidance(
                 scstResult,
                 hybridDecision.finalScores || {},
-                expertRules
+                expertRules,
+                text,
+                humanIntelligence.dangerAssessment
             );
 
             const caseId = `NHAA-${Date.now().toString().slice(-8)}`;
@@ -298,6 +305,7 @@ class NHHAController {
             let scstResult = null;
             let scores = finalScores || {};
             let expertRules = [];
+            let dangerAssessment = null;
 
             if (text) {
                 scstResult = this.scstTrainer.analyze(text);
@@ -306,9 +314,15 @@ class NHHAController {
                 const aiResult = this.hybridAI.assess(textAnalysis, null, this.feedbackLearning.getLearnedParameters());
                 scores = aiResult.scores;
                 expertRules = this.expertSystem.applyRules(aiResult);
+                // Needed for the same workplace-context/Danger-Assessment
+                // disambiguation getGuidanceForClinical uses in the main
+                // assessment path (see legalGuidance.js) - without it, this
+                // standalone endpoint would silently fall back to the
+                // weaker score-only heuristic for domestic_violence.
+                dangerAssessment = this.humanIntelligence.synthesize(aiResult, expertRules, text).dangerAssessment;
             }
 
-            const legalGuidance = this.legalGuidance.getCombinedGuidance(scstResult, scores, expertRules);
+            const legalGuidance = this.legalGuidance.getCombinedGuidance(scstResult, scores, expertRules, text || '', dangerAssessment);
 
             res.status(200).json({
                 success: true,
