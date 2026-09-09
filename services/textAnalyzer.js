@@ -95,7 +95,11 @@ class TextAnalyzer {
                         "can't wash it off": 20, 'violated': 22, 'used me': 15,
                         'took advantage of me sexually': 28, 'traumatized': 20,
                         'traumatic experience': 18, 'scarred me': 15,
-                        'changed me forever': 12, 'not the same person anymore': 15
+                        'changed me forever': 12, 'not the same person anymore': 15,
+                        // ✅ NEW: physical restraint during assault - a
+                        // real, common way this is described that scored
+                        // zero (fell to a generic "depression" match instead).
+                        'pinned me down': 25, 'held me down': 25, 'pinned down': 22
                     },
                     hi: {
                         'आघात': 15, 'अत्याचार': 20, 'हिंसा': 25, 'बलात्कार': 30,
@@ -158,7 +162,15 @@ class TextAnalyzer {
                         'numb to everything': 16, "don't feel anything anymore": 18,
                         'life feels grey': 15, 'everything is grey': 14,
                         'no motivation for anything': 15, "can't function": 18,
-                        'barely functioning': 16, 'struggling to get through the day': 16
+                        'barely functioning': 16, 'struggling to get through the day': 16,
+                        // ✅ NEW: real gaps found stress-testing the pipeline -
+                        // common anhedonia/withdrawal phrasing that scored
+                        // ZERO despite being textbook depression disclosures.
+                        "don't see the point in getting up": 20, "no point in getting up": 20,
+                        "don't see the point anymore": 18,
+                        'feels like a waste of time': 16, 'everything feels like a waste': 16,
+                        'stopped talking to everyone': 18, "don't have energy for anything": 16,
+                        'no energy for anything': 16, 'lost all my energy': 14
                     },
                     hi: {
                         'उदास': 20, 'निराश': 20, 'बेकार': 18, 'खाली': 15,
@@ -198,7 +210,18 @@ class TextAnalyzer {
                         'stomach in knots': 14, 'shaking with anxiety': 18,
                         'having panic attacks': 22, 'panic attacks': 20,
                         'dread going': 12, 'afraid something bad will happen': 16,
-                        'worst case scenario': 10
+                        'worst case scenario': 10,
+                        // ✅ NEW: real gaps found stress-testing the pipeline.
+                        // 'heart racing' already existed but only matched as
+                        // a literal contiguous substring - "heart WON'T STOP
+                        // racing" doesn't contain it, which is exactly the
+                        // kind of natural interrupting phrasing real speech
+                        // has. Added common variants directly rather than
+                        // relying on exact substring matching to bridge them.
+                        "heart won't stop racing": 16, "can't breathe properly": 15,
+                        "can't catch my breath": 14, 'trouble breathing': 14,
+                        'hard to breathe': 14, 'imagining the worst happening': 14,
+                        'keep imagining the worst': 14
                     },
                     hi: {
                         'चिंता': 20, 'परेशान': 15, 'घबराहट': 20, 'डर': 15,
@@ -371,7 +394,16 @@ class TextAnalyzer {
                         'feel trapped': 18, 'no way out': 18, 'stuck with no options': 18,
                         'nowhere to turn': 18, 'no one to help me': 16,
                         'completely alone in this': 16, 'cut off from the world': 16,
-                        'no support system': 14, 'no one in my corner': 14
+                        'no support system': 14, 'no one in my corner': 14,
+                        // ✅ NEW: real gaps found stress-testing the pipeline -
+                        // economic entrapment ("no money and nowhere to go")
+                        // is one of the most well-documented reasons abuse
+                        // victims can't leave, and family rejection is a
+                        // major real isolation marker - both scored zero.
+                        'no money and nowhere to go': 22, 'nowhere to go if i leave': 22,
+                        'no money to leave': 20, 'cant afford to leave': 20,
+                        'disowned by my family': 18, 'family disowned me': 18,
+                        'cut off by my family': 16, 'family cut me off': 16
                     },
                     hi: {
                         'अकेला': 15, 'असहाय': 20, 'बेसहारा': 15, 'बेबस': 15,
@@ -424,7 +456,16 @@ class TextAnalyzer {
                         'posted my address online': 25, 'doxxed me': 22,
                         'threatened my job': 18, 'threatened to fire me': 20,
                         'blackmailing me': 25, 'using photos against me': 25,
-                        'threatened to hurt my pet': 20
+                        'threatened to hurt my pet': 20,
+                        // ✅ NEW: real gaps found stress-testing the
+                        // pipeline. "knows where my parents live" is a
+                        // textbook veiled threat (implying ability to harm
+                        // family without saying so directly) and scored
+                        // zero; same for a landlord's retaliatory-eviction
+                        // threat against someone reporting to police.
+                        'knows where my parents live': 25, 'knows where my family lives': 25,
+                        'knows where i live': 22, 'threatened to throw us out': 20,
+                        'threatened to evict us': 20, 'throw us out': 18, 'throw me out': 16
                     },
                     hi: {
                         'धमकी': 20, 'डराना': 15, 'बदमाशी': 15, 'जबरदस्ती': 15,
@@ -461,7 +502,17 @@ class TextAnalyzer {
                         'like i was floating': 20, 'not myself': 15, 'feel disconnected': 15,
                         'zoned out': 12, 'blank spells': 15, "can't remember parts of it": 18,
                         'lost time': 15, 'felt like a dream': 15, 'detached': 12,
-                        'like watching a movie': 18
+                        'like watching a movie': 18,
+                        // ✅ NEW: real gap found stress-testing the pipeline -
+                        // "black out" during a violent incident is a
+                        // real, common dissociative memory-gap marker,
+                        // distinct from the existing "lost time"/"can't
+                        // remember parts of it". Kept to the two-word
+                        // phrase (not bare "blackout") since that single
+                        // compound word much more often means a power
+                        // outage in ordinary speech.
+                        'black out': 20, 'blacked out': 20,
+                        "don't remember what happened": 16
                     },
                     hi: {
                         'खुद से अलग': 18, 'सपना जैसा': 15, 'असत्य जैसा': 15
@@ -478,7 +529,12 @@ class TextAnalyzer {
                         'cant concentrate': 15, 'hypervigilant': 20, 'constantly checking': 15,
                         'jump at every sound': 20, 'can\'t relax': 15, 'irritable': 12,
                         'on guard': 15, 'watching my back': 18, 'heart races': 15,
-                        'racing heart': 15, 'can\'t let my guard down': 20
+                        'racing heart': 15, 'can\'t let my guard down': 20,
+                        // ✅ NEW: real gap found stress-testing the pipeline -
+                        // a vivid, commonly-used real idiom for
+                        // hypervigilance that scored zero.
+                        'sleep with one eye open': 20, 'always listening for the door': 16,
+                        'listening for footsteps': 14
                     },
                     hi: {
                         'हमेशा सतर्क': 18, 'नींद नहीं आती': 15, 'चौंक जाता हूं': 15
@@ -496,7 +552,17 @@ class TextAnalyzer {
                         'avoid anything that reminds me': 22, 'try not to think about it': 15,
                         'stopped doing things i used to enjoy': 18, 'quit my job to avoid': 20,
                         'moved to avoid': 18, 'changed my route': 15, "can't watch": 12,
-                        'avoid being alone with': 18
+                        'avoid being alone with': 18,
+                        // ✅ NEW: real gap found stress-testing the pipeline -
+                        // "quit my job to avoid" already existed but didn't
+                        // match the equally common "quit my job because I
+                        // couldn't be near him" phrasing.
+                        "couldn't be in the same room as him": 18,
+                        "couldn't be in the same room as her": 18,
+                        "couldn't be in the same building as him": 18,
+                        "couldn't be in the same building as her": 18,
+                        "can't be around him": 16, "can't be around her": 16,
+                        'avoid being in the same room': 16
                     },
                     hi: {
                         'वहां नहीं जाता': 15, 'बात नहीं करना चाहता': 15
