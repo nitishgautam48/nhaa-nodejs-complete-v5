@@ -90,6 +90,12 @@ class CSSRSLadder {
                     'not want to continue anymore', 'not want to continue any longer',
                     'not want to continue living', 'not to continue anymore',
                     'not to continue any longer', 'not to continue living',
+                    // ✅ NEW: same false negative, different wording - "not
+                    // want to continue my/his/her life" (no "anymore"/"any
+                    // longer") is just as explicit but wasn't covered here.
+                    'not want to continue my life', 'not want to continue his life',
+                    'not want to continue her life', 'not to continue my life',
+                    'not to continue his life', 'not to continue her life',
                     'want not to live', 'want not to be alive', 'want not to exist'],
                 hi: ['आत्महत्या', 'मर जाना', 'जान ले लेना', 'मरना चाहता हूँ', 'खत्म कर देना']
             },
