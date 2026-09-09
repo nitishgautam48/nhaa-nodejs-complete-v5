@@ -58,8 +58,11 @@ class NHHAController {
     //  Never returns a password or password hash in any response.
     // ============================================================
     async registerUser(req, res) {
-        const { email, password, mobile } = req.body || {};
-        const result = await this.auth.register({ email, password, mobile });
+        // name/bciNumber are optional - only sent by the Lawyer
+        // Assistant page's signup form (see auth.js's header note on why
+        // mobile is no longer required either).
+        const { email, password, mobile, name, bciNumber } = req.body || {};
+        const result = await this.auth.register({ email, password, mobile, name, bciNumber });
         if (!result.success) {
             return res.status(result.status).json({ success: false, error: result.error });
         }
@@ -97,7 +100,7 @@ class NHHAController {
     // `contact` is entirely optional - only present if the person chose to
     // create/log into an account before submitting (see the account widget
     // in advanced_dashboard.html); anonymous submissions omit it.
-    _persistCase({ caseId, text, language, hybridDecision, scstAnalysis, legalGuidance, source, contact, clinicalScales, clinicalReasoning, expertRules }) {
+    _persistCase({ caseId, text, language, hybridDecision, scstAnalysis, legalGuidance, source, contact, clinicalScales, clinicalReasoning, expertRules, caseNumber, court }) {
         try {
             const severityLevel = hybridDecision?.severity?.level ||
                 scstAnalysis?.severityLevel || 'Minimal';
@@ -145,6 +148,17 @@ class NHHAController {
                 clinicalScales: clinicalScales || null,
                 clinicalReasoning: clinicalReasoning || null,
                 expertRules: expertRules || null,
+                // ✅ NEW: Lawyer Assistant "follow-up" tracking - a
+                // lawyer's own case number and which court it's before,
+                // entirely optional and only ever set from the two
+                // lawyer-facing endpoints (scstAnalyze/summarizeCaseDocument).
+                // Lets a case submitted through the Lawyer Assistant page
+                // show up correctly labeled in "My Cases" for the lawyer
+                // who's tracking it, distinct from an official FIR/court
+                // case number extracted FROM a document's text (see
+                // caseSummarizer.js's separate extractedEntities.firNumbers).
+                caseNumber: caseNumber || null,
+                court: court || null,
                 status: 'Pending',
                 officer: 'Unassigned',
                 contact: contact && (contact.email || contact.mobile)
@@ -290,7 +304,11 @@ class NHHAController {
 
     async scstAnalyze(req, res) {
         try {
-            const { text } = req.body;
+            // email/caseNumber/court are optional - only sent from the
+            // Lawyer Assistant page's Quick Pattern Check when the lawyer
+            // is logged in and chooses to track this check (see
+            // _persistCase's caseNumber/court note).
+            const { text, email, caseNumber, court } = req.body;
             if (!text) {
                 return res.status(400).json({ success: false, error: 'Text required' });
             }
@@ -304,7 +322,9 @@ class NHHAController {
             this._persistCase({
                 caseId, text, language: lang,
                 hybridDecision: { finalScores: textAnalysis.scores },
-                scstAnalysis: result, legalGuidance, source: 'scst_tab'
+                scstAnalysis: result, legalGuidance, source: 'scst_tab',
+                contact: email ? { email } : null,
+                caseNumber, court
             });
 
             res.status(200).json({
@@ -379,7 +399,13 @@ class NHHAController {
     async summarizeCaseDocument(req, res) {
         try {
             const file = req.file;
-            const pastedText = req.body.text;
+            // email/caseNumber/court are optional, multer parses them as
+            // regular body fields alongside the uploaded file for a
+            // multipart request the same way it does for a pasted-text
+            // JSON request - only present when the lawyer is logged in
+            // and chooses to track this summary (see _persistCase's
+            // caseNumber/court note).
+            const { text: pastedText, email, caseNumber, court } = req.body;
 
             if (!file && !pastedText) {
                 return res.status(400).json({
@@ -410,8 +436,26 @@ class NHHAController {
                 });
             }
 
+            // ✅ NEW: "follow up" tracking - only persisted when a logged-in
+            // lawyer's email is provided, reusing the same _persistCase()
+            // (and therefore the same "My Cases" lookup) every other
+            // case-creating endpoint already uses.
+            let caseId = null;
+            if (email) {
+                caseId = `NHAA-${Date.now().toString().slice(-8)}`;
+                this._persistCase({
+                    caseId, text, language: 'en',
+                    scstAnalysis: summary.rawScstResult,
+                    legalGuidance: summary.applicableLaw,
+                    source: 'lawyer_doc',
+                    contact: { email },
+                    caseNumber, court
+                });
+            }
+
             res.status(200).json({
                 success: true,
+                caseId,
                 data: {
                     sourceName: sourceName,
                     extractionWarning: extractionWarning,
