@@ -64,6 +64,22 @@ class NHHAController {
         res.status(200).json({ success: true, user: result.user });
     }
 
+    // "My Cases": every case submitted while logged in (contact.email set
+    // to this account's email - see hybridAssessment/_persistCase), so
+    // someone can check status (Pending/Assigned/Escalated/Resolved) later
+    // without needing their case ID. Requires the per-user x-user-token
+    // issued at register/login - a case's contents are sensitive enough
+    // that a bare email in a query string isn't sufficient to hand them back.
+    getMyCases(req, res) {
+        const token = req.headers['x-user-token'];
+        const user = this.auth.getUserByToken(token);
+        if (!user) {
+            return res.status(401).json({ success: false, error: 'Not logged in or session expired.' });
+        }
+        const cases = this.db.getAllCases().filter(c => c.contact && c.contact.email === user.email);
+        res.status(200).json({ success: true, data: { cases } });
+    }
+
     // Shared by hybridAssessment and scstAnalyze so both entry points
     // (the victim-facing assessment AND the SC/ST-specific tab) create a
     // real, server-side case record an authority can actually see.
