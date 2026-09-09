@@ -170,7 +170,18 @@ class TextAnalyzer {
                         "don't see the point anymore": 18,
                         'feels like a waste of time': 16, 'everything feels like a waste': 16,
                         'stopped talking to everyone': 18, "don't have energy for anything": 16,
-                        'no energy for anything': 16, 'lost all my energy': 14
+                        'no energy for anything': 16, 'lost all my energy': 14,
+                        // ✅ NEW: current slang for depressive/burnt-out
+                        // states. Deliberately excludes ambiguous terms
+                        // that are overwhelmingly used for trivial things
+                        // in casual speech (e.g. "I'm cooked", "triggered")
+                        // - same judgment call already applied to
+                        // hyperbolic suicide-adjacent slang above.
+                        'living in survival mode': 16, 'survival mode': 12,
+                        'running on fumes': 12, 'empty husk': 16,
+                        'feel like an empty husk': 18, 'existing not living': 16,
+                        'surviving not living': 16, "i'm not okay bestie": 14,
+                        'not vibing with life': 14
                     },
                     hi: {
                         'उदास': 20, 'निराश': 20, 'बेकार': 18, 'खाली': 15,
@@ -221,7 +232,11 @@ class TextAnalyzer {
                         "heart won't stop racing": 16, "can't breathe properly": 15,
                         "can't catch my breath": 14, 'trouble breathing': 14,
                         'hard to breathe': 14, 'imagining the worst happening': 14,
-                        'keep imagining the worst': 14
+                        'keep imagining the worst': 14,
+                        // ✅ NEW: current rumination/overthinking phrasing.
+                        "can't shut my brain off": 14, "brain won't shut off": 14,
+                        'intrusive thoughts': 16, "mind won't stop": 12,
+                        'nervous system is fried': 14, 'nervous system fried': 14
                     },
                     hi: {
                         'चिंता': 20, 'परेशान': 15, 'घबराहट': 20, 'डर': 15,
@@ -295,7 +310,31 @@ class TextAnalyzer {
                         'no one would care if i disappeared': 28,
                         'everyone would be happier without me': 30,
                         'everyone happier without me': 28,
-                        'everyone better off without me': 30
+                        'everyone better off without me': 30,
+                        // ✅ NEW: "unalive" is now the dominant way younger
+                        // users describe actual suicidal ideation/self-harm
+                        // online - it emerged specifically to evade
+                        // platform content moderation on the literal words,
+                        // so unlike "I'm dead"/"kill me" (excluded above as
+                        // near-universally hyperbolic), its usage skews
+                        // heavily toward genuine disclosure. Omitting it
+                        // would leave a large, foreseeable blind spot
+                        // exactly among the demographic most likely to use
+                        // coded language for this. Same tier as
+                        // "kill myself"/"want to die".
+                        'unalive myself': 40, 'unalive me': 38, 'want to unalive myself': 40,
+                        'thinking about unaliving myself': 38, 'gonna unalive myself': 40,
+                        'self-deleting': 30, 'self delete': 28, 'deleting myself': 28,
+                        // ✅ NEW: other real, current crisis phrasing found
+                        // missing - not slang specifically, just common
+                        // real-world ways this gets said that weren't
+                        // covered yet.
+                        "not gonna make it another day": 32, "i'm not gonna make it": 30,
+                        "can't see a future for myself": 28, 'no future for me': 26,
+                        'signing off for good': 28, 'final goodbye': 30,
+                        'world would be better without me': 30,
+                        'urge to self harm': 24, 'self harm urges': 24,
+                        'wanted to hurt myself': 22
                     },
                     hi: {
                         'आत्महत्या': 35, 'मर जाना': 30, 'जान ले लेना': 30,
