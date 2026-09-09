@@ -29,16 +29,25 @@
             -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
         }
         .header p { color: rgba(255,255,255,0.6); font-size: 16px; margin-top: 8px; }
-        .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 20px; }
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 20px; max-width: 900px; margin-left: auto; margin-right: auto; }
         .card {
             background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
             border-radius: 20px; padding: 24px; text-align: center; transition: all 0.4s ease;
             cursor: pointer; position: relative; overflow: hidden;
+            display: flex; flex-direction: column; align-items: center;
         }
         .card:hover { transform: translateY(-8px); border-color: rgba(108, 92, 231, 0.3); box-shadow: 0 12px 48px rgba(0,0,0,0.4); }
         .card .icon { font-size: 40px; margin-bottom: 12px; }
         .card h2 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
-        .card p { color: rgba(255,255,255,0.6); font-size: 12px; line-height: 1.5; }
+        .card p {
+            color: rgba(255,255,255,0.6); font-size: 12px; line-height: 1.5;
+            /* ✅ FIX: grows to fill whatever space is left in the card,
+               pushing the badge below it to the same vertical position on
+               every card - previously the badge sat wherever the (varying-
+               length) description text happened to end, which is why the
+               three cards looked visually uneven. */
+            flex: 1; display: flex; align-items: center; margin: 0;
+        }
         .card .badge {
             display: inline-block; padding: 3px 12px; border-radius: 30px; font-size: 9px; font-weight: 700; margin-top: 8px;
         }
