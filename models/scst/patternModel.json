@@ -80,10 +80,19 @@
       "casteist remarks",
       "denied treatment",
       "refused to touch",
-      "healthcare denial"
+      "healthcare denial",
+      "tease me",
+      "teased me",
+      "teasing me",
+      "bully me",
+      "bullied me",
+      "bullying me",
+      "mock me",
+      "mocked me",
+      "made fun of me"
     ],
     "severity": 65,
-    "description": "Caste discrimination against SC/ST individual (workplace, healthcare, or general)"
+    "description": "Caste discrimination against SC/ST individual (workplace, healthcare, school, or general)"
   },
   "public_humiliation": {
     "keywords": [
