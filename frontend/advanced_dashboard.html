@@ -1422,6 +1422,19 @@
         loadHistory();
         restoreSession();
         document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
+
+        // ✅ FIX: the landing page's "SC/ST Atrocities" card links to
+        // advanced_dashboard.html#scst, expecting to land directly on the
+        // SC/ST Analysis tab - but nothing here ever read that hash, so
+        // the page just showed the default Assessment tab regardless of
+        // which card was clicked. Same pattern applies to any other
+        // #tabname link pointed at this page in the future.
+        const validTabs = ['assess', 'scst', 'legal', 'dashboard', 'history'];
+        const requestedTab = window.location.hash.replace('#', '');
+        if (validTabs.includes(requestedTab)) {
+            switchTab(requestedTab);
+        }
+
         console.log('🧠 NHAA Advanced Dashboard loaded.');
         console.log(`📡 API: ${API_URL}`);
         console.log(`📊 ${assessmentHistory.length} cases loaded`);
