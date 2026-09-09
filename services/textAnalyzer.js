@@ -70,7 +70,20 @@ class TextAnalyzer {
                         'forced himself': 28, 'forced herself': 28,
                         "didn't want it": 20, 'did not want it': 20,
                         'took advantage of me': 22, 'molested': 28, 'groped': 25,
-                        'sexually harassed': 25, 'sexually assaulted': 30
+                        'sexually harassed': 25, 'sexually assaulted': 30,
+                        // ✅ NEW: comprehensive trauma expansion - physical
+                        // abuse patterns, intrusive/PTSD-adjacent language,
+                        // and sexual trauma phrasing in victims' own words.
+                        'beaten badly': 28, 'beaten repeatedly': 28, 'physically abused': 25,
+                        'abused physically': 25, 'burned me': 25, 'burnt me': 25,
+                        'threw things at me': 20, 'smashed things': 15,
+                        "can't stop thinking about it": 18, 'keeps replaying in my head': 20,
+                        'haunted by what happened': 20, 'flinch when': 15,
+                        'still feel dirty': 22, 'feel disgusting after': 22,
+                        "can't wash it off": 20, 'violated': 22, 'used me': 15,
+                        'took advantage of me sexually': 28, 'traumatized': 20,
+                        'traumatic experience': 18, 'scarred me': 15,
+                        'changed me forever': 12, 'not the same person anymore': 15
                     },
                     hi: {
                         'आघात': 15, 'अत्याचार': 20, 'हिंसा': 25, 'बलात्कार': 30,
@@ -120,7 +133,20 @@ class TextAnalyzer {
                         'everything feels pointless': 18, "i don't care about anything anymore": 18,
                         'feel disconnected from everyone': 15, 'feel unworthy': 15,
                         'never good enough': 14, 'not good enough': 12,
-                        'feel inadequate': 13, 'feel inferior': 13, 'feel incompetent': 12
+                        'feel inadequate': 13, 'feel inferior': 13, 'feel incompetent': 12,
+                        // ✅ NEW: functional/behavioral depression markers -
+                        // these are literally what clinical screening tools
+                        // (like the PHQ-9 this app's clinicalScales.js
+                        // already references) ask about, in plain language.
+                        "can't get out of bed": 20, "don't want to get out of bed": 20,
+                        'sleeping all day': 15, "can't sleep at all": 15,
+                        'lost my appetite': 15, 'stopped eating': 18,
+                        'crying every day': 20, 'cry myself to sleep': 20,
+                        'feel like a ghost': 16, 'just going through the motions': 16,
+                        'numb to everything': 16, "don't feel anything anymore": 18,
+                        'life feels grey': 15, 'everything is grey': 14,
+                        'no motivation for anything': 15, "can't function": 18,
+                        'barely functioning': 16, 'struggling to get through the day': 16
                     },
                     hi: {
                         'उदास': 20, 'निराश': 20, 'बेकार': 18, 'खाली': 15,
@@ -152,7 +178,15 @@ class TextAnalyzer {
                         // the existing panic/racing-thoughts keywords.
                         'overthinking everything': 12, "can't stop overthinking": 14,
                         "mind won't stop racing": 14, 'constantly on edge': 12,
-                        'social anxiety': 15, 'performance anxiety': 12
+                        'social anxiety': 15, 'performance anxiety': 12,
+                        // ✅ NEW: somatic anxiety symptoms and catastrophic
+                        // thinking - real, specific ways anxiety actually
+                        // presents, not just the word "anxiety" itself.
+                        "can't stop worrying": 15, 'worried sick': 16,
+                        'stomach in knots': 14, 'shaking with anxiety': 18,
+                        'having panic attacks': 22, 'panic attacks': 20,
+                        'dread going': 12, 'afraid something bad will happen': 16,
+                        'worst case scenario': 10
                     },
                     hi: {
                         'चिंता': 20, 'परेशान': 15, 'घबराहट': 20, 'डर': 15,
@@ -196,7 +230,19 @@ class TextAnalyzer {
                         'everyone would be better off without me': 32, "everyone's better off without me": 32,
                         "i'm a burden to everyone": 22, "i'm just a burden": 20,
                         "what's the point of living": 25, "what's the point anymore": 18,
-                        'no one would notice if i was gone': 28, 'nobody would notice if i disappeared': 28
+                        'no one would notice if i was gone': 28, 'nobody would notice if i disappeared': 28,
+                        // ✅ NEW: clinically-recognized suicide warning
+                        // signs - giving away possessions and saying
+                        // goodbye are well-documented behavioral markers in
+                        // suicide prevention literature, not just verbal
+                        // expressions. Kept deliberately specific to avoid
+                        // the hyperbole-prone language explicitly excluded
+                        // earlier in this file (see the header comment
+                        // above this category).
+                        'giving away my things': 30, 'giving away my belongings': 30,
+                        'saying goodbye to everyone': 28, 'wrote a goodbye letter': 32,
+                        "i have nothing to live for": 32, 'have a plan to end my life': 40,
+                        "won't be here much longer": 25
                     },
                     hi: {
                         'आत्महत्या': 35, 'मर जाना': 30, 'जान ले लेना': 30,
@@ -281,7 +327,15 @@ class TextAnalyzer {
                         'no one checks on me': 14, 'no one cares about me': 16,
                         'feel unloved': 15, 'feel abandoned by everyone': 18,
                         'everyone left me': 15, 'feel forgotten by everyone': 15,
-                        'everyone is better than me': 13
+                        'everyone is better than me': 13,
+                        // ✅ NEW: feeling trapped and lacking support - a
+                        // distinct vulnerability marker from social
+                        // exclusion, common in both abuse and general
+                        // crisis contexts.
+                        'feel trapped': 18, 'no way out': 18, 'stuck with no options': 18,
+                        'nowhere to turn': 18, 'no one to help me': 16,
+                        'completely alone in this': 16, 'cut off from the world': 16,
+                        'no support system': 14, 'no one in my corner': 14
                     },
                     hi: {
                         'अकेला': 15, 'असहाय': 20, 'बेसहारा': 15, 'बेबस': 15,
@@ -323,7 +377,18 @@ class TextAnalyzer {
                         'stalking my social media': 18, 'creepy vibes': 10,
                         'predatory behavior': 22, "he's controlling af": 18,
                         "he's so controlling": 18, 'red flags': 10,
-                        'sliding into my dms after i said no': 18
+                        'sliding into my dms after i said no': 18,
+                        // ✅ NEW: digital harassment and coercive threats -
+                        // stalking behavior and blackmail patterns common
+                        // in both online harassment and abusive
+                        // relationships.
+                        "he keeps calling me": 15, "won't stop texting me": 18,
+                        'showed up at my house': 22, 'waiting outside my work': 20,
+                        'following my car': 22, 'sent me threatening messages': 25,
+                        'posted my address online': 25, 'doxxed me': 22,
+                        'threatened my job': 18, 'threatened to fire me': 20,
+                        'blackmailing me': 25, 'using photos against me': 25,
+                        'threatened to hurt my pet': 20
                     },
                     hi: {
                         'धमकी': 20, 'डराना': 15, 'बदमाशी': 15, 'जबरदस्ती': 15,
