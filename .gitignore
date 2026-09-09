@@ -3,3 +3,8 @@ node_modules/
 *.log
 .DS_Store
 Thumbs.db
+
+# Password hashes and account contact info should never be committed,
+# even hashed - unlike data/cases.json (already committed by this
+# project's existing convention), this is credential material.
+data/users.json
