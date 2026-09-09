@@ -341,7 +341,6 @@
     <!-- TABS -->
     <nav class="tabs">
         <button class="tab-btn active" onclick="switchTab('assess')"><i class="fas fa-microphone-alt"></i> Assessment</button>
-        <button class="tab-btn" onclick="switchTab('scst')"><i class="fas fa-gavel"></i> SC/ST Analysis</button>
         <button class="tab-btn" onclick="switchTab('legal')"><i class="fas fa-balance-scale"></i> Legal Redressal</button>
         <button class="tab-btn" onclick="switchTab('lawyer')"><i class="fas fa-user-tie"></i> Lawyer Assistant</button>
         <button class="tab-btn" onclick="switchTab('dashboard')"><i class="fas fa-chart-pie"></i> Dashboard</button>
@@ -485,28 +484,6 @@
         </div>
     </div>
 
-    <!-- PAGE 2: SC/ST ANALYSIS -->
-    <div id="page-scst" class="page">
-        <div class="card">
-            <div class="card-title"><i class="fas fa-gavel"></i> SC/ST Atrocities Analysis</div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-                <div>
-                    <label style="font-size:13px; color:rgba(255,255,255,0.6);">Enter text to analyze for SC/ST atrocity patterns:</label>
-                    <textarea id="scstInput" rows="4" placeholder="Describe an incident or case..." style="margin-top:8px;"></textarea>
-                    <button class="btn btn-primary" onclick="analyzeSCST()" style="margin-top:10px;">
-                        <i class="fas fa-search"></i> Analyze SC/ST Pattern
-                    </button>
-                </div>
-                <div id="scstResults">
-                    <div style="text-align:center; padding:20px; color:rgba(255,255,255,0.4);">
-                        <i class="fas fa-search" style="font-size:32px;"></i>
-                        <p style="margin-top:8px;">Enter text to analyze</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- PAGE: LEGAL REDRESSAL -->
     <div id="page-legal" class="page">
         <div class="card">
@@ -536,35 +513,69 @@
         </div>
     </div>
 
-    <!-- PAGE: LAWYER ASSISTANT -->
+    <!-- PAGE: LAWYER ASSISTANT (Quick Pattern Check + Case Document Summary) -->
     <div id="page-lawyer" class="page">
         <div class="card">
-            <div class="card-title"><i class="fas fa-user-tie"></i> Lawyer Assistant - Case Document Summary</div>
+            <div class="card-title"><i class="fas fa-user-tie"></i> Lawyer Assistant</div>
             <p style="font-size:12px; color:rgba(255,255,255,0.5); margin-bottom:14px;">
-                Upload an SC/ST atrocity or sexual-offence case document (FIR, chargesheet, or judgment - PDF, DOCX, or TXT), or paste
-                the text directly, to get a structured summary: key facts, detected offense categories, extracted sections/dates/parties,
-                applicable law, and relevant case law - ready to review before a hearing or presentation.
+                Two ways to check a case: a quick pattern check on a short description, or a full structured summary
+                from an uploaded case document - key facts, detected offense categories, extracted sections/dates/parties,
+                applicable law, and relevant case law, ready to review before a hearing or presentation.
             </p>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-                <div>
-                    <label style="font-size:13px; color:rgba(255,255,255,0.6);">Upload case document (PDF, DOCX, or TXT):</label>
-                    <input type="file" id="lawyerFileInput" accept=".pdf,.docx,.txt" onchange="handleLawyerFileSelect(event)" style="margin-top:8px; width:100%; font-size:12px; color:rgba(255,255,255,0.7);">
-                    <div id="lawyerFileName" style="font-size:11px; color:#00b894; margin-top:6px;"></div>
+            <div style="display:flex; gap:8px; margin-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:14px;">
+                <button class="btn btn-primary btn-sm" id="lawyerSubtabQuickBtn" onclick="switchLawyerSubtab('quick')">
+                    <i class="fas fa-bolt"></i> Quick Pattern Check
+                </button>
+                <button class="btn btn-outline btn-sm" id="lawyerSubtabDocBtn" onclick="switchLawyerSubtab('doc')">
+                    <i class="fas fa-file-contract"></i> Case Document Summary
+                </button>
+            </div>
 
-                    <label style="font-size:13px; color:rgba(255,255,255,0.6); display:block; margin-top:14px;">Or paste the case text directly:</label>
-                    <textarea id="lawyerTextInput" rows="6" placeholder="Paste FIR / chargesheet / judgment text here..." style="margin-top:8px;"></textarea>
-
-                    <button class="btn btn-primary" onclick="summarizeCaseDocument()" style="margin-top:10px;" id="lawyerSummarizeBtn">
-                        <i class="fas fa-file-contract"></i> Generate Case Summary
-                    </button>
-                    <div style="font-size:11px; color:rgba(255,255,255,0.35); margin-top:10px;">
-                        <i class="fas fa-info-circle"></i> This is an AI-assisted drafting aid (rule-based extraction, not a generative summary) - always verify against the original document before relying on it in any filing or presentation.
+            <!-- SUBTAB: QUICK PATTERN CHECK (formerly the standalone SC/ST Analysis tab) -->
+            <div id="lawyerSubtab-quick" class="lawyer-subtab">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                    <div>
+                        <label style="font-size:13px; color:rgba(255,255,255,0.6);">Enter text to analyze for SC/ST atrocity patterns:</label>
+                        <textarea id="scstInput" rows="4" placeholder="Describe an incident or case..." style="margin-top:8px;"></textarea>
+                        <button class="btn btn-primary" onclick="analyzeSCST()" style="margin-top:10px;">
+                            <i class="fas fa-search"></i> Analyze SC/ST Pattern
+                        </button>
+                        <div style="font-size:11px; color:rgba(255,255,255,0.35); margin-top:10px;">
+                            <i class="fas fa-info-circle"></i> For a quick check on a short description. For a full document (FIR, chargesheet, judgment), use Case Document Summary instead.
+                        </div>
+                    </div>
+                    <div id="scstResults">
+                        <div style="text-align:center; padding:20px; color:rgba(255,255,255,0.4);">
+                            <i class="fas fa-search" style="font-size:32px;"></i>
+                            <p style="margin-top:8px;">Enter text to analyze</p>
+                        </div>
                     </div>
                 </div>
-                <div id="lawyerResults">
-                    <div style="text-align:center; padding:20px; color:rgba(255,255,255,0.4);">
-                        <i class="fas fa-file-contract" style="font-size:32px;"></i>
-                        <p style="margin-top:8px;">Upload a document or paste case text to generate a summary</p>
+            </div>
+
+            <!-- SUBTAB: CASE DOCUMENT SUMMARY -->
+            <div id="lawyerSubtab-doc" class="lawyer-subtab" style="display:none;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                    <div>
+                        <label style="font-size:13px; color:rgba(255,255,255,0.6);">Upload case document (PDF, DOCX, or TXT):</label>
+                        <input type="file" id="lawyerFileInput" accept=".pdf,.docx,.txt" onchange="handleLawyerFileSelect(event)" style="margin-top:8px; width:100%; font-size:12px; color:rgba(255,255,255,0.7);">
+                        <div id="lawyerFileName" style="font-size:11px; color:#00b894; margin-top:6px;"></div>
+
+                        <label style="font-size:13px; color:rgba(255,255,255,0.6); display:block; margin-top:14px;">Or paste the case text directly:</label>
+                        <textarea id="lawyerTextInput" rows="6" placeholder="Paste FIR / chargesheet / judgment text here..." style="margin-top:8px;"></textarea>
+
+                        <button class="btn btn-primary" onclick="summarizeCaseDocument()" style="margin-top:10px;" id="lawyerSummarizeBtn">
+                            <i class="fas fa-file-contract"></i> Generate Case Summary
+                        </button>
+                        <div style="font-size:11px; color:rgba(255,255,255,0.35); margin-top:10px;">
+                            <i class="fas fa-info-circle"></i> This is an AI-assisted drafting aid (rule-based extraction, not a generative summary) - always verify against the original document before relying on it in any filing or presentation.
+                        </div>
+                    </div>
+                    <div id="lawyerResults">
+                        <div style="text-align:center; padding:20px; color:rgba(255,255,255,0.4);">
+                            <i class="fas fa-file-contract" style="font-size:32px;"></i>
+                            <p style="margin-top:8px;">Upload a document or paste case text to generate a summary</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -884,15 +895,46 @@
     }
 
     function switchTab(tab) {
+        // ✅ FIX: 'scst' used to be its own top-level tab/page - now folded
+        // into the Lawyer Assistant tab as its "Quick Pattern Check"
+        // subtab (see switchLawyerSubtab below). landing.html's "SC/ST
+        // Atrocities" card still links to /scst -> #scst, and this
+        // function's own hash-routing at the bottom of the file still
+        // accepts 'scst' - both would otherwise silently break (no
+        // page-scst element, no .tab-btn with onclick*="scst" to
+        // activate) since there's no longer a page/tab actually named
+        // 'scst'.
+        let wantsQuickSubtab = false;
+        if (tab === 'scst') {
+            tab = 'lawyer';
+            wantsQuickSubtab = true;
+        }
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('page-' + tab).classList.add('active');
         document.querySelector(`.tab-btn[onclick*="${tab}"]`).classList.add('active');
+        if (wantsQuickSubtab) switchLawyerSubtab('quick');
         if (tab === 'dashboard' || tab === 'history') loadHistory();
         if (tab === 'history') loadMyCases();
         if (tab === 'legal' && typeof latestLegalGuidance !== 'undefined' && latestLegalGuidance) {
             renderLegalGuidance(latestLegalGuidance, latestLegalSource);
         }
+    }
+
+    // Lawyer Assistant tab's two subtabs (Quick Pattern Check / Case
+    // Document Summary) - a plain show/hide toggle, not a second copy of
+    // the .page/.tab-btn machinery above, since both subtabs live inside
+    // the same page and never need independent deep-linking beyond what
+    // switchTab('scst') already provides for the quick-check one.
+    function switchLawyerSubtab(subtab) {
+        document.getElementById('lawyerSubtab-quick').style.display = subtab === 'quick' ? 'block' : 'none';
+        document.getElementById('lawyerSubtab-doc').style.display = subtab === 'doc' ? 'block' : 'none';
+        const quickBtn = document.getElementById('lawyerSubtabQuickBtn');
+        const docBtn = document.getElementById('lawyerSubtabDocBtn');
+        quickBtn.classList.toggle('btn-primary', subtab === 'quick');
+        quickBtn.classList.toggle('btn-outline', subtab !== 'quick');
+        docBtn.classList.toggle('btn-primary', subtab === 'doc');
+        docBtn.classList.toggle('btn-outline', subtab !== 'doc');
     }
 
     // ============================================================
@@ -2040,9 +2082,24 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-        loadHistory();
-        restoreSession();
-        updateAccountBadge();
+        // ✅ FIX: these ran as one unguarded sequence - if ANY of them
+        // threw (found while testing: loadHistory() throws when Chart.js
+        // failed to load from its CDN, e.g. a slow/blocked network),
+        // every step AFTER it silently never ran at all: restoreSession(),
+        // updateAccountBadge(), and critically the hash-based deep-link
+        // routing below (landing.html's "SC/ST Atrocities" card links
+        // here via #scst and would silently land on the default
+        // Assessment tab instead, with no visible error). Each step is
+        // now isolated so one failure can't cascade into unrelated
+        // features silently not working.
+        const initSteps = [
+            ['loadHistory', () => loadHistory()],
+            ['restoreSession', () => restoreSession()],
+            ['updateAccountBadge', () => updateAccountBadge()]
+        ];
+        for (const [name, fn] of initSteps) {
+            try { fn(); } catch (e) { console.error(`Dashboard init step "${name}" failed:`, e); }
+        }
         document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
 
         // ✅ FIX: the landing page's "SC/ST Atrocities" card links to
@@ -2050,8 +2107,10 @@
         // SC/ST Analysis tab - but nothing here ever read that hash, so
         // the page just showed the default Assessment tab regardless of
         // which card was clicked. Same pattern applies to any other
-        // #tabname link pointed at this page in the future.
-        const validTabs = ['assess', 'scst', 'legal', 'dashboard', 'history'];
+        // #tabname link pointed at this page in the future. 'scst' now
+        // maps into the Lawyer Assistant tab's Quick Pattern Check
+        // subtab - see switchTab()'s handling of the 'scst' name.
+        const validTabs = ['assess', 'scst', 'legal', 'lawyer', 'dashboard', 'history'];
         const requestedTab = window.location.hash.replace('#', '');
         if (validTabs.includes(requestedTab)) {
             switchTab(requestedTab);
