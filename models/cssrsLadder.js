@@ -78,7 +78,19 @@ class CSSRSLadder {
                     'want to unalive myself', 'thinking about unaliving myself',
                     'gonna unalive myself', 'unalive me', 'self-deleting', 'self delete',
                     'deleting myself', "can't see a future for myself", 'no future for me',
-                    "can't go on", "can't do this anymore", 'give up on life'],
+                    "can't go on", "can't do this anymore", 'give up on life',
+                    // ✅ NEW: real reported false negative - "do not want
+                    // to continue anymore in my life" is contiguous enough
+                    // to match as a literal substring even with "do"/"does"
+                    // and "want to" variants stripped down to this common
+                    // core ("not want to continue anymore/any longer/
+                    // living"). Same rung as the other non-specific active
+                    // ideation phrases above ("can't go on", "don't want to
+                    // be here") - active, but no stated method/plan.
+                    'not want to continue anymore', 'not want to continue any longer',
+                    'not want to continue living', 'not to continue anymore',
+                    'not to continue any longer', 'not to continue living',
+                    'want not to live', 'want not to be alive', 'want not to exist'],
                 hi: ['आत्महत्या', 'मर जाना', 'जान ले लेना', 'मरना चाहता हूँ', 'खत्म कर देना']
             },
             3: {

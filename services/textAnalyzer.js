@@ -370,7 +370,13 @@ class TextAnalyzer {
                         { regex: /\bthink(?:s|ing)?\s+(?:of|about)\s+(?:killing\s+myself|suicide|ending\s+(?:my\s+life|it\s+all))\b/i, weight: 38 },
                         { regex: /\bsuicidal\s+thoughts?\b/i, weight: 35 },
                         { regex: /\bthoughts?\s+of\s+suicide\b/i, weight: 35 },
-                        { regex: /\bdon'?t\s+want\s+to\s+(live|be\s+here|exist)\b/i, weight: 30 },
+                        // ✅ FIX: was "don'?t" only, so "do not want to
+                        // live" (two words, no contraction) fell through
+                        // entirely - the same contraction-vs-two-word gap
+                        // fixed elsewhere in this file (apostrophe
+                        // stripping), just not yet covered for this
+                        // specific pattern.
+                        { regex: /\b(?:don'?t|do\s+not|doesn'?t|does\s+not)\s+want\s+to\s+(live|be\s+here|exist)\b/i, weight: 30 },
                         // ✅ FIX: the pattern above only catches negation-
                         // first phrasing ("don't want to live"). It missed
                         // "want NOT to live" (want-first) entirely - a
@@ -382,7 +388,26 @@ class TextAnalyzer {
                         // "want not to live" fix - "not to continue
                         // anymore" is a real, explicit expression of
                         // suicidal intent using different phrasing.
-                        { regex: /\bnot\s+to\s+continue\s+(?:anymore|any\s*longer|living|this)\b/i, weight: 32 },
+                        // The bare "this" alternative is guarded with a
+                        // negative lookahead so it only matches when "this"
+                        // ends the clause ("not to continue this[.]") -
+                        // otherwise "not to continue this course"/"this
+                        // conversation" would false-positive on ordinary,
+                        // non-suicidal uses of "continue this <noun>".
+                        { regex: /\bnot\s+to\s+continue\s+(?:anymore|any\s*longer|living|this\s+(?:anymore|any\s*longer)|this(?!\s+\w))\b/i, weight: 32 },
+                        // ✅ FIX: real reported false negative - "I do not
+                        // want to continue anymore in my life" has "want
+                        // to" inserted between "not" and "continue", which
+                        // the two patterns above (requiring "not to
+                        // continue" or "don't/doesn't want to
+                        // live/be here/exist") both miss entirely. This is
+                        // a common, natural phrasing of the same indirect
+                        // suicidal disclosure - "not wanting to continue
+                        // [living/anymore]" - distinct from "not wanting to
+                        // continue [a task/conversation]" by requiring one
+                        // of the same life-ending terminal phrases as the
+                        // pattern above (same "this" guard, see above).
+                        { regex: /\bnot\s+want(?:s|ing|ed)?\s+to\s+continue\s+(?:anymore|any\s*longer|living|in\s+(?:my\s+)?life|this\s+(?:anymore|any\s*longer)|this(?!\s+\w))\b/i, weight: 32 },
                         { regex: /\bdone\s+with\s+(?:my\s+)?life\b/i, weight: 35 },
                         { regex: /\bno\s+longer\s+want(?:s|ing|ed)?\s+to\s+(?:live|be\s+alive|exist)\b/i, weight: 30 },
                         { regex: /\bwant(?:s|ing|ed)?\s+to\s+stop\s+living\b/i, weight: 30 },
