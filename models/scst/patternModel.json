@@ -60,10 +60,14 @@
       "police station beating",
       "assaulted by police",
       "detained",
-      "released without charge"
+      "released without charge",
+      "forest officers beat",
+      "beaten by forest officials",
+      "assaulted by forest department",
+      "forest guards beat"
     ],
     "severity": 85,
-    "description": "Police brutality against SC/ST victim"
+    "description": "Police or forest-department brutality against SC/ST victim"
   },
   "discrimination": {
     "keywords": [
@@ -160,7 +164,12 @@
       "social boycott",
       "economic boycott",
       "sit separately",
-      "eat separately"
+      "eat separately",
+      "not allowed to enter",
+      "sit outside the classroom",
+      "made to sit outside",
+      "denied electricity",
+      "denied water connection"
     ],
     "severity": 68,
     "description": "Denial of access to public resources or organized social/economic boycott"

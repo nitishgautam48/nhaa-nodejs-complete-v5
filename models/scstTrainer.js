@@ -58,9 +58,18 @@ class SCSTTrainer {
                 keywords: ['police beat', 'beaten by police', 'police torture',
                     'tortured by police', 'police custody torture', 'custodial death',
                     'custodial torture', 'police assault', 'lathi charge',
-                    'police station beating', 'assaulted by police', 'detained', 'released without charge'],
+                    'police station beating', 'assaulted by police', 'detained', 'released without charge',
+                    // ✅ NEW: real gap found stress-testing the pipeline -
+                    // forest officials assaulting Adivasi people over land/
+                    // forest-rights disputes is a well-documented, common
+                    // form of state violence against tribal communities
+                    // (see the Samatha land-rights case in
+                    // legalGuidance.js), but scored zero since only
+                    // "police" specifically was covered here.
+                    'forest officers beat', 'beaten by forest officials',
+                    'assaulted by forest department', 'forest guards beat'],
                 severity: 85,
-                description: 'Police brutality against SC/ST victim'
+                description: 'Police or forest-department brutality against SC/ST victim'
             },
             'discrimination': {
                 keywords: ['caste', 'discrimination', 'casteist slur', 'caste slur',
@@ -111,7 +120,14 @@ class SCSTTrainer {
             'denial_of_access_and_social_boycott': {
                 keywords: ['untouchability', 'denied entry', 'denied access', 'segregation',
                     'shunned', 'social boycott', 'economic boycott', 'sit separately',
-                    'eat separately'],
+                    'eat separately',
+                    // ✅ NEW: real gaps found stress-testing the pipeline -
+                    // both are extremely common, real ways this pattern is
+                    // described but used different wording than the
+                    // existing entries ("denied entry" vs "not allowed to
+                    // enter"; nothing at all covered school segregation).
+                    'not allowed to enter', 'sit outside the classroom',
+                    'made to sit outside', 'denied electricity', 'denied water connection'],
                 severity: 68,
                 description: 'Denial of access to public resources or organized social/economic boycott'
             },
@@ -148,7 +164,8 @@ class SCSTTrainer {
         this.authorityContext = [
             'teacher', 'employer', 'landlord', 'warden', 'priest', 'guardian',
             'doctor', 'in-law', 'police officer', 'government official',
-            'upper-caste employer', 'principal', 'supervisor', 'boss'
+            'upper-caste employer', 'principal', 'supervisor', 'boss',
+            'forest officer', 'forest official', 'forest department'
         ];
 
         // ============================================================
