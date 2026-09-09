@@ -156,6 +156,76 @@ class ClinicalDomainMapper {
                     'having panic attacks']
             }
         };
+
+        // PCL-5's real 20 items grouped into DSM-5's 4 clusters, with
+        // their REAL item counts (Intrusion=5, Avoidance=2, Negative
+        // Alterations in Cognition/Mood=7, Arousal/Reactivity=6) - reuses
+        // the already-curated trauma/dissociation/depression/hyperarousal/
+        // avoidance phrases from textAnalyzer.js per item, plus a small
+        // number of new phrases for the two items (distorted self-blame,
+        // reckless/self-destructive behavior) that had no existing
+        // coverage anywhere in this codebase.
+        this.pcl5Clusters = {
+            intrusion: {
+                label: 'Intrusion (Criterion B)',
+                items: {
+                    intrusiveMemories: {
+                        label: 'Repeated, disturbing memories of the event',
+                        phrases: ["can't stop thinking about it", 'keeps replaying in my head',
+                            "can't forget", 'still see it']
+                    },
+                    nightmares: { label: 'Repeated, disturbing dreams', phrases: ['nightmare', 'nightmares'] },
+                    flashbacks: { label: 'Feeling or acting as if the event were happening again', phrases: ['flashback', 'relive it', 'like watching a movie'] },
+                    distressAtCues: { label: 'Feeling very upset when reminded of the event', phrases: ['flinch when', 'haunted by what happened'] },
+                    physioReactions: { label: 'Strong physical reactions when reminded of the event', phrases: ['shaking', 'frozen'] }
+                }
+            },
+            avoidance: {
+                label: 'Avoidance (Criterion C)',
+                items: {
+                    avoidInternal: {
+                        label: 'Avoiding memories, thoughts, or feelings related to the event',
+                        phrases: ['avoid thinking about it', "can't talk about it", 'try not to think about it']
+                    },
+                    avoidExternal: {
+                        label: 'Avoiding external reminders (people, places, activities)',
+                        phrases: ["won't go back there", 'stopped going', 'stay away from',
+                            'avoid anything that reminds me', 'quit my job to avoid', 'moved to avoid',
+                            'changed my route', "can't watch", 'avoid being alone with',
+                            "couldn't be in the same room as him", "couldn't be in the same room as her",
+                            "couldn't be in the same building as him", "couldn't be in the same building as her"]
+                    }
+                }
+            },
+            negativeAlterations: {
+                label: 'Negative Alterations in Cognition/Mood (Criterion D)',
+                items: {
+                    inabilityToRemember: { label: 'Trouble remembering important parts of the event', phrases: ["can't remember parts of it", 'lost time', 'blank spells'] },
+                    negativeBeliefs: { label: 'Strong negative beliefs about oneself or the world', phrases: ['feel like a failure', 'never good enough', 'not good enough', 'feel unworthy', 'feel inadequate'] },
+                    // ✅ NEW: no existing coverage anywhere for distorted
+                    // self-blame - a real, common trauma-response item.
+                    distortedBlame: { label: 'Blaming oneself or others for the event or its consequences', phrases: ["it's my fault", 'i blame myself', 'should have stopped it', 'should have known better'] },
+                    negativeEmotionalState: { label: 'Persistent negative emotional state (fear, horror, guilt, shame)', phrases: ['horror', 'still feel dirty', 'feel disgusting after', 'violated'] },
+                    diminishedInterest: { label: 'Loss of interest in activities once enjoyed', phrases: ['lost interest in everything', "can't find joy in anything"] },
+                    detachment: { label: 'Feeling distant or cut off from other people', phrases: ['feel disconnected from everyone', 'not myself', 'feel disconnected', 'detached'] },
+                    inabilityPositiveEmotions: { label: 'Trouble experiencing positive emotions', phrases: ['numb to everything', "don't feel anything anymore", 'feel hollow', 'feel like a ghost'] }
+                }
+            },
+            arousal: {
+                label: 'Alterations in Arousal and Reactivity (Criterion E)',
+                items: {
+                    irritability: { label: 'Irritable behavior or angry outbursts', phrases: ['irritable', 'snapping at everyone', 'easily annoyed', 'short temper lately'] },
+                    // ✅ NEW: no existing coverage anywhere for reckless/
+                    // self-destructive behavior - a real PCL-5 item,
+                    // distinct from suicidal ideation itself.
+                    recklessBehavior: { label: 'Taking risks or engaging in self-destructive behavior', phrases: ['taking risks i never used to', 'being reckless lately'] },
+                    hypervigilance: { label: 'Being overly alert or watchful', phrases: ['hypervigilant', 'always on edge', 'on high alert', 'on guard', 'watching my back', 'sleep with one eye open'] },
+                    exaggeratedStartle: { label: 'Being jumpy or easily startled', phrases: ['startled easily', 'easily startled', 'jumpy', 'jump at every sound'] },
+                    concentrationProblems: { label: 'Difficulty concentrating', phrases: ["can't concentrate", 'cant concentrate', 'trouble concentrating', "can't focus on anything"] },
+                    sleepDisturbance: { label: 'Trouble falling or staying asleep', phrases: ["can't sleep", 'cant sleep', 'trouble sleeping'] }
+                }
+            }
+        };
     }
 
     _stripApostrophes(s) {
@@ -179,16 +249,18 @@ class ClinicalDomainMapper {
         }
     }
 
-    // Approximates a 0-3 PHQ-9/GAD-7 item rating from whether the domain's
-    // phrases matched at all - NOT from real day-frequency data. Any match
-    // is scored 2 ("more than half the days") as a middle-ground estimate,
-    // since disclosing a symptom in free text at all is a reasonably
-    // strong signal it isn't merely "not at all" (0) or a single passing
-    // day (1) - but text alone can't distinguish 2 from the maximum 3
-    // ("nearly every day") without explicit frequency language, so 3 is
-    // reserved for phrases that themselves state frequency/severity
-    // (e.g. "crying every day", "sleeping all day").
-    _itemScoreForDomain(text, domain) {
+    // Approximates an item rating from whether the domain's phrases
+    // matched at all - NOT from real day-frequency/severity data. Any
+    // match is scored at roughly two-thirds of the item's max (the
+    // "moderate/quite a bit" tier) as a middle-ground estimate, since
+    // disclosing a symptom in free text at all is a reasonably strong
+    // signal it isn't merely "not at all" or barely present - but text
+    // alone can't distinguish that from the true maximum without explicit
+    // frequency/intensity language, so the max is reserved for phrases
+    // that themselves state it (e.g. "crying every day", "sleeping all day").
+    // `maxScore` is 3 for PHQ-9/GAD-7 items, 4 for PCL-5 items (their real
+    // response scales differ - PCL-5 is "not at all" to "extremely").
+    _itemScoreForDomain(text, domain, maxScore = 3) {
         const dailyPhrases = ['every day', 'all day', 'every night', 'all the time', 'constantly'];
         let matched = false;
         let matchedPhrase = null;
@@ -204,17 +276,17 @@ class ClinicalDomainMapper {
         }
 
         if (!matched) return { score: 0, matchedPhrase: null };
-        return { score: dailyIndicated ? 3 : 2, matchedPhrase };
+        return { score: dailyIndicated ? maxScore : Math.round(maxScore * 0.67), matchedPhrase };
     }
 
     // Returns { total, domains: { <domainKey>: { label, score, matchedPhrase } } }
-    _mapDomains(text, domainDefs) {
+    _mapDomains(text, domainDefs, maxScore = 3) {
         const normalized = this._stripApostrophes((text || '').toLowerCase());
         const domains = {};
         let total = 0;
 
         for (const [key, domain] of Object.entries(domainDefs)) {
-            const { score, matchedPhrase } = this._itemScoreForDomain(normalized, domain);
+            const { score, matchedPhrase } = this._itemScoreForDomain(normalized, domain, maxScore);
             domains[key] = { label: domain.label, score, matchedPhrase };
             total += score;
         }
@@ -223,11 +295,37 @@ class ClinicalDomainMapper {
     }
 
     mapPHQ9(text) {
-        return this._mapDomains(text, this.phq9Domains);
+        return this._mapDomains(text, this.phq9Domains, 3);
     }
 
     mapGAD7(text) {
-        return this._mapDomains(text, this.gad7Domains);
+        return this._mapDomains(text, this.gad7Domains, 3);
+    }
+
+    // Returns { total, clusters: { intrusion: {total, items}, avoidance:
+    // {...}, negativeAlterations: {...}, arousal: {...} } }. PCL-5's 20
+    // items are grouped into DSM-5's 4 clusters with their REAL item
+    // counts (5/2/7/6) - a cluster with more real items can contribute
+    // more to the total, matching how the actual instrument weighs them,
+    // rather than treating all 4 clusters as equally-sized buckets.
+    mapPCL5(text) {
+        const normalized = this._stripApostrophes((text || '').toLowerCase());
+        const clusters = {};
+        let total = 0;
+
+        for (const [clusterKey, clusterDef] of Object.entries(this.pcl5Clusters)) {
+            const items = {};
+            let clusterTotal = 0;
+            for (const [itemKey, itemDef] of Object.entries(clusterDef.items)) {
+                const { score, matchedPhrase } = this._itemScoreForDomain(normalized, itemDef, 4);
+                items[itemKey] = { label: itemDef.label, score, matchedPhrase };
+                clusterTotal += score;
+            }
+            clusters[clusterKey] = { label: clusterDef.label, total: clusterTotal, items };
+            total += clusterTotal;
+        }
+
+        return { total, clusters };
     }
 }
 

@@ -99,7 +99,14 @@ class TextAnalyzer {
                         // ✅ NEW: physical restraint during assault - a
                         // real, common way this is described that scored
                         // zero (fell to a generic "depression" match instead).
-                        'pinned me down': 25, 'held me down': 25, 'pinned down': 22
+                        'pinned me down': 25, 'held me down': 25, 'pinned down': 22,
+                        // ✅ NEW: PCL-5's distorted self-blame item (see
+                        // models/clinicalDomainMapper.js phase 4 work) had
+                        // no coverage anywhere - added here too so it
+                        // moves the headline trauma score, not just the
+                        // PCL-5 sub-scale.
+                        "it's my fault": 16, 'i blame myself': 16,
+                        'should have stopped it': 14, 'should have known better': 12
                     },
                     hi: {
                         'आघात': 15, 'अत्याचार': 20, 'हिंसा': 25, 'बलात्कार': 30,
@@ -600,7 +607,11 @@ class TextAnalyzer {
                         // models/clinicalDomainMapper.js phase 2 work).
                         'snapping at everyone': 14, 'on edge with everyone': 12,
                         'easily annoyed': 12, 'short temper lately': 12,
-                        "can't sit still": 10
+                        "can't sit still": 10,
+                        // ✅ NEW: PCL-5's reckless/self-destructive behavior
+                        // item (see models/clinicalDomainMapper.js phase 4
+                        // work) had no coverage anywhere.
+                        'taking risks i never used to': 16, 'being reckless lately': 14
                     },
                     hi: {
                         'हमेशा सतर्क': 18, 'नींद नहीं आती': 15, 'चौंक जाता हूं': 15
