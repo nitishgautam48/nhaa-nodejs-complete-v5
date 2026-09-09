@@ -793,12 +793,23 @@
         // dashboard only ever showed the single SVI number, with no way to
         // see which specific indicators (trauma, intimidation, depression,
         // etc.) actually drove that score.
+        // ✅ FIX: found auditing this app - this whitelist was missing the
+        // six DSM-5 symptom categories added later (flashbacks, anhedonia,
+        // fatigue, panic, hopelessness, worthlessness - see
+        // textAnalyzer.js) and protective_factors. Since indicatorKeys
+        // below is built by filtering THIS list against the case's real
+        // finalScores (not the other way around), any score key missing
+        // here was silently excluded from what an officer sees for a
+        // case, even though the score itself was computed and stored.
         const INDICATOR_LABELS = {
             trauma: 'Trauma', depression: 'Depression', anxiety: 'Anxiety',
             suicidal_ideation: 'Suicide Risk', vulnerability: 'Vulnerability',
             intimidation: 'Intimidation', stress: 'Stress', fear: 'Fear',
             social_isolation: 'Social Isolation', dissociation: 'Dissociation',
-            hyperarousal: 'Hyperarousal', avoidance: 'Avoidance'
+            hyperarousal: 'Hyperarousal', avoidance: 'Avoidance',
+            protective_factors: 'Protective Factors', flashbacks: 'Flashbacks',
+            anhedonia: 'Anhedonia', fatigue: 'Fatigue', panic: 'Panic',
+            hopelessness: 'Hopelessness', worthlessness: 'Worthlessness'
         };
         const fs = c.finalScores || {};
         const indicatorKeys = Object.keys(INDICATOR_LABELS).filter(k => k in fs);
@@ -836,6 +847,43 @@
                 <strong>Patterns:</strong> ${(c.scstSummary.patterns || []).join(', ') || 'none'}<br>
                 <strong>Communities:</strong> ${(c.scstSummary.communities || []).join(', ') || 'none'}
                 ${c.scstSummary.escalation && c.scstSummary.escalation.length ? `<br><strong>Escalation:</strong> ${c.scstSummary.escalation.join('; ')}` : ''}
+            </div>`;
+        }
+
+        // ✅ NEW: found auditing this app - clinicalScales (C-SSRS/PHQ-9/
+        // GAD-7/PCL-5), clinicalReasoning (Danger Assessment/risk
+        // formulation), and expertRules were computed on every assessment
+        // but never persisted to the case record at all before this - an
+        // officer reviewing a case here had no access to any of it, only
+        // the raw finalScores. Now stored (see controllers/nhaa.controller.js
+        // _persistCase) and rendered here when present - null/undefined
+        // for older cases or ones from the lighter-weight Quick Pattern
+        // Check tab, which don't compute this.
+        const cs = c.clinicalScales;
+        const cr = c.clinicalReasoning;
+        const activatedRules = (c.expertRules || []).filter(r => r.activated);
+        const clinicalParts = [];
+        if (cs && cs.cssrs && cs.cssrs.ladder && cs.cssrs.ladder.rung > 0) {
+            clinicalParts.push(`<strong>C-SSRS:</strong> Rung ${cs.cssrs.ladder.rung}/5 - ${cs.cssrs.ladder.rungLabel}`);
+        }
+        if (cs && cs.phq9 && cs.phq9.score > 0) {
+            clinicalParts.push(`<strong>PHQ-9:</strong> ${cs.phq9.score}/27 - ${cs.phq9.severity}`);
+        }
+        if (cs && cs.gad7 && cs.gad7.score > 0) {
+            clinicalParts.push(`<strong>GAD-7:</strong> ${cs.gad7.score}/21 - ${cs.gad7.severity}`);
+        }
+        if (cs && cs.pcl5 && cs.pcl5.score > 0) {
+            clinicalParts.push(`<strong>PCL-5:</strong> ${cs.pcl5.score}/80 - ${cs.pcl5.severity}`);
+        }
+        if (cr && cr.dangerAssessment && cr.dangerAssessment.factorsPresent && cr.dangerAssessment.factorsPresent.length > 0) {
+            clinicalParts.push(`<strong>Danger Assessment:</strong> ${cr.dangerAssessment.factorsPresent.map(f => f.replace(/([A-Z])/g, ' $1').toLowerCase()).join(', ')}${cr.dangerAssessment.elevatedLethalityRisk ? ' (elevated lethality risk)' : ''}`);
+        }
+        if (activatedRules.length > 0) {
+            clinicalParts.push(`<strong>Expert rules:</strong> ${activatedRules.map(r => `${r.name} (${r.severity})`).join(', ')}`);
+        }
+        if (clinicalParts.length > 0) {
+            body += `<div style="margin-top:12px; padding:12px; background:rgba(108,92,231,0.06); border-radius:8px; font-size:12px; line-height:1.8;">
+                ${clinicalParts.join('<br>')}
             </div>`;
         }
 

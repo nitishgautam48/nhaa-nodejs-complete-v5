@@ -475,6 +475,24 @@
                 </div>
                     </div>
                 </details>
+
+                <!-- ✅ NEW: the C-SSRS ladder, PHQ-9/GAD-7/PCL-5 domain
+                     mapping, Danger Assessment, structured risk
+                     formulation, and expert-system rule activations were
+                     all computed on every single assessment request
+                     (see clinicalScales.js/humanIntelligence.js/
+                     expertSystem.js) but never rendered anywhere in
+                     either frontend file - a real gap found auditing this
+                     app: a large share of this session's clinical-
+                     methodology work was completely invisible to anyone
+                     actually using the tool. Collapsed by default (like
+                     the breakdown above) so it doesn't overwhelm the
+                     primary result, but now genuinely reachable. -->
+                <details class="breakdown-accordion" id="clinicalDetailAccordion" style="display:none;">
+                    <summary><span><i class="fas fa-stethoscope"></i> Clinical Assessment Detail</span></summary>
+                    <div class="breakdown-body" id="clinicalDetailBody"></div>
+                </details>
+
                 <div style="margin-top:10px; padding:8px 14px; background:rgba(255,255,255,0.02); border-radius:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
                     <span style="font-size:11px; color:rgba(255,255,255,0.4);"><i class="fas fa-shield-alt"></i> Confidence</span>
                     <span id="confidenceDisplay" style="font-weight:700; font-size:13px; color:#a29bfe;">High (85%)</span>
@@ -1373,6 +1391,119 @@
             `;
             grid.appendChild(div);
         }
+
+        renderClinicalDetail(data);
+    }
+
+    // ✅ NEW: renders clinicalScales.js's C-SSRS/PHQ-9/GAD-7/PCL-5 output
+    // and humanIntelligence.js's Danger Assessment / risk formulation /
+    // symptom-pattern / expert-system-rule output - all fully computed on
+    // every request but never shown anywhere before this (see the HTML
+    // comment above the accordion this renders into). Every sub-section
+    // renders only when it actually has a nonzero/matched signal, so a
+    // low-signal case doesn't show 30+ lines of "0" domains - and the
+    // whole accordion stays hidden entirely when nothing here applies.
+    function renderClinicalDetail(data) {
+        const accordion = document.getElementById('clinicalDetailAccordion');
+        const body = document.getElementById('clinicalDetailBody');
+        const scales = data.clinicalScales || {};
+        const reasoning = (data.hybridDecision && data.hybridDecision.clinicalReasoning) || {};
+        const rules = (data.expertRules || []).filter(r => r.activated);
+
+        const sections = [];
+
+        if (scales.cssrs && scales.cssrs.ladder && scales.cssrs.ladder.rung > 0) {
+            const l = scales.cssrs.ladder;
+            sections.push(`
+                <div class="legal-section-title"><i class="fas fa-layer-group"></i> C-SSRS Severity Ladder</div>
+                <div class="legal-provision-card">
+                    <div class="incident-tag">Rung ${l.rung} of 5 - ${scales.cssrs.risk}</div>
+                    <div class="primary-law">${l.rungLabel}</div>
+                    <div style="font-size:12px; color:rgba(255,255,255,0.7); line-height:1.6;">${l.description}${l.matchedPhrase ? ` <em>(matched: "${l.matchedPhrase}")</em>` : ''}</div>
+                </div>
+            `);
+        }
+
+        const renderDomainScale = (title, scale, maxLabel) => {
+            if (!scale) return '';
+            const activeDomains = Object.entries(scale.domains || {}).filter(([, d]) => d.score > 0);
+            if (scale.score === 0 && activeDomains.length === 0) return '';
+            return `
+                <div class="legal-section-title"><i class="fas fa-clipboard-list"></i> ${title}: ${scale.score}${maxLabel} - ${scale.severity}</div>
+                ${activeDomains.length > 0 ? `
+                    <ul class="legal-baseline-rights">
+                        ${activeDomains.map(([, d]) => `<li>${d.label}${d.matchedPhrase ? ` <em>("${d.matchedPhrase}")</em>` : ''}</li>`).join('')}
+                    </ul>
+                ` : ''}
+            `;
+        };
+        sections.push(renderDomainScale('PHQ-9 (Depression)', scales.phq9, '/27'));
+        sections.push(renderDomainScale('GAD-7 (Anxiety)', scales.gad7, '/21'));
+
+        if (scales.pcl5 && scales.pcl5.clusters) {
+            const activeClusters = Object.entries(scales.pcl5.clusters).filter(([, c]) => c.total > 0);
+            if (activeClusters.length > 0) {
+                sections.push(`
+                    <div class="legal-section-title"><i class="fas fa-clipboard-list"></i> PCL-5 (Trauma): ${scales.pcl5.score}/80 - ${scales.pcl5.severity}</div>
+                    ${activeClusters.map(([, c]) => `
+                        <div class="legal-provision-card">
+                            <div class="incident-tag">${c.label}</div>
+                            <ul>${Object.values(c.items).filter(i => i.score > 0).map(i => `<li>${i.label}${i.matchedPhrase ? ` <em>("${i.matchedPhrase}")</em>` : ''}</li>`).join('')}</ul>
+                        </div>
+                    `).join('')}
+                `);
+            }
+        }
+
+        if (reasoning.dangerAssessment && reasoning.dangerAssessment.factorsPresent && reasoning.dangerAssessment.factorsPresent.length > 0) {
+            sections.push(`
+                <div class="legal-priority-banner">
+                    <i class="fas fa-triangle-exclamation"></i> Danger Assessment: ${reasoning.dangerAssessment.factorsPresent.map(f => f.replace(/([A-Z])/g, ' $1').toLowerCase()).join(', ')}
+                    ${reasoning.dangerAssessment.elevatedLethalityRisk ? ' - elevated lethality risk' : ''}
+                </div>
+            `);
+        }
+
+        if (reasoning.riskFormulation && (reasoning.riskFormulation.riskFactorCount > 0 || reasoning.riskFormulation.protectiveFactorCount > 0)) {
+            const rf = reasoning.riskFormulation;
+            sections.push(`
+                <div class="legal-section-title"><i class="fas fa-scale-unbalanced"></i> Risk Formulation (multiplier: ${rf.multiplier.toFixed(2)}x)</div>
+                <ul class="legal-baseline-rights">
+                    ${[...rf.staticRiskFactors, ...rf.dynamicRiskFactors].map(f => `<li>Risk factor: ${f.replace(/_/g, ' ')}</li>`).join('')}
+                    ${rf.protectiveFactors.map(f => `<li>Protective factor: ${f.replace(/_/g, ' ')}</li>`).join('')}
+                </ul>
+            `);
+        }
+
+        if (reasoning.symptomPattern && reasoning.symptomPattern.clustersPresent && reasoning.symptomPattern.clustersPresent.length > 0) {
+            sections.push(`
+                <div class="legal-section-title"><i class="fas fa-diagram-project"></i> Symptom Pattern</div>
+                <p style="font-size:12px; color:rgba(255,255,255,0.7);">Spans ${reasoning.symptomPattern.clustersPresent.map(c => c.replace(/([A-Z])/g, ' $1').toLowerCase()).join(', ')} clusters${reasoning.symptomPattern.resemblesPTSDPattern ? ' - resembles a PTSD-consistent pattern (not a diagnosis)' : ''}.</p>
+            `);
+        }
+
+        if (rules.length > 0) {
+            sections.push(`
+                <div class="legal-section-title"><i class="fas fa-list-check"></i> Expert System Rules Activated</div>
+                ${rules.map(r => `
+                    <div class="legal-provision-card">
+                        <div class="incident-tag">${r.name} - ${r.severity} (${Math.round(r.confidence * 100)}% confidence)</div>
+                        <div style="font-size:12px; color:rgba(255,255,255,0.7);">${r.intervention || ''}</div>
+                    </div>
+                `).join('')}
+            `);
+        }
+
+        if (sections.filter(s => s).length === 0) {
+            accordion.style.display = 'none';
+            return;
+        }
+
+        accordion.style.display = '';
+        body.innerHTML = `
+            ${sections.join('')}
+            <div class="legal-disclaimer"><i class="fas fa-info-circle"></i> Text-based approximations of these clinical instruments, not the validated self-report/interview-administered versions - see each section's data for the full methodology note.</div>
+        `;
     }
 
     // Generates a real, downloadable report the person can save or print -
