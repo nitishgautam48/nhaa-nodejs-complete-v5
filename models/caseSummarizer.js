@@ -175,14 +175,14 @@ class CaseSummarizer {
         return parts.join(' ');
     }
 
-    _suggestNextSteps(scstResult, guidance, entities) {
+    _suggestNextSteps(scstResult, guidance, entities, documentRequiresPriorityReview) {
         const steps = [];
 
         if (entities.firNumbers.length === 0) {
             steps.push('No FIR number was detected in this document - if one has not yet been filed, note that under the Atrocities Act a police officer cannot require a preliminary inquiry before registering an FIR (Section 18A), and NALSA legal aid (15100) is available free of cost.');
         }
 
-        if (scstResult && scstResult.requiresPriorityReview) {
+        if (documentRequiresPriorityReview) {
             steps.push('This document was flagged for priority review based on the severity of the matched pattern(s) - treat case-timeline steps below as time-sensitive.');
         }
 
@@ -221,8 +221,28 @@ class CaseSummarizer {
         const scstResult = this.scstTrainer.analyze(text);
         const guidance = this.legalGuidance.getGuidanceForSCST(scstResult);
 
+        // ✅ FIX: real gap found auditing this feature - scstResult.
+        // requiresPriorityReview requires 2+ FIRST-PERSON markers
+        // ("I"/"me"/"my") alongside a Severe/Critical pattern (see
+        // scstTrainer.js's firstPersonMarkers comment) - a deliberate
+        // design for victim self-disclosure text, where firsthand voice
+        // is a genuine urgency signal distinct from third-party/news-
+        // style reporting. But case DOCUMENTS (FIRs, chargesheets,
+        // judgments) are written in third person as a matter of format,
+        // not credibility - "the accused gang-raped the victim" is
+        // exactly as urgent as "he raped me", just grammatically
+        // different. Applying the first-person gate here meant a
+        // Critical-severity case document could NEVER be flagged for
+        // priority review, regardless of severity - confirmed on a real
+        // test case (severity 100, requiresPriorityReview still false).
+        // A document already representing an official record doesn't
+        // need a firsthand-voice check the way anonymous crisis-line
+        // text does - severity alone is the right, sufficient signal
+        // here. Additive to (never downgrading) scstTrainer's own flag.
+        const documentRequiresPriorityReview = (scstResult.severity || 0) > 70 || !!scstResult.requiresPriorityReview;
+
         const overview = this._buildOverview(keyFacts, scstResult, entities);
-        const nextSteps = this._suggestNextSteps(scstResult, guidance, entities);
+        const nextSteps = this._suggestNextSteps(scstResult, guidance, entities, documentRequiresPriorityReview);
 
         return {
             success: true,
@@ -236,7 +256,7 @@ class CaseSummarizer {
                 .sort((a, b) => b.severity - a.severity),
             communitiesIdentified: scstResult.communities || [],
             overallSeverity: scstResult.severity || 0,
-            requiresPriorityReview: !!scstResult.requiresPriorityReview,
+            requiresPriorityReview: documentRequiresPriorityReview,
             applicableLaw: guidance,
             suggestedNextSteps: nextSteps,
             documentStats: {

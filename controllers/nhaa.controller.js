@@ -97,7 +97,7 @@ class NHHAController {
     // `contact` is entirely optional - only present if the person chose to
     // create/log into an account before submitting (see the account widget
     // in advanced_dashboard.html); anonymous submissions omit it.
-    _persistCase({ caseId, text, language, hybridDecision, scstAnalysis, legalGuidance, source, contact }) {
+    _persistCase({ caseId, text, language, hybridDecision, scstAnalysis, legalGuidance, source, contact, clinicalScales, clinicalReasoning, expertRules }) {
         try {
             const severityLevel = hybridDecision?.severity?.level ||
                 scstAnalysis?.severityLevel || 'Minimal';
@@ -129,6 +129,22 @@ class NHHAController {
                     priorityReview: !!scstAnalysis.requiresPriorityReview
                 } : null,
                 legalApplicable: !!(legalGuidance && legalGuidance.applicable),
+                // ✅ NEW: found auditing this app - the C-SSRS ladder,
+                // PHQ-9/GAD-7/PCL-5 domain mapping, Danger Assessment,
+                // risk formulation, symptom-pattern check, and expert-
+                // system rule activations were computed on every request
+                // but never persisted anywhere - only available in the
+                // single API response returned to whoever ran the
+                // assessment, then gone forever. An authority reviewing
+                // the case later in the Command Center had no access to
+                // any of it, only the raw finalScores. Stored here
+                // (all optional - undefined for the lighter-weight
+                // scstAnalyze() call site, which doesn't compute them)
+                // so the case detail view can show the same clinical
+                // detail the person who ran the assessment saw.
+                clinicalScales: clinicalScales || null,
+                clinicalReasoning: clinicalReasoning || null,
+                expertRules: expertRules || null,
                 status: 'Pending',
                 officer: 'Unassigned',
                 contact: contact && (contact.email || contact.mobile)
@@ -157,9 +173,18 @@ class NHHAController {
             if (audioFile) {
                 try {
                     audioAnalysis = await this.audioAnalyzer.analyze(audioFile.path);
-                    fs.unlinkSync(audioFile.path);
                 } catch (err) {
                     console.warn('Audio analysis failed:', err.message);
+                } finally {
+                    // ✅ FIX: this only ran on the success path before - if
+                    // analyze() threw, the catch block logged a warning but
+                    // the uploaded temp file was never deleted, leaking a
+                    // file on disk on every audio-analysis failure with no
+                    // way for it to ever get cleaned up (the top-level
+                    // catch below only fires if this whole request handler
+                    // throws uncaught, which this inner try/catch
+                    // specifically prevents).
+                    if (fs.existsSync(audioFile.path)) fs.unlinkSync(audioFile.path);
                 }
             }
 
@@ -205,7 +230,14 @@ class NHHAController {
 
             this._persistCase({
                 caseId, text, language: lang, hybridDecision, scstAnalysis: scstResult,
-                legalGuidance, source: 'assessment', contact: { email, mobile }
+                legalGuidance, source: 'assessment', contact: { email, mobile },
+                clinicalScales: scales,
+                clinicalReasoning: {
+                    dangerAssessment: humanIntelligence.dangerAssessment,
+                    riskFormulation: humanIntelligence.riskFormulation,
+                    symptomPattern: humanIntelligence.symptomPattern
+                },
+                expertRules
             });
 
             res.status(200).json({

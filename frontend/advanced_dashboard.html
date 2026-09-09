@@ -341,7 +341,6 @@
     <!-- TABS -->
     <nav class="tabs">
         <button class="tab-btn active" onclick="switchTab('assess')"><i class="fas fa-microphone-alt"></i> Assessment</button>
-        <button class="tab-btn" onclick="switchTab('scst')"><i class="fas fa-gavel"></i> SC/ST Analysis</button>
         <button class="tab-btn" onclick="switchTab('legal')"><i class="fas fa-balance-scale"></i> Legal Redressal</button>
         <button class="tab-btn" onclick="switchTab('lawyer')"><i class="fas fa-user-tie"></i> Lawyer Assistant</button>
         <button class="tab-btn" onclick="switchTab('dashboard')"><i class="fas fa-chart-pie"></i> Dashboard</button>
@@ -476,33 +475,29 @@
                 </div>
                     </div>
                 </details>
+
+                <!-- ✅ NEW: the C-SSRS ladder, PHQ-9/GAD-7/PCL-5 domain
+                     mapping, Danger Assessment, structured risk
+                     formulation, and expert-system rule activations were
+                     all computed on every single assessment request
+                     (see clinicalScales.js/humanIntelligence.js/
+                     expertSystem.js) but never rendered anywhere in
+                     either frontend file - a real gap found auditing this
+                     app: a large share of this session's clinical-
+                     methodology work was completely invisible to anyone
+                     actually using the tool. Collapsed by default (like
+                     the breakdown above) so it doesn't overwhelm the
+                     primary result, but now genuinely reachable. -->
+                <details class="breakdown-accordion" id="clinicalDetailAccordion" style="display:none;">
+                    <summary><span><i class="fas fa-stethoscope"></i> Clinical Assessment Detail</span></summary>
+                    <div class="breakdown-body" id="clinicalDetailBody"></div>
+                </details>
+
                 <div style="margin-top:10px; padding:8px 14px; background:rgba(255,255,255,0.02); border-radius:8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap;">
                     <span style="font-size:11px; color:rgba(255,255,255,0.4);"><i class="fas fa-shield-alt"></i> Confidence</span>
                     <span id="confidenceDisplay" style="font-weight:700; font-size:13px; color:#a29bfe;">High (85%)</span>
                 </div>
                 <div style="margin-top:10px;" id="assessLegalLink"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- PAGE 2: SC/ST ANALYSIS -->
-    <div id="page-scst" class="page">
-        <div class="card">
-            <div class="card-title"><i class="fas fa-gavel"></i> SC/ST Atrocities Analysis</div>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-                <div>
-                    <label style="font-size:13px; color:rgba(255,255,255,0.6);">Enter text to analyze for SC/ST atrocity patterns:</label>
-                    <textarea id="scstInput" rows="4" placeholder="Describe an incident or case..." style="margin-top:8px;"></textarea>
-                    <button class="btn btn-primary" onclick="analyzeSCST()" style="margin-top:10px;">
-                        <i class="fas fa-search"></i> Analyze SC/ST Pattern
-                    </button>
-                </div>
-                <div id="scstResults">
-                    <div style="text-align:center; padding:20px; color:rgba(255,255,255,0.4);">
-                        <i class="fas fa-search" style="font-size:32px;"></i>
-                        <p style="margin-top:8px;">Enter text to analyze</p>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -536,35 +531,69 @@
         </div>
     </div>
 
-    <!-- PAGE: LAWYER ASSISTANT -->
+    <!-- PAGE: LAWYER ASSISTANT (Quick Pattern Check + Case Document Summary) -->
     <div id="page-lawyer" class="page">
         <div class="card">
-            <div class="card-title"><i class="fas fa-user-tie"></i> Lawyer Assistant - Case Document Summary</div>
+            <div class="card-title"><i class="fas fa-user-tie"></i> Lawyer Assistant</div>
             <p style="font-size:12px; color:rgba(255,255,255,0.5); margin-bottom:14px;">
-                Upload an SC/ST atrocity or sexual-offence case document (FIR, chargesheet, or judgment - PDF, DOCX, or TXT), or paste
-                the text directly, to get a structured summary: key facts, detected offense categories, extracted sections/dates/parties,
-                applicable law, and relevant case law - ready to review before a hearing or presentation.
+                Two ways to check a case: a quick pattern check on a short description, or a full structured summary
+                from an uploaded case document - key facts, detected offense categories, extracted sections/dates/parties,
+                applicable law, and relevant case law, ready to review before a hearing or presentation.
             </p>
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-                <div>
-                    <label style="font-size:13px; color:rgba(255,255,255,0.6);">Upload case document (PDF, DOCX, or TXT):</label>
-                    <input type="file" id="lawyerFileInput" accept=".pdf,.docx,.txt" onchange="handleLawyerFileSelect(event)" style="margin-top:8px; width:100%; font-size:12px; color:rgba(255,255,255,0.7);">
-                    <div id="lawyerFileName" style="font-size:11px; color:#00b894; margin-top:6px;"></div>
+            <div style="display:flex; gap:8px; margin-bottom:16px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:14px;">
+                <button class="btn btn-primary btn-sm" id="lawyerSubtabQuickBtn" onclick="switchLawyerSubtab('quick')">
+                    <i class="fas fa-bolt"></i> Quick Pattern Check
+                </button>
+                <button class="btn btn-outline btn-sm" id="lawyerSubtabDocBtn" onclick="switchLawyerSubtab('doc')">
+                    <i class="fas fa-file-contract"></i> Case Document Summary
+                </button>
+            </div>
 
-                    <label style="font-size:13px; color:rgba(255,255,255,0.6); display:block; margin-top:14px;">Or paste the case text directly:</label>
-                    <textarea id="lawyerTextInput" rows="6" placeholder="Paste FIR / chargesheet / judgment text here..." style="margin-top:8px;"></textarea>
-
-                    <button class="btn btn-primary" onclick="summarizeCaseDocument()" style="margin-top:10px;" id="lawyerSummarizeBtn">
-                        <i class="fas fa-file-contract"></i> Generate Case Summary
-                    </button>
-                    <div style="font-size:11px; color:rgba(255,255,255,0.35); margin-top:10px;">
-                        <i class="fas fa-info-circle"></i> This is an AI-assisted drafting aid (rule-based extraction, not a generative summary) - always verify against the original document before relying on it in any filing or presentation.
+            <!-- SUBTAB: QUICK PATTERN CHECK (formerly the standalone SC/ST Analysis tab) -->
+            <div id="lawyerSubtab-quick" class="lawyer-subtab">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                    <div>
+                        <label style="font-size:13px; color:rgba(255,255,255,0.6);">Enter text to analyze for SC/ST atrocity patterns:</label>
+                        <textarea id="scstInput" rows="4" placeholder="Describe an incident or case..." style="margin-top:8px;"></textarea>
+                        <button class="btn btn-primary" onclick="analyzeSCST()" style="margin-top:10px;">
+                            <i class="fas fa-search"></i> Analyze SC/ST Pattern
+                        </button>
+                        <div style="font-size:11px; color:rgba(255,255,255,0.35); margin-top:10px;">
+                            <i class="fas fa-info-circle"></i> For a quick check on a short description. For a full document (FIR, chargesheet, judgment), use Case Document Summary instead.
+                        </div>
+                    </div>
+                    <div id="scstResults">
+                        <div style="text-align:center; padding:20px; color:rgba(255,255,255,0.4);">
+                            <i class="fas fa-search" style="font-size:32px;"></i>
+                            <p style="margin-top:8px;">Enter text to analyze</p>
+                        </div>
                     </div>
                 </div>
-                <div id="lawyerResults">
-                    <div style="text-align:center; padding:20px; color:rgba(255,255,255,0.4);">
-                        <i class="fas fa-file-contract" style="font-size:32px;"></i>
-                        <p style="margin-top:8px;">Upload a document or paste case text to generate a summary</p>
+            </div>
+
+            <!-- SUBTAB: CASE DOCUMENT SUMMARY -->
+            <div id="lawyerSubtab-doc" class="lawyer-subtab" style="display:none;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                    <div>
+                        <label style="font-size:13px; color:rgba(255,255,255,0.6);">Upload case document (PDF, DOCX, or TXT):</label>
+                        <input type="file" id="lawyerFileInput" accept=".pdf,.docx,.txt" onchange="handleLawyerFileSelect(event)" style="margin-top:8px; width:100%; font-size:12px; color:rgba(255,255,255,0.7);">
+                        <div id="lawyerFileName" style="font-size:11px; color:#00b894; margin-top:6px;"></div>
+
+                        <label style="font-size:13px; color:rgba(255,255,255,0.6); display:block; margin-top:14px;">Or paste the case text directly:</label>
+                        <textarea id="lawyerTextInput" rows="6" placeholder="Paste FIR / chargesheet / judgment text here..." style="margin-top:8px;"></textarea>
+
+                        <button class="btn btn-primary" onclick="summarizeCaseDocument()" style="margin-top:10px;" id="lawyerSummarizeBtn">
+                            <i class="fas fa-file-contract"></i> Generate Case Summary
+                        </button>
+                        <div style="font-size:11px; color:rgba(255,255,255,0.35); margin-top:10px;">
+                            <i class="fas fa-info-circle"></i> This is an AI-assisted drafting aid (rule-based extraction, not a generative summary) - always verify against the original document before relying on it in any filing or presentation.
+                        </div>
+                    </div>
+                    <div id="lawyerResults">
+                        <div style="text-align:center; padding:20px; color:rgba(255,255,255,0.4);">
+                            <i class="fas fa-file-contract" style="font-size:32px;"></i>
+                            <p style="margin-top:8px;">Upload a document or paste case text to generate a summary</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -884,15 +913,46 @@
     }
 
     function switchTab(tab) {
+        // ✅ FIX: 'scst' used to be its own top-level tab/page - now folded
+        // into the Lawyer Assistant tab as its "Quick Pattern Check"
+        // subtab (see switchLawyerSubtab below). landing.html's "SC/ST
+        // Atrocities" card still links to /scst -> #scst, and this
+        // function's own hash-routing at the bottom of the file still
+        // accepts 'scst' - both would otherwise silently break (no
+        // page-scst element, no .tab-btn with onclick*="scst" to
+        // activate) since there's no longer a page/tab actually named
+        // 'scst'.
+        let wantsQuickSubtab = false;
+        if (tab === 'scst') {
+            tab = 'lawyer';
+            wantsQuickSubtab = true;
+        }
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('page-' + tab).classList.add('active');
         document.querySelector(`.tab-btn[onclick*="${tab}"]`).classList.add('active');
+        if (wantsQuickSubtab) switchLawyerSubtab('quick');
         if (tab === 'dashboard' || tab === 'history') loadHistory();
         if (tab === 'history') loadMyCases();
         if (tab === 'legal' && typeof latestLegalGuidance !== 'undefined' && latestLegalGuidance) {
             renderLegalGuidance(latestLegalGuidance, latestLegalSource);
         }
+    }
+
+    // Lawyer Assistant tab's two subtabs (Quick Pattern Check / Case
+    // Document Summary) - a plain show/hide toggle, not a second copy of
+    // the .page/.tab-btn machinery above, since both subtabs live inside
+    // the same page and never need independent deep-linking beyond what
+    // switchTab('scst') already provides for the quick-check one.
+    function switchLawyerSubtab(subtab) {
+        document.getElementById('lawyerSubtab-quick').style.display = subtab === 'quick' ? 'block' : 'none';
+        document.getElementById('lawyerSubtab-doc').style.display = subtab === 'doc' ? 'block' : 'none';
+        const quickBtn = document.getElementById('lawyerSubtabQuickBtn');
+        const docBtn = document.getElementById('lawyerSubtabDocBtn');
+        quickBtn.classList.toggle('btn-primary', subtab === 'quick');
+        quickBtn.classList.toggle('btn-outline', subtab !== 'quick');
+        docBtn.classList.toggle('btn-primary', subtab === 'doc');
+        docBtn.classList.toggle('btn-outline', subtab !== 'doc');
     }
 
     // ============================================================
@@ -1331,6 +1391,119 @@
             `;
             grid.appendChild(div);
         }
+
+        renderClinicalDetail(data);
+    }
+
+    // ✅ NEW: renders clinicalScales.js's C-SSRS/PHQ-9/GAD-7/PCL-5 output
+    // and humanIntelligence.js's Danger Assessment / risk formulation /
+    // symptom-pattern / expert-system-rule output - all fully computed on
+    // every request but never shown anywhere before this (see the HTML
+    // comment above the accordion this renders into). Every sub-section
+    // renders only when it actually has a nonzero/matched signal, so a
+    // low-signal case doesn't show 30+ lines of "0" domains - and the
+    // whole accordion stays hidden entirely when nothing here applies.
+    function renderClinicalDetail(data) {
+        const accordion = document.getElementById('clinicalDetailAccordion');
+        const body = document.getElementById('clinicalDetailBody');
+        const scales = data.clinicalScales || {};
+        const reasoning = (data.hybridDecision && data.hybridDecision.clinicalReasoning) || {};
+        const rules = (data.expertRules || []).filter(r => r.activated);
+
+        const sections = [];
+
+        if (scales.cssrs && scales.cssrs.ladder && scales.cssrs.ladder.rung > 0) {
+            const l = scales.cssrs.ladder;
+            sections.push(`
+                <div class="legal-section-title"><i class="fas fa-layer-group"></i> C-SSRS Severity Ladder</div>
+                <div class="legal-provision-card">
+                    <div class="incident-tag">Rung ${l.rung} of 5 - ${scales.cssrs.risk}</div>
+                    <div class="primary-law">${l.rungLabel}</div>
+                    <div style="font-size:12px; color:rgba(255,255,255,0.7); line-height:1.6;">${l.description}${l.matchedPhrase ? ` <em>(matched: "${l.matchedPhrase}")</em>` : ''}</div>
+                </div>
+            `);
+        }
+
+        const renderDomainScale = (title, scale, maxLabel) => {
+            if (!scale) return '';
+            const activeDomains = Object.entries(scale.domains || {}).filter(([, d]) => d.score > 0);
+            if (scale.score === 0 && activeDomains.length === 0) return '';
+            return `
+                <div class="legal-section-title"><i class="fas fa-clipboard-list"></i> ${title}: ${scale.score}${maxLabel} - ${scale.severity}</div>
+                ${activeDomains.length > 0 ? `
+                    <ul class="legal-baseline-rights">
+                        ${activeDomains.map(([, d]) => `<li>${d.label}${d.matchedPhrase ? ` <em>("${d.matchedPhrase}")</em>` : ''}</li>`).join('')}
+                    </ul>
+                ` : ''}
+            `;
+        };
+        sections.push(renderDomainScale('PHQ-9 (Depression)', scales.phq9, '/27'));
+        sections.push(renderDomainScale('GAD-7 (Anxiety)', scales.gad7, '/21'));
+
+        if (scales.pcl5 && scales.pcl5.clusters) {
+            const activeClusters = Object.entries(scales.pcl5.clusters).filter(([, c]) => c.total > 0);
+            if (activeClusters.length > 0) {
+                sections.push(`
+                    <div class="legal-section-title"><i class="fas fa-clipboard-list"></i> PCL-5 (Trauma): ${scales.pcl5.score}/80 - ${scales.pcl5.severity}</div>
+                    ${activeClusters.map(([, c]) => `
+                        <div class="legal-provision-card">
+                            <div class="incident-tag">${c.label}</div>
+                            <ul>${Object.values(c.items).filter(i => i.score > 0).map(i => `<li>${i.label}${i.matchedPhrase ? ` <em>("${i.matchedPhrase}")</em>` : ''}</li>`).join('')}</ul>
+                        </div>
+                    `).join('')}
+                `);
+            }
+        }
+
+        if (reasoning.dangerAssessment && reasoning.dangerAssessment.factorsPresent && reasoning.dangerAssessment.factorsPresent.length > 0) {
+            sections.push(`
+                <div class="legal-priority-banner">
+                    <i class="fas fa-triangle-exclamation"></i> Danger Assessment: ${reasoning.dangerAssessment.factorsPresent.map(f => f.replace(/([A-Z])/g, ' $1').toLowerCase()).join(', ')}
+                    ${reasoning.dangerAssessment.elevatedLethalityRisk ? ' - elevated lethality risk' : ''}
+                </div>
+            `);
+        }
+
+        if (reasoning.riskFormulation && (reasoning.riskFormulation.riskFactorCount > 0 || reasoning.riskFormulation.protectiveFactorCount > 0)) {
+            const rf = reasoning.riskFormulation;
+            sections.push(`
+                <div class="legal-section-title"><i class="fas fa-scale-unbalanced"></i> Risk Formulation (multiplier: ${rf.multiplier.toFixed(2)}x)</div>
+                <ul class="legal-baseline-rights">
+                    ${[...rf.staticRiskFactors, ...rf.dynamicRiskFactors].map(f => `<li>Risk factor: ${f.replace(/_/g, ' ')}</li>`).join('')}
+                    ${rf.protectiveFactors.map(f => `<li>Protective factor: ${f.replace(/_/g, ' ')}</li>`).join('')}
+                </ul>
+            `);
+        }
+
+        if (reasoning.symptomPattern && reasoning.symptomPattern.clustersPresent && reasoning.symptomPattern.clustersPresent.length > 0) {
+            sections.push(`
+                <div class="legal-section-title"><i class="fas fa-diagram-project"></i> Symptom Pattern</div>
+                <p style="font-size:12px; color:rgba(255,255,255,0.7);">Spans ${reasoning.symptomPattern.clustersPresent.map(c => c.replace(/([A-Z])/g, ' $1').toLowerCase()).join(', ')} clusters${reasoning.symptomPattern.resemblesPTSDPattern ? ' - resembles a PTSD-consistent pattern (not a diagnosis)' : ''}.</p>
+            `);
+        }
+
+        if (rules.length > 0) {
+            sections.push(`
+                <div class="legal-section-title"><i class="fas fa-list-check"></i> Expert System Rules Activated</div>
+                ${rules.map(r => `
+                    <div class="legal-provision-card">
+                        <div class="incident-tag">${r.name} - ${r.severity} (${Math.round(r.confidence * 100)}% confidence)</div>
+                        <div style="font-size:12px; color:rgba(255,255,255,0.7);">${r.intervention || ''}</div>
+                    </div>
+                `).join('')}
+            `);
+        }
+
+        if (sections.filter(s => s).length === 0) {
+            accordion.style.display = 'none';
+            return;
+        }
+
+        accordion.style.display = '';
+        body.innerHTML = `
+            ${sections.join('')}
+            <div class="legal-disclaimer"><i class="fas fa-info-circle"></i> Text-based approximations of these clinical instruments, not the validated self-report/interview-administered versions - see each section's data for the full methodology note.</div>
+        `;
     }
 
     // Generates a real, downloadable report the person can save or print -
@@ -2040,9 +2213,24 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-        loadHistory();
-        restoreSession();
-        updateAccountBadge();
+        // ✅ FIX: these ran as one unguarded sequence - if ANY of them
+        // threw (found while testing: loadHistory() throws when Chart.js
+        // failed to load from its CDN, e.g. a slow/blocked network),
+        // every step AFTER it silently never ran at all: restoreSession(),
+        // updateAccountBadge(), and critically the hash-based deep-link
+        // routing below (landing.html's "SC/ST Atrocities" card links
+        // here via #scst and would silently land on the default
+        // Assessment tab instead, with no visible error). Each step is
+        // now isolated so one failure can't cascade into unrelated
+        // features silently not working.
+        const initSteps = [
+            ['loadHistory', () => loadHistory()],
+            ['restoreSession', () => restoreSession()],
+            ['updateAccountBadge', () => updateAccountBadge()]
+        ];
+        for (const [name, fn] of initSteps) {
+            try { fn(); } catch (e) { console.error(`Dashboard init step "${name}" failed:`, e); }
+        }
         document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
 
         // ✅ FIX: the landing page's "SC/ST Atrocities" card links to
@@ -2050,8 +2238,10 @@
         // SC/ST Analysis tab - but nothing here ever read that hash, so
         // the page just showed the default Assessment tab regardless of
         // which card was clicked. Same pattern applies to any other
-        // #tabname link pointed at this page in the future.
-        const validTabs = ['assess', 'scst', 'legal', 'dashboard', 'history'];
+        // #tabname link pointed at this page in the future. 'scst' now
+        // maps into the Lawyer Assistant tab's Quick Pattern Check
+        // subtab - see switchTab()'s handling of the 'scst' name.
+        const validTabs = ['assess', 'scst', 'legal', 'lawyer', 'dashboard', 'history'];
         const requestedTab = window.location.hash.replace('#', '');
         if (validTabs.includes(requestedTab)) {
             switchTab(requestedTab);
