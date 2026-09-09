@@ -419,6 +419,16 @@ class TextAnalyzer {
                 keywords: {
                     en: {
                         'threat': 20, 'intimidate': 20, 'intimidating': 20, 'bully': 15,
+                        // ✅ NEW: 'bully' was already here, but its fuzzy-
+                        // stemming fallback can't bridge to 'bullied'
+                        // (stripping '-ed' gives 'bulli', not 'bully' -
+                        // English's y->i spelling change before a suffix).
+                        // 'tease'/'mock' are separate words entirely and
+                        // weren't covered at all - real gap found via a
+                        // school caste-bullying disclosure that scored zero.
+                        'bullied': 15, 'bullying': 15, 'tease': 14, 'teased': 14,
+                        'teasing': 14, 'mock': 12, 'mocked': 14, 'mocking': 14,
+                        'made fun of me': 15,
                         'coerce': 15, 'coercing': 15, 'danger': 15, 'threatening': 20,
                         'menace': 15, 'stalking': 20, 'harass': 15, 'frighten': 12,
                         'horrify': 15, 'horrified': 15, 'horrifying': 15, 'terrorize': 20,

@@ -72,11 +72,27 @@ class SCSTTrainer {
                 description: 'Police or forest-department brutality against SC/ST victim'
             },
             'discrimination': {
+                // ✅ NEW: real gap - "my classmates tease me... because I am
+                // from SC community" identified the community correctly but
+                // matched NO pattern at all, since neither 'caste' nor
+                // 'discrimination' literally appeared in the text - school
+                // caste-bullying is one of the most common real disclosure
+                // types this tool should catch. Added the same way
+                // 'workplace harassment' already was: a generic-sounding
+                // phrase accepted into this pattern despite not being
+                // caste-specific on its own. This can only affect scstResult
+                // in isolation - the headline severity escalation still
+                // requires a community to ALSO be identified (see
+                // _getSeverity's scst_atrocity check in the controller), so
+                // ordinary non-caste teasing with no community mentioned
+                // never escalates the main assessment.
                 keywords: ['caste', 'discrimination', 'casteist slur', 'caste slur',
                     'denied promotion', 'workplace harassment', 'casteist remarks',
-                    'denied treatment', 'refused to touch', 'healthcare denial'],
+                    'denied treatment', 'refused to touch', 'healthcare denial',
+                    'tease me', 'teased me', 'teasing me', 'bully me', 'bullied me',
+                    'bullying me', 'mock me', 'mocked me', 'made fun of me'],
                 severity: 65,
-                description: 'Caste discrimination against SC/ST individual (workplace, healthcare, or general)'
+                description: 'Caste discrimination against SC/ST individual (workplace, healthcare, school, or general)'
             },
             'public_humiliation': {
                 keywords: ['paraded', 'stripped', 'paraded naked', 'publicly humiliated', 'humiliation'],
