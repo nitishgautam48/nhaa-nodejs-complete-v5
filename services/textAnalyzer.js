@@ -93,7 +93,34 @@ class TextAnalyzer {
                         'meaningless': 15, 'burden': 10, 'exhausted': 10, 'sad': 10,
                         'crying': 10, 'tears': 8, 'miserable': 12, 'anhedonia': 15,
                         'fatigue': 10, 'tired': 8, 'dark': 8, 'heavy': 8,
-                        'sorrow': 12, 'despondent': 15, 'down': 8, 'gloomy': 8
+                        'sorrow': 12, 'despondent': 15, 'down': 8, 'gloomy': 8,
+                        // ✅ NEW: modern/informal ways people (especially
+                        // younger users) actually describe low mood -
+                        // clinical vocabulary ("anhedonia", "despondent")
+                        // isn't how most people, especially Gen Z, describe
+                        // how they're feeling.
+                        'not okay': 15, 'not doing okay': 18, 'not doing good mentally': 20,
+                        'empty inside': 18, 'feel empty inside': 18, 'i feel nothing': 15,
+                        'nothing matters anymore': 22, "nothing matters": 15,
+                        'checked out': 10, 'running on empty': 12, 'burnt out': 12,
+                        'burnout': 12, 'mentally drained': 12, 'emotionally drained': 14,
+                        'falling apart': 16, 'breaking down': 16, 'at my breaking point': 18,
+                        'not in a good headspace': 15, 'bad headspace': 12,
+                        'rock bottom': 15, 'at rock bottom': 18, 'so done with everything': 18,
+                        'done with everything': 15, 'sad boy hours': 8, 'sad girl era': 8,
+                        'not vibing': 6, 'in a dark place': 18,
+                        'feel lost': 14, 'feeling lost': 14, 'so lost right now': 14,
+                        // ✅ NEW: low self-worth and disconnection phrasing -
+                        // these are extremely common real ways people
+                        // describe depressive feelings, distinct from the
+                        // single-word "worthless"/"hopeless" already covered.
+                        'feel like a failure': 16, 'feel like nothing': 15,
+                        "don't feel like myself": 14, 'lost interest in everything': 18,
+                        "can't find joy in anything": 16, 'feel hollow': 14,
+                        'everything feels pointless': 18, "i don't care about anything anymore": 18,
+                        'feel disconnected from everyone': 15, 'feel unworthy': 15,
+                        'never good enough': 14, 'not good enough': 12,
+                        'feel inadequate': 13, 'feel inferior': 13, 'feel incompetent': 12
                     },
                     hi: {
                         'उदास': 20, 'निराश': 20, 'बेकार': 18, 'खाली': 15,
@@ -113,7 +140,19 @@ class TextAnalyzer {
                         'nervous': 15, 'overwhelmed': 15, 'racing thoughts': 15,
                         'trembling': 10, 'dread': 15, 'phobia': 15, 'agitated': 15,
                         'stress': 10, 'worry': 12, 'restless': 12, 'tense': 12,
-                        'frightened': 12, 'heart racing': 10, 'sweating': 8
+                        'frightened': 12, 'heart racing': 10, 'sweating': 8,
+                        // ✅ NEW: modern/informal anxiety phrasing
+                        'anxiety is through the roof': 20, 'panic mode': 15,
+                        'overstimulated': 10, 'stressed tf out': 14, 'stressed af': 14,
+                        "can't handle this rn": 12, 'overwhelmed af': 15,
+                        'brain fog': 8, 'spiraling': 15, 'spiraling out of control': 20,
+                        'anxious af': 15, 'freaking out': 14, 'losing it': 15,
+                        // ✅ NEW: overthinking and social/performance anxiety -
+                        // common everyday anxiety phrasing not covered by
+                        // the existing panic/racing-thoughts keywords.
+                        'overthinking everything': 12, "can't stop overthinking": 14,
+                        "mind won't stop racing": 14, 'constantly on edge': 12,
+                        'social anxiety': 15, 'performance anxiety': 12
                     },
                     hi: {
                         'चिंता': 20, 'परेशान': 15, 'घबराहट': 20, 'डर': 15,
@@ -140,7 +179,24 @@ class TextAnalyzer {
                         'self-harm': 25, 'self harm': 25, 'death wish': 20, 'give up': 15,
                         'no reason to live': 25, 'tired of living': 15, 'not worth living': 25,
                         'cut myself': 20, 'overdose': 25, 'hang myself': 25,
-                        'ending it all': 30, "don't want to live": 30, 'no point in living': 25
+                        'ending it all': 30, "don't want to live": 30, 'no point in living': 25,
+                        // ✅ NEW: genuinely-used modern crisis phrasing.
+                        // Deliberately excludes purely hyperbolic slang like
+                        // "I'm dead"/"deceased"/"kill me" (near-universally
+                        // used non-literally for embarrassment or finding
+                        // something funny) - adding those would flood this
+                        // category with false positives, which is
+                        // especially dangerous here since it erodes trust
+                        // in genuine alerts. "Everyone better off without
+                        // me" / "I'm a burden" reflect perceived
+                        // burdensomeness, a recognized suicide risk marker
+                        // in clinical literature (Joiner's interpersonal
+                        // theory of suicide), not just informal slang.
+                        "i don't want to exist anymore": 35, 'want to disappear forever': 22,
+                        'everyone would be better off without me': 32, "everyone's better off without me": 32,
+                        "i'm a burden to everyone": 22, "i'm just a burden": 20,
+                        "what's the point of living": 25, "what's the point anymore": 18,
+                        'no one would notice if i was gone': 28, 'nobody would notice if i disappeared': 28
                     },
                     hi: {
                         'आत्महत्या': 35, 'मर जाना': 30, 'जान ले लेना': 30,
@@ -205,7 +261,27 @@ class TextAnalyzer {
                         'takes my paycheck': 18, 'monitors everything i do': 20,
                         'walking on eggshells': 18, "keeps me from leaving": 20,
                         'controls who i talk to': 20, 'checks my phone': 15,
-                        'reads my messages': 15
+                        'reads my messages': 15,
+                        // ✅ NEW: modern phrasing for isolation/vulnerability
+                        'no one gets me': 14, 'nobody understands me': 14,
+                        "i feel so alone rn": 15, "i'm not built for this": 10,
+                        'socially backward': 15, 'socially awkward': 12, 'feel so backward': 12,
+                        // ✅ NEW: social exclusion and loneliness phrasing -
+                        // real, common ways people describe not belonging
+                        // or feeling forgotten, distinct from the more
+                        // abstract "isolated"/"lonely" single words already
+                        // covered.
+                        'feel like an outsider': 15, "don't fit in": 12, "don't belong anywhere": 16,
+                        'feel out of place': 12, 'feel invisible': 14, 'feel forgotten': 13,
+                        'always left out': 14, 'never included': 13, 'feel excluded': 13,
+                        'feel like an outcast': 16, "can't make friends": 13,
+                        'feel awkward around people': 13, 'socially inept': 14,
+                        'afraid to talk to people': 13, 'afraid of judgment': 12,
+                        'feel judged by everyone': 14, 'no one to talk to': 15,
+                        'no one checks on me': 14, 'no one cares about me': 16,
+                        'feel unloved': 15, 'feel abandoned by everyone': 18,
+                        'everyone left me': 15, 'feel forgotten by everyone': 15,
+                        'everyone is better than me': 13
                     },
                     hi: {
                         'अकेला': 15, 'असहाय': 20, 'बेसहारा': 15, 'बेबस': 15,
@@ -234,7 +310,20 @@ class TextAnalyzer {
                         'threatened to take my children': 25, 'punched a hole in the wall': 22,
                         'tracks my location': 18, 'follows me everywhere': 20,
                         'shows up unannounced': 15, "threatened to kill me": 30,
-                        'threatened to hurt me': 25, 'said he would find me': 20
+                        'threatened to hurt me': 25, 'said he would find me': 20,
+                        // ✅ NEW: modern relationship/harassment vocabulary -
+                        // terms like "toxic", "gaslighting", and "love
+                        // bombing" are now the everyday way people describe
+                        // controlling and predatory behavior, not clinical
+                        // or legal terminology.
+                        'toxic relationship': 15, "he's so toxic": 15, "she's so toxic": 15,
+                        'gaslighting me': 22, 'gaslit me': 22, 'love bombing': 15,
+                        "he won't leave me alone": 20, "she won't leave me alone": 20,
+                        "he's obsessed with me": 18, 'stalking my socials': 18,
+                        'stalking my social media': 18, 'creepy vibes': 10,
+                        'predatory behavior': 22, "he's controlling af": 18,
+                        "he's so controlling": 18, 'red flags': 10,
+                        'sliding into my dms after i said no': 18
                     },
                     hi: {
                         'धमकी': 20, 'डराना': 15, 'बदमाशी': 15, 'जबरदस्ती': 15,
@@ -446,7 +535,18 @@ class TextAnalyzer {
     // (>=10 letters), where two edits are far less likely to land on a
     // different real word by coincidence.
     _fuzzyThreshold(len) {
-        if (len <= 4) return 0;   // exact-only for short words
+        // ✅ FIX: was `len <= 4 -> 0`, which still allowed fuzzy matching
+        // on 5-6 letter keywords. That's exactly how "dead" (used
+        // constantly in ordinary/hyperbolic speech - "I'm dead" for
+        // laughing, dead tired, dead serious) ended up fuzzy-matching the
+        // keyword "dread" (edit distance 1, same first letter, so it
+        // passed the existing guard) and produced a false anxiety signal
+        // on a text that was just someone finding a meme funny. Raising
+        // the exact-only cutoff trades away typo tolerance for some
+        // medium-length keywords in exchange for closing this risk -
+        // worthwhile given how much more costly a false positive is here
+        // than a missed typo.
+        if (len <= 6) return 0;   // exact-only for short/medium words
         if (len <= 9) return 1;
         return 2;
     }
