@@ -242,7 +242,8 @@ class TextAnalyzer {
                         'giving away my things': 30, 'giving away my belongings': 30,
                         'saying goodbye to everyone': 28, 'wrote a goodbye letter': 32,
                         "i have nothing to live for": 32, 'have a plan to end my life': 40,
-                        "won't be here much longer": 25
+                        "won't be here much longer": 25,
+                        'done with my life': 35, 'done with life': 32
                     },
                     hi: {
                         'आत्महत्या': 35, 'मर जाना': 30, 'जान ले लेना': 30,
@@ -268,6 +269,12 @@ class TextAnalyzer {
                         // in a word order common among non-native English
                         // speakers, which this app explicitly serves.
                         { regex: /\bwant(?:s|ing|ed)?\s+not\s+to\s+(?:live|be\s+alive|exist)\b/i, weight: 35 },
+                        // ✅ FIX: same non-standard word-order gap as the
+                        // "want not to live" fix - "not to continue
+                        // anymore" is a real, explicit expression of
+                        // suicidal intent using different phrasing.
+                        { regex: /\bnot\s+to\s+continue\s+(?:anymore|any\s*longer|living|this)\b/i, weight: 32 },
+                        { regex: /\bdone\s+with\s+(?:my\s+)?life\b/i, weight: 35 },
                         { regex: /\bno\s+longer\s+want(?:s|ing|ed)?\s+to\s+(?:live|be\s+alive|exist)\b/i, weight: 30 },
                         { regex: /\bwant(?:s|ing|ed)?\s+to\s+stop\s+living\b/i, weight: 30 },
                         { regex: /\bwish\s+i\s+(?:was|were)\s+dead\b/i, weight: 30 },
