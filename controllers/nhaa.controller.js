@@ -393,13 +393,14 @@ class NHHAController {
             svi: Math.max(severity.displaySvi, ((scstResult?.patterns?.length > 0 && scstResult?.communities?.length > 0) ? scstResult.severity : 0)),
             confidence: Math.min(((aiResult.confidence || 0.7) + (humanIntelligence.confidence || 0)) / 2, 1),
             recommendations: this._generateRecommendations(severity, primaryConcern, finalScores, humanIntelligence.dangerAssessment),
-            // ✅ NEW: surfaces the two clinical-methodology integrations
-            // (see humanIntelligence.js header) so the frontend can show
-            // them, clearly labeled as automated approximations.
+            // ✅ NEW: surfaces the clinical-methodology integrations (see
+            // humanIntelligence.js header) so the frontend can show them,
+            // clearly labeled as automated approximations.
             clinicalReasoning: {
                 impressions: humanIntelligence.impressions,
                 symptomPattern: humanIntelligence.symptomPattern,
-                dangerAssessment: humanIntelligence.dangerAssessment
+                dangerAssessment: humanIntelligence.dangerAssessment,
+                riskFormulation: humanIntelligence.riskFormulation
             }
         };
     }
