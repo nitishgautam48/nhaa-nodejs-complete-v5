@@ -44,19 +44,34 @@ class ClinicalScales {
         // instead of being silently replaced with a fake 0.5 "Moderate" baseline.
         const phq9Fallback = this._mapToScale(scores.depression ?? 0.5, this.scaleRanges.phq9);
         const gad7Fallback = this._mapToScale(scores.anxiety ?? 0.5, this.scaleRanges.gad7);
-        const pcl5 = this._mapToScale(scores.trauma ?? 0.5, this.scaleRanges.pcl5);
+        const pcl5Fallback = this._mapToScale(scores.trauma ?? 0.5, this.scaleRanges.pcl5);
 
         const phq9 = this._calculatePHQ9(scores, text, phq9Fallback);
         const gad7 = this._calculateGAD7(text, gad7Fallback);
+        const pcl5 = this._calculatePCL5(text, pcl5Fallback);
 
         return {
             phq9: phq9,
             gad7: gad7,
-            pcl5: {
-                score: pcl5,
-                severity: this._getScaleSeverity(pcl5, this.scaleRanges.pcl5)
-            },
+            pcl5: pcl5,
             cssrs: this._calculateCSSRS(scores, text)
+        };
+    }
+
+    // ⚠️ Text-based approximation of PCL-5's 4-cluster, 20-item structure
+    // - see clinicalDomainMapper.js's file header. Same never-downgrade
+    // principle as PHQ-9/GAD-7 above: takes the worse (higher) of the
+    // cluster-based total and the previous linear-rescale fallback.
+    _calculatePCL5(text, fallbackScore) {
+        const mapped = this.domainMapper.mapPCL5(text);
+        const clusterTotal = Math.min(mapped.total, 80);
+        const finalScore = Math.max(clusterTotal, fallbackScore);
+
+        return {
+            score: finalScore,
+            severity: this._getScaleSeverity(finalScore, this.scaleRanges.pcl5),
+            clusters: mapped.clusters,
+            methodology: 'Text-based approximation of the PCL-5\'s 4 DSM-5 symptom clusters and 20 items, weighted by their real item counts (Intrusion=5, Avoidance=2, Negative Alterations=7, Arousal=6) - not the validated self-report instrument.'
         };
     }
 
