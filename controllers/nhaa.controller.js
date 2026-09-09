@@ -17,6 +17,8 @@ import LanguageDetector from '../utils/languageDetector.js';
 import Database from '../utils/database.js';
 import AuthService from '../services/auth.js';
 import SemanticAnalyzer from '../services/semanticAnalyzer.js';
+import DocumentParser from '../services/documentParser.js';
+import CaseSummarizer from '../models/caseSummarizer.js';
 
 class NHHAController {
     constructor() {
@@ -42,6 +44,10 @@ class NHHAController {
         // - not awaited here, never blocks server startup or a request if
         // it's slow/unavailable).
         this.semanticAnalyzer = new SemanticAnalyzer();
+        // Lawyer tab: document upload -> extracted text -> structured case
+        // summary. See models/caseSummarizer.js's header for methodology.
+        this.documentParser = new DocumentParser();
+        this.caseSummarizer = new CaseSummarizer();
         this.caseCounter = 0;
     }
 
@@ -330,6 +336,61 @@ class NHHAController {
             });
 
         } catch (error) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    }
+
+    // Lawyer tab: accepts either an uploaded document (PDF/DOCX/TXT) or
+    // pasted case text, extracts the text if needed, and returns a
+    // structured case summary - see models/caseSummarizer.js for the full
+    // methodology and its scope/accuracy caveats.
+    async summarizeCaseDocument(req, res) {
+        try {
+            const file = req.file;
+            const pastedText = req.body.text;
+
+            if (!file && !pastedText) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Upload a document (PDF/DOCX/TXT) or paste case text.'
+                });
+            }
+
+            let text = pastedText || '';
+            let extractionWarning = null;
+            let sourceName = 'pasted text';
+
+            if (file) {
+                sourceName = file.originalname;
+                const extracted = await this.documentParser.extractText(file.path, file.mimetype, file.originalname);
+                fs.unlinkSync(file.path);
+                text = extracted.text;
+                extractionWarning = extracted.warning;
+            }
+
+            const summary = this.caseSummarizer.summarize(text);
+
+            if (!summary.success) {
+                return res.status(422).json({
+                    success: false,
+                    error: summary.error,
+                    extractionWarning: extractionWarning
+                });
+            }
+
+            res.status(200).json({
+                success: true,
+                data: {
+                    sourceName: sourceName,
+                    extractionWarning: extractionWarning,
+                    summary: summary
+                }
+            });
+        } catch (error) {
+            console.error('Case summarization error:', error);
+            if (req.file && fs.existsSync(req.file.path)) {
+                fs.unlinkSync(req.file.path);
+            }
             res.status(500).json({ success: false, error: error.message });
         }
     }
