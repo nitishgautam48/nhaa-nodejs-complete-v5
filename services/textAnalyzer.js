@@ -70,6 +70,18 @@ class TextAnalyzer {
                         'forced himself': 28, 'forced herself': 28,
                         "didn't want it": 20, 'did not want it': 20,
                         'took advantage of me': 22, 'molested': 28, 'groped': 25,
+                        // ✅ FIX: only the past-tense verb 'molested' was
+                        // covered - the noun 'molestation' (a very common,
+                        // often more formal way this is described, e.g.
+                        // "I am suffering from social molestation") scored
+                        // ZERO signal. The fuzzy/stemming fallback can't
+                        // bridge this: "-ation" isn't a suffix it strips,
+                        // and even after stripping "-ing"/"-s" the edit
+                        // distance to "molested" exceeds the threshold.
+                        // Added explicitly rather than relying on fuzzy
+                        // matching, same as every other multi-form phrase
+                        // in this category.
+                        'molestation': 28, 'molesting': 28, 'molests': 25,
                         'sexually harassed': 25, 'sexually assaulted': 30,
                         // ✅ NEW: comprehensive trauma expansion - physical
                         // abuse patterns, intrusive/PTSD-adjacent language,
