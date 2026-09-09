@@ -43,7 +43,16 @@ app.get('/ping', (req, res) => {
 });
 
 // Frontend
-app.use(express.static('frontend'));
+const frontendDir = path.join(__dirname, 'frontend');
+app.use(express.static(frontendDir));
+
+// Clean, systematic routes for the three pages, instead of only reaching
+// them via a raw *.html filename. The static middleware above still serves
+// the *.html paths directly too, so existing bookmarks/links keep working.
+app.get('/', (req, res) => res.sendFile(path.join(frontendDir, 'landing.html')));
+app.get('/assessment', (req, res) => res.sendFile(path.join(frontendDir, 'advanced_dashboard.html')));
+app.get('/scst', (req, res) => res.redirect('/assessment#scst'));
+app.get('/authority', (req, res) => res.sendFile(path.join(frontendDir, 'authority_dashboard.html')));
 
 app.listen(PORT, () => {
     console.log('\n' + '='.repeat(60));
@@ -53,11 +62,17 @@ app.listen(PORT, () => {
     console.log(`📡 API: http://localhost:${PORT}/api/v1`);
     console.log(`📊 Health: http://localhost:${PORT}/ping`);
     console.log('\n🌐 Frontend Pages:');
-    console.log(`   🏠 Landing: http://localhost:${PORT}/landing.html`);
-    console.log(`   📝 Assessment: http://localhost:${PORT}/index.html`);
-    console.log(`   🏛️ Authority: http://localhost:${PORT}/authority_dashboard.html`);
-    console.log(`   🧠 Advanced: http://localhost:${PORT}/advanced_dashboard.html`);
-    console.log('='.repeat(60) + '\n');
+    console.log(`   🏠 Landing: http://localhost:${PORT}/`);
+    console.log(`   📝 Assessment: http://localhost:${PORT}/assessment`);
+    console.log(`   🏛️ Authority: http://localhost:${PORT}/authority`);
+    console.log('='.repeat(60));
+    if (!process.env.AUTHORITY_ACCESS_CODE) {
+        console.warn('\n⚠️  AUTHORITY_ACCESS_CODE is not set - the authority');
+        console.warn('   dashboard\'s case data endpoints will refuse every');
+        console.warn('   request (fail closed) until it is configured.');
+        console.warn('   Set it in your environment (see .env.example) and restart.');
+    }
+    console.log('');
 });
 
 export default app;
