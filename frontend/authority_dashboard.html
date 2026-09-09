@@ -201,6 +201,54 @@
         }
         .access-gate-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(108, 92, 231, 0.4); }
         .access-gate-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        /* ============================================================
+           Command Center tabs (Active Cases / Lawyer Assistant) + the
+           Lawyer Assistant panel styling - ported verbatim from
+           advanced_dashboard.html's Lawyer Assistant tab, since it's the
+           same feature/backend endpoint (/api/v1/lawyer/summarize)
+           surfaced here for officers too.
+           ============================================================ */
+        @keyframes slideIn { from { opacity: 0; transform: translateY(20px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .tabs {
+            display: flex; gap: 4px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 20px; padding: 4px; margin-bottom: 24px; overflow-x: auto;
+        }
+        .tab-btn {
+            flex: 1; padding: 12px 24px; border: none; border-radius: 16px; background: transparent;
+            color: rgba(255,255,255,0.6); font-weight: 600; font-size: 13px; cursor: pointer;
+            transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px;
+            min-width: 100px; white-space: nowrap; font-family: inherit;
+        }
+        .tab-btn:hover { background: rgba(255,255,255,0.04); color: white; }
+        .tab-btn.active { background: linear-gradient(135deg, #6c5ce7, #5a4bd1); color: white; box-shadow: 0 4px 20px rgba(108, 92, 231, 0.35); }
+        .page { display: none; animation: slideIn 0.5s ease; }
+        .page.active { display: block; }
+
+        .scst-result-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 16px; margin-top: 12px; }
+        .scst-result-card .severity-display { font-size: 24px; font-weight: 800; }
+        .legal-priority-banner {
+            display: flex; align-items: center; gap: 10px; padding: 12px 16px; margin-bottom: 14px;
+            background: rgba(214, 48, 49, 0.1); border: 1px solid rgba(214, 48, 49, 0.3); border-radius: 12px;
+            font-size: 13px; font-weight: 700; color: #ff7675;
+        }
+        .legal-section-title { font-size: 13px; font-weight: 700; color: #a29bfe; margin: 16px 0 10px; display: flex; align-items: center; gap: 8px; }
+        .legal-provision-card {
+            background: rgba(255,255,255,0.02); border: 1px solid rgba(108, 92, 231, 0.15); border-radius: 12px;
+            padding: 14px 16px; margin-bottom: 10px;
+        }
+        .legal-provision-card .incident-tag {
+            display: inline-block; padding: 2px 10px; background: rgba(108, 92, 231, 0.2); border-radius: 20px;
+            font-size: 10px; font-weight: 700; color: #a29bfe; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 6px;
+        }
+        .legal-provision-card .primary-law { font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+        .legal-provision-card ul { margin: 0 0 0 18px; padding: 0; font-size: 12px; color: rgba(255,255,255,0.75); line-height: 1.6; }
+        .legal-baseline-rights { font-size: 12px; color: rgba(255,255,255,0.75); line-height: 1.7; margin: 0 0 4px 18px; padding: 0; }
+        .legal-disclaimer {
+            margin-top: 16px; padding: 10px 14px; background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.15);
+            border-radius: 10px; font-size: 11px; color: rgba(255,255,255,0.45); line-height: 1.6;
+        }
+        .legal-source-note { font-size: 11px; color: rgba(255,255,255,0.4); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
     </style>
 </head>
 <body>
@@ -247,6 +295,12 @@
         </div>
     </header>
 
+    <nav class="tabs">
+        <button class="tab-btn active" onclick="switchDashboardTab('cases')"><i class="fas fa-list"></i> Active Cases</button>
+        <button class="tab-btn" onclick="switchDashboardTab('lawyer')"><i class="fas fa-user-tie"></i> Lawyer Assistant</button>
+    </nav>
+
+    <div id="page-cases" class="page active">
     <div id="connectionError" class="connection-error">
         <i class="fas fa-triangle-exclamation"></i> Can't reach the server. Check that it's running, then <a href="#" onclick="loadCases(); return false;" style="color:#ff8787; text-decoration:underline;">try again</a>.
     </div>
@@ -342,6 +396,42 @@
                         <button class="btn btn-primary btn-sm" onclick="submitIntervention()"><i class="fas fa-paper-plane"></i> Submit</button>
                         <button class="btn btn-success btn-sm" onclick="assignOfficer()"><i class="fas fa-user-check"></i> Assign</button>
                         <button class="btn btn-danger btn-sm" onclick="escalateCase()"><i class="fas fa-arrow-up"></i> Escalate</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <!-- PAGE: LAWYER ASSISTANT -->
+    <div id="page-lawyer" class="page">
+        <div class="card">
+            <div class="card-title"><i class="fas fa-user-tie"></i> Lawyer Assistant - Case Document Summary</div>
+            <p style="font-size:12px; color:rgba(255,255,255,0.5); margin-bottom:14px;">
+                Upload an SC/ST atrocity or sexual-offence case document (FIR, chargesheet, or judgment - PDF, DOCX, or TXT), or paste
+                the text directly, to get a structured summary: key facts, detected offense categories, extracted sections/dates/parties,
+                applicable law, and relevant case law.
+            </p>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+                <div>
+                    <label style="font-size:13px; color:rgba(255,255,255,0.6);">Upload case document (PDF, DOCX, or TXT):</label>
+                    <input type="file" id="lawyerFileInput" accept=".pdf,.docx,.txt" onchange="handleLawyerFileSelect(event)" style="margin-top:8px; width:100%; font-size:12px; color:rgba(255,255,255,0.7);">
+                    <div id="lawyerFileName" style="font-size:11px; color:#00b894; margin-top:6px;"></div>
+
+                    <label style="font-size:13px; color:rgba(255,255,255,0.6); display:block; margin-top:14px;">Or paste the case text directly:</label>
+                    <textarea id="lawyerTextInput" rows="6" placeholder="Paste FIR / chargesheet / judgment text here..." style="width:100%; margin-top:8px; padding:10px 14px; border-radius:8px; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.03); color:#fff; font-family:inherit; font-size:13px; resize:vertical;"></textarea>
+
+                    <button class="btn btn-primary" onclick="summarizeCaseDocument()" style="margin-top:10px;" id="lawyerSummarizeBtn">
+                        <i class="fas fa-file-contract"></i> Generate Case Summary
+                    </button>
+                    <div style="font-size:11px; color:rgba(255,255,255,0.35); margin-top:10px;">
+                        <i class="fas fa-info-circle"></i> This is an AI-assisted drafting aid (rule-based extraction, not a generative summary) - always verify against the original document before relying on it in any filing or presentation.
+                    </div>
+                </div>
+                <div id="lawyerResults">
+                    <div style="text-align:center; padding:20px; color:rgba(255,255,255,0.4);">
+                        <i class="fas fa-file-contract" style="font-size:32px;"></i>
+                        <p style="margin-top:8px;">Upload a document or paste case text to generate a summary</p>
                     </div>
                 </div>
             </div>
@@ -828,6 +918,242 @@
             body: JSON.stringify({ status: 'Escalated' })
         });
         loadCases();
+    }
+
+    function switchDashboardTab(tab) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('page-' + tab).classList.add('active');
+        document.querySelector(`.tab-btn[onclick*="${tab}"]`).classList.add('active');
+    }
+
+    // ============================================================
+    //  LAWYER ASSISTANT - case document upload & summary
+    //  Ported from frontend/advanced_dashboard.html's Lawyer Assistant
+    //  tab - same feature, same backend endpoint
+    //  (/api/v1/lawyer/summarize), surfaced here in the Command Center
+    //  for officers too. See that file for the original implementation
+    //  notes; kept functionally identical here.
+    //  ⚠️ Unlike this file's other renderXxx() functions, this one
+    //  interpolates text lifted VERBATIM from a user-uploaded document -
+    //  genuinely attacker-controllable content, not a curated server
+    //  string. Every such value is passed through escapeHtml() before
+    //  going into innerHTML.
+    // ============================================================
+    let lawyerSelectedFile = null;
+
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str == null ? '' : String(str);
+        return div.innerHTML;
+    }
+
+    function handleLawyerFileSelect(event) {
+        const file = event.target.files[0];
+        lawyerSelectedFile = file || null;
+        document.getElementById('lawyerFileName').textContent = file
+            ? `Selected: ${file.name}`
+            : '';
+    }
+
+    async function summarizeCaseDocument() {
+        const text = document.getElementById('lawyerTextInput').value;
+        const resultsDiv = document.getElementById('lawyerResults');
+        const btn = document.getElementById('lawyerSummarizeBtn');
+
+        if (!lawyerSelectedFile && !text.trim()) {
+            alert('Upload a case document or paste case text first.');
+            return;
+        }
+
+        btn.disabled = true;
+        resultsDiv.innerHTML = '<div style="text-align:center; padding:20px; color:rgba(255,255,255,0.4);"><i class="fas fa-spinner fa-spin" style="font-size:24px;"></i><p>Generating case summary...</p></div>';
+
+        try {
+            const formData = new FormData();
+            if (lawyerSelectedFile) {
+                formData.append('document', lawyerSelectedFile);
+            } else {
+                formData.append('text', text);
+            }
+
+            const response = await fetch(`${API_URL}/lawyer/summarize`, {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+
+            if (!result.success) {
+                throw new Error(result.error || 'Could not summarize this document.');
+            }
+
+            renderCaseSummary(result.data);
+        } catch (error) {
+            resultsDiv.innerHTML = `<div style="padding:16px; color:#d63031;">❌ ${escapeHtml(error.message)}</div>`;
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    function renderCaseSummary(data) {
+        const resultsDiv = document.getElementById('lawyerResults');
+        const s = data.summary;
+
+        const severityColor = s.overallSeverity > 75 ? 'var(--sev-critical)' : s.overallSeverity > 50 ? 'var(--sev-high)' : s.overallSeverity > 25 ? 'var(--sev-moderate)' : 'var(--sev-low)';
+
+        const priorityBanner = s.requiresPriorityReview ? `
+            <div class="legal-priority-banner">
+                <i class="fas fa-flag"></i> Flagged for priority review based on the severity of the matched pattern(s).
+            </div>` : '';
+
+        const extractionWarning = data.extractionWarning ? `
+            <div class="legal-priority-banner" style="border-color:rgba(253,203,110,0.4); background:rgba(253,203,110,0.08); color:#fdcb6e;">
+                <i class="fas fa-triangle-exclamation"></i> ${escapeHtml(data.extractionWarning)}
+            </div>` : '';
+
+        const categoriesBlock = s.detectedOffenseCategories.length > 0 ? `
+            <div class="legal-section-title"><i class="fas fa-gavel"></i> Detected Offense Categories</div>
+            ${s.detectedOffenseCategories.map(c => `
+                <div class="legal-provision-card">
+                    <div class="incident-tag">${escapeHtml(c.name.replace(/_/g, ' '))}</div>
+                    <div class="primary-law">${escapeHtml(c.description)} <span style="color:rgba(255,255,255,0.4); font-weight:400;">(severity ${c.severity}/100)</span></div>
+                </div>
+            `).join('')}
+        ` : '<p style="font-size:12px; color:rgba(255,255,255,0.5);">No specific atrocity pattern was matched in this document.</p>';
+
+        const entities = s.extractedEntities;
+        const entityRow = (label, values) => values && values.length > 0 ? `
+            <div style="margin-bottom:8px;"><strong style="color:#a29bfe; font-size:11px;">${label}:</strong>
+            <span style="font-size:12px; color:rgba(255,255,255,0.75);"> ${values.map(v => escapeHtml(v)).join(' &nbsp;|&nbsp; ')}</span></div>
+        ` : '';
+
+        const entitiesBlock = `
+            <div class="legal-section-title"><i class="fas fa-list-check"></i> Extracted Details</div>
+            <div class="scst-result-card" style="margin-top:0;">
+                ${entityRow('FIR No.', entities.firNumbers) || '<div style="font-size:12px; color:rgba(255,255,255,0.4);">No FIR number detected</div>'}
+                ${entityRow('Sections / Acts cited', entities.sectionsAndActsCited)}
+                ${entityRow('Dates mentioned', entities.dates)}
+                ${entityRow('Parties', entities.parties)}
+                ${entityRow('Courts mentioned', entities.courtsMentioned)}
+            </div>
+        `;
+
+        const keyFactsBlock = `
+            <div class="legal-section-title"><i class="fas fa-list"></i> Key Facts</div>
+            <ul class="legal-baseline-rights">
+                ${s.keyFacts.map(f => `<li>${escapeHtml(f)}</li>`).join('')}
+            </ul>
+        `;
+
+        const lawBlock = s.applicableLaw ? `
+            <div class="legal-section-title"><i class="fas fa-balance-scale"></i> Applicable Law</div>
+            <ul class="legal-baseline-rights">
+                ${s.applicableLaw.baselineRights.map(r => `<li>${escapeHtml(r)}</li>`).join('')}
+            </ul>
+            ${s.applicableLaw.matchedProvisions.map(p => `
+                <div class="legal-provision-card">
+                    <div class="incident-tag">${escapeHtml(p.incidentType.replace(/_/g, ' '))}</div>
+                    <div class="primary-law">${escapeHtml(p.primaryLaw)}</div>
+                    <ul>${p.keyProtections.map(k => `<li>${escapeHtml(k)}</li>`).join('')}</ul>
+                </div>
+            `).join('')}
+        ` : '';
+
+        const caseLawBlock = s.applicableLaw && s.applicableLaw.relevantCaseLaw.length > 0 ? `
+            <div class="legal-section-title"><i class="fas fa-scroll"></i> Relevant Case Law</div>
+            ${s.applicableLaw.relevantCaseLaw.map(c => `
+                <div class="legal-provision-card">
+                    <div class="primary-law">${escapeHtml(c.caseName)}</div>
+                    <div style="font-size:12px; color:rgba(255,255,255,0.75); line-height:1.6;">${escapeHtml(c.holding)}</div>
+                </div>
+            `).join('')}
+        ` : '';
+
+        const nextStepsBlock = `
+            <div class="legal-section-title"><i class="fas fa-forward"></i> Suggested Next Steps</div>
+            <ul class="legal-baseline-rights">
+                ${s.suggestedNextSteps.map(step => `<li>${escapeHtml(step)}</li>`).join('')}
+            </ul>
+        `;
+
+        resultsDiv.innerHTML = `
+            <div class="scst-result-card">
+                <div class="legal-source-note"><i class="fas fa-file"></i> ${escapeHtml(data.sourceName)} - ${s.documentStats.wordCount} words</div>
+                ${extractionWarning}
+                ${priorityBanner}
+                <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:10px;">
+                    <span class="severity-display" style="color:${severityColor};">${s.overallSeverity}</span>
+                    <span style="font-size:12px; color:rgba(255,255,255,0.5);">/ 100 overall severity</span>
+                    ${s.communitiesIdentified.length > 0 ? `<span style="font-size:11px; color:#a29bfe;">Community identified: ${s.communitiesIdentified.map(c => escapeHtml(c)).join(', ')}</span>` : ''}
+                </div>
+                <div class="legal-section-title"><i class="fas fa-file-lines"></i> Overview</div>
+                <p style="font-size:13px; color:rgba(255,255,255,0.8); line-height:1.6;">${escapeHtml(s.caseOverview)}</p>
+                ${keyFactsBlock}
+                ${categoriesBlock}
+                ${entitiesBlock}
+                ${lawBlock}
+                ${caseLawBlock}
+                ${nextStepsBlock}
+                <div class="legal-disclaimer"><i class="fas fa-info-circle"></i> ${escapeHtml(s.disclaimer)}</div>
+                <button class="btn btn-primary" onclick="downloadCaseSummary()" style="margin-top:14px;"><i class="fas fa-download"></i> Download Summary</button>
+            </div>
+        `;
+
+        window._lastCaseSummary = data;
+    }
+
+    function downloadCaseSummary() {
+        const data = window._lastCaseSummary;
+        if (!data) return;
+        const s = data.summary;
+        const lines = [];
+        lines.push('CASE SUMMARY (AI-Assisted Drafting Aid)');
+        lines.push('Source: ' + data.sourceName);
+        lines.push('Generated: ' + new Date().toLocaleString());
+        lines.push('');
+        lines.push('OVERVIEW');
+        lines.push(s.caseOverview);
+        lines.push('');
+        lines.push('KEY FACTS');
+        s.keyFacts.forEach(f => lines.push('- ' + f));
+        lines.push('');
+        lines.push('DETECTED OFFENSE CATEGORIES');
+        s.detectedOffenseCategories.forEach(c => lines.push(`- ${c.name.replace(/_/g, ' ')} (severity ${c.severity}/100): ${c.description}`));
+        lines.push('');
+        lines.push('EXTRACTED DETAILS');
+        lines.push('FIR No.: ' + (s.extractedEntities.firNumbers.join(', ') || 'none detected'));
+        lines.push('Sections/Acts cited: ' + (s.extractedEntities.sectionsAndActsCited.join(', ') || 'none detected'));
+        lines.push('Dates: ' + (s.extractedEntities.dates.join(', ') || 'none detected'));
+        lines.push('Parties: ' + (s.extractedEntities.parties.join(', ') || 'none detected'));
+        lines.push('Courts mentioned: ' + (s.extractedEntities.courtsMentioned.join(', ') || 'none detected'));
+        lines.push('');
+        if (s.applicableLaw) {
+            lines.push('APPLICABLE LAW');
+            s.applicableLaw.matchedProvisions.forEach(p => {
+                lines.push(`[${p.incidentType.replace(/_/g, ' ')}] ${p.primaryLaw}`);
+                p.keyProtections.forEach(k => lines.push('  - ' + k));
+            });
+            lines.push('');
+            if (s.applicableLaw.relevantCaseLaw.length > 0) {
+                lines.push('RELEVANT CASE LAW');
+                s.applicableLaw.relevantCaseLaw.forEach(c => lines.push(`- ${c.caseName}: ${c.holding}`));
+                lines.push('');
+            }
+        }
+        lines.push('SUGGESTED NEXT STEPS');
+        s.suggestedNextSteps.forEach(step => lines.push('- ' + step));
+        lines.push('');
+        lines.push('DISCLAIMER: ' + s.disclaimer);
+
+        const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `case-summary-${Date.now()}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     }
 
     document.addEventListener('DOMContentLoaded', function() {
