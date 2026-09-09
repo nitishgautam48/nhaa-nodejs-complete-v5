@@ -243,7 +243,24 @@ class TextAnalyzer {
                         'saying goodbye to everyone': 28, 'wrote a goodbye letter': 32,
                         "i have nothing to live for": 32, 'have a plan to end my life': 40,
                         "won't be here much longer": 25,
-                        'done with my life': 35, 'done with life': 32
+                        'done with my life': 35, 'done with life': 32,
+                        // ✅ NEW: common, well-documented indirect suicidal-
+                        // ideation phrasing that the existing entries missed
+                        // entirely - "sleep and never wake up" in particular
+                        // is a widely-recognized passive suicidal ideation
+                        // marker in clinical screening literature, not just
+                        // an unusual turn of phrase.
+                        'sleep and never wake up': 32, 'never wake up again': 28,
+                        "wish i wouldn't wake up": 30, "hope i don't wake up": 30,
+                        'want everything to stop': 28, 'want it all to stop': 28,
+                        'i just want it to end': 30, 'just want it all to end': 30,
+                        'want the pain to end': 26, 'want the pain to stop': 26,
+                        'want it to be over': 24,
+                        'nobody would care if i disappeared': 28,
+                        'no one would care if i disappeared': 28,
+                        'everyone would be happier without me': 30,
+                        'everyone happier without me': 28,
+                        'everyone better off without me': 30
                     },
                     hi: {
                         'आत्महत्या': 35, 'मर जाना': 30, 'जान ले लेना': 30,
@@ -528,6 +545,18 @@ class TextAnalyzer {
         return !!ch && /[\p{L}\p{N}]/u.test(ch);
     }
 
+    // ✅ FIX: keywords/negations written with an apostrophe ("what's the
+    // point of living", "won't let me work", "wasn't") never matched real
+    // user text typed without one ("whats the point of living anymore") -
+    // extremely common on mobile keyboards, and especially dangerous here
+    // since it silently dropped otherwise-clear suicidal-ideation phrasing
+    // to a 0% score. Stripping apostrophes from both sides before matching
+    // (see analyze()'s textLower and _findWholeMatches below) makes
+    // apostrophe presence/absence a non-issue everywhere in this file.
+    _stripApostrophes(s) {
+        return s.replace(/['’‘]/g, '');
+    }
+
     _hasInflectionalSuffix(text, fromIndex) {
         const suffixes = ['ing', 'ened', 'ening', 'ment', 'ness', 'fully',
             'ful', 'ers', 'er', 'ed', 'es', 'en', 's', 'd'];
@@ -543,6 +572,12 @@ class TextAnalyzer {
 
     _findWholeMatches(text, phrase) {
         const indices = [];
+        if (!phrase) return indices;
+        // `text` is expected to already be apostrophe-stripped (analyze()
+        // normalizes it once up front); `phrase` is a literal keyword/
+        // negation/intensifier string that may still contain one, so it's
+        // normalized here at the single point of comparison.
+        phrase = this._stripApostrophes(phrase);
         if (!phrase) return indices;
         let fromIndex = 0;
         while (true) {
@@ -701,7 +736,10 @@ class TextAnalyzer {
         }
 
         const detectedLang = lang || this.detectLanguage(text);
-        const textLower = text.toLowerCase();
+        // Apostrophes stripped once here so every downstream comparison
+        // (keywords, negations, intensifiers, regex patterns) is
+        // apostrophe-insensitive - see _stripApostrophes()/_findWholeMatches().
+        const textLower = this._stripApostrophes(text.toLowerCase());
 
         // ✅ FIX: Log the text being analyzed
         console.log('📝 Analyzing text:', text.substring(0, 100) + '...');
