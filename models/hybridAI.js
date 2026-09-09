@@ -15,8 +15,13 @@ class HybridAIService {
         };
     }
 
-    assess(textAnalysis, audioAnalysis, learnedAdjustments = {}) {
-        let scores = this._calculateScores(textAnalysis, audioAnalysis);
+    // semanticAnalysis is optional (see services/semanticAnalyzer.js) - an
+    // embedding-based paraphrase signal that runs ALONGSIDE the keyword
+    // system (textAnalysis), never in place of it. Passing null/undefined
+    // here (disabled, still loading, or the call timed out) behaves
+    // exactly as before this parameter existed.
+    assess(textAnalysis, audioAnalysis, learnedAdjustments = {}, semanticAnalysis = null) {
+        let scores = this._calculateScores(textAnalysis, audioAnalysis, semanticAnalysis);
         scores = this._applyLearnedAdjustments(scores, learnedAdjustments);
         const svi = this._calculateSVI(scores);
         const confidence = this._calculateConfidence(textAnalysis, audioAnalysis);
@@ -25,7 +30,12 @@ class HybridAIService {
             scores: scores,
             svi: svi,
             confidence: confidence,
-            severity: this._getSeverity(svi)
+            severity: this._getSeverity(svi),
+            // Passthrough for transparency (e.g. a future "why did this
+            // escalate" view) - which reference phrase each category's
+            // semantic score was closest to, and how similar. Not
+            // currently rendered anywhere; harmless to include.
+            semanticTopMatches: semanticAnalysis ? semanticAnalysis.topMatches : null
         };
     }
 
@@ -47,7 +57,7 @@ class HybridAIService {
         return adjusted;
     }
 
-    _calculateScores(textAnalysis, audioAnalysis) {
+    _calculateScores(textAnalysis, audioAnalysis, semanticAnalysis) {
         // NOTE: previously these started at a 0.1 / 0.05 "baseline floor" and used
         // Math.max(floor, realValue). Since real per-text values were often small,
         // that floor dominated the result and made almost every text score nearly
@@ -74,6 +84,19 @@ class HybridAIService {
         if (textAnalysis && textAnalysis.scores) {
             const textScores = textAnalysis.scores;
             for (const [key, value] of Object.entries(textScores)) {
+                if (key in scores) {
+                    scores[key] = Math.max(scores[key], value);
+                }
+            }
+        }
+
+        // Same Math.max blend as audio below: the stronger signal wins.
+        // This is precisely how a paraphrase the keyword list never
+        // anticipated (semantic score high, keyword score 0) still moves
+        // the outcome, without a semantic false-positive ever being able
+        // to REDUCE a keyword-driven score.
+        if (semanticAnalysis && semanticAnalysis.scores) {
+            for (const [key, value] of Object.entries(semanticAnalysis.scores)) {
                 if (key in scores) {
                     scores[key] = Math.max(scores[key], value);
                 }

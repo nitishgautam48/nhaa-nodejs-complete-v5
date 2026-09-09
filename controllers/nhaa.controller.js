@@ -16,6 +16,7 @@ import AudioAnalyzer from '../services/audioAnalyzer.js';
 import LanguageDetector from '../utils/languageDetector.js';
 import Database from '../utils/database.js';
 import AuthService from '../services/auth.js';
+import SemanticAnalyzer from '../services/semanticAnalyzer.js';
 
 class NHHAController {
     constructor() {
@@ -37,6 +38,10 @@ class NHHAController {
         // Wiring this in makes cases real, server-side, shared records.
         this.db = new Database();
         this.auth = new AuthService();
+        // Loads its model in the background (see services/semanticAnalyzer.js
+        // - not awaited here, never blocks server startup or a request if
+        // it's slow/unavailable).
+        this.semanticAnalyzer = new SemanticAnalyzer();
         this.caseCounter = 0;
     }
 
@@ -159,7 +164,14 @@ class NHHAController {
             // Compute it first so it can feed into _hybridDecision below.
             const scstResult = text ? this.scstTrainer.analyze(text) : null;
 
-            const aiResult = this.hybridAI.assess(textAnalysis, audioAnalysis, this.feedbackLearning.getLearnedParameters());
+            // Embedding-based paraphrase signal, additive to (never a
+            // replacement for) the keyword system above - see
+            // services/semanticAnalyzer.js. Resolves to null (falls back to
+            // keyword-only scoring) if disabled, still loading, non-English,
+            // or slow enough to hit its own internal timeout.
+            const semanticAnalysis = text ? await this.semanticAnalyzer.analyze(text, lang) : null;
+
+            const aiResult = this.hybridAI.assess(textAnalysis, audioAnalysis, this.feedbackLearning.getLearnedParameters(), semanticAnalysis);
             const scales = this.clinicalScales.calculate(aiResult);
             const expertRules = this.expertSystem.applyRules(aiResult);
             const humanIntelligence = this.humanIntelligence.synthesize(aiResult, expertRules, text);
