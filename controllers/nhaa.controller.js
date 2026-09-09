@@ -15,6 +15,7 @@ import TextAnalyzer from '../services/textAnalyzer.js';
 import AudioAnalyzer from '../services/audioAnalyzer.js';
 import LanguageDetector from '../utils/languageDetector.js';
 import Database from '../utils/database.js';
+import AuthService from '../services/auth.js';
 
 class NHHAController {
     constructor() {
@@ -35,13 +36,41 @@ class NHHAController {
         // could never show a case submitted from a different browser/device.
         // Wiring this in makes cases real, server-side, shared records.
         this.db = new Database();
+        this.auth = new AuthService();
         this.caseCounter = 0;
+    }
+
+    // ============================================================
+    //  OPTIONAL VICTIM/USER ACCOUNTS
+    //  Entirely optional - see the account widget in
+    //  advanced_dashboard.html and the header comment in services/auth.js.
+    //  Never returns a password or password hash in any response.
+    // ============================================================
+    async registerUser(req, res) {
+        const { email, password, mobile } = req.body || {};
+        const result = await this.auth.register({ email, password, mobile });
+        if (!result.success) {
+            return res.status(result.status).json({ success: false, error: result.error });
+        }
+        res.status(201).json({ success: true, user: result.user });
+    }
+
+    async loginUser(req, res) {
+        const { email, password } = req.body || {};
+        const result = await this.auth.login({ email, password });
+        if (!result.success) {
+            return res.status(result.status).json({ success: false, error: result.error });
+        }
+        res.status(200).json({ success: true, user: result.user });
     }
 
     // Shared by hybridAssessment and scstAnalyze so both entry points
     // (the victim-facing assessment AND the SC/ST-specific tab) create a
     // real, server-side case record an authority can actually see.
-    _persistCase({ caseId, text, language, hybridDecision, scstAnalysis, legalGuidance, source }) {
+    // `contact` is entirely optional - only present if the person chose to
+    // create/log into an account before submitting (see the account widget
+    // in advanced_dashboard.html); anonymous submissions omit it.
+    _persistCase({ caseId, text, language, hybridDecision, scstAnalysis, legalGuidance, source, contact }) {
         try {
             const severityLevel = hybridDecision?.severity?.level ||
                 scstAnalysis?.severityLevel || 'Minimal';
@@ -74,7 +103,10 @@ class NHHAController {
                 } : null,
                 legalApplicable: !!(legalGuidance && legalGuidance.applicable),
                 status: 'Pending',
-                officer: 'Unassigned'
+                officer: 'Unassigned',
+                contact: contact && (contact.email || contact.mobile)
+                    ? { email: contact.email || null, mobile: contact.mobile || null }
+                    : null
             });
         } catch (err) {
             // Persistence failure should never break the response the
@@ -85,7 +117,10 @@ class NHHAController {
 
     async hybridAssessment(req, res) {
         try {
-            const { text } = req.body;
+            // email/mobile are optional - only present if the person chose
+            // to create/log into an account first (see advanced_dashboard.html's
+            // account widget). Anonymous submissions simply omit them.
+            const { text, email, mobile } = req.body;
             const audioFile = req.file;
 
             const lang = text ? this.languageDetector.detect(text) : 'en';
@@ -129,7 +164,7 @@ class NHHAController {
 
             this._persistCase({
                 caseId, text, language: lang, hybridDecision, scstAnalysis: scstResult,
-                legalGuidance, source: 'assessment'
+                legalGuidance, source: 'assessment', contact: { email, mobile }
             });
 
             res.status(200).json({

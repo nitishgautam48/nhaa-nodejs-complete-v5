@@ -233,9 +233,90 @@
             border-radius: 10px; font-size: 11px; color: rgba(255,255,255,0.45); line-height: 1.6;
         }
         .legal-source-note { font-size: 11px; color: rgba(255,255,255,0.4); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+        /* ============================================================
+           ACCOUNT MODAL - entirely optional. This tool works fully
+           anonymously without ever opening this; it exists only for
+           someone who wants their contact info attached to a case for
+           follow-up. Dismissible, not a gate - the page underneath stays
+           usable while this is open or closed.
+           ============================================================ */
+        .account-modal-overlay {
+            display: none; position: fixed; inset: 0; z-index: 1000;
+            align-items: center; justify-content: center; padding: 20px;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(2px);
+        }
+        .account-modal-overlay.open { display: flex; }
+        .account-modal {
+            width: 100%; max-width: 380px; background: #14142c;
+            border: 1px solid rgba(255,255,255,0.08); border-radius: 20px;
+            padding: 28px; position: relative; animation: slideIn 0.3s ease;
+        }
+        .account-modal-close {
+            position: absolute; top: 14px; right: 14px; background: none; border: none;
+            color: rgba(255,255,255,0.4); font-size: 16px; cursor: pointer; padding: 6px;
+        }
+        .account-modal-close:hover { color: white; }
+        .account-modal-title { font-size: 17px; font-weight: 800; margin-bottom: 4px; }
+        .account-modal-subtitle { font-size: 12px; color: rgba(255,255,255,0.5); margin-bottom: 18px; line-height: 1.5; }
+        .account-modal-tabs { display: flex; gap: 4px; background: rgba(255,255,255,0.04); border-radius: 12px; padding: 4px; margin-bottom: 18px; }
+        .account-modal-tab {
+            flex: 1; padding: 8px; border: none; border-radius: 8px; background: transparent;
+            color: rgba(255,255,255,0.6); font-weight: 600; font-size: 12px; cursor: pointer; font-family: inherit;
+        }
+        .account-modal-tab.active { background: linear-gradient(135deg, #6c5ce7, #5a4bd1); color: white; }
+        .account-modal-label { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.5); margin: 0 0 6px 2px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .account-modal-input {
+            width: 100%; padding: 11px 14px; background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 10px;
+            color: #ffffff; font-size: 13px; font-family: inherit; margin-bottom: 12px;
+        }
+        .account-modal-input:focus { outline: none; border-color: #6c5ce7; box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.1); }
+        .account-modal-error { display: none; font-size: 12px; color: #ff8787; margin-bottom: 10px; }
+        .account-modal-success { display: none; font-size: 12px; color: #55efc4; margin-bottom: 10px; }
+        .account-modal-btn {
+            width: 100%; padding: 11px; border: none; border-radius: 10px; font-weight: 700; font-size: 13px;
+            cursor: pointer; background: linear-gradient(135deg, #6c5ce7, #5a4bd1); color: white; font-family: inherit;
+        }
+        .account-modal-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .account-modal-skip { text-align: center; margin-top: 14px; font-size: 11px; color: rgba(255,255,255,0.4); }
+        .account-modal-skip a { color: #a29bfe; cursor: pointer; text-decoration: underline; }
     </style>
 </head>
 <body>
+
+<div id="accountModalOverlay" class="account-modal-overlay">
+    <div class="account-modal">
+        <button class="account-modal-close" onclick="closeAccountModal()"><i class="fas fa-xmark"></i></button>
+        <div class="account-modal-title">Save your case for follow-up</div>
+        <div class="account-modal-subtitle">Completely optional - you can use this tool fully anonymously without an account. Only create one if you want an officer able to follow up with you.</div>
+        <div class="account-modal-tabs">
+            <button class="account-modal-tab active" id="tabSignup" onclick="switchAccountMode('signup')">Sign Up</button>
+            <button class="account-modal-tab" id="tabLogin" onclick="switchAccountMode('login')">Log In</button>
+        </div>
+
+        <form id="signupForm" onsubmit="return submitRegister(event)">
+            <div class="account-modal-label">Email ID</div>
+            <input type="email" id="suEmail" class="account-modal-input" placeholder="you@example.com" autocomplete="off" required>
+            <div class="account-modal-label">Mobile Number</div>
+            <input type="tel" id="suMobile" class="account-modal-input" placeholder="+91XXXXXXXXXX" autocomplete="off" required>
+            <div class="account-modal-label">Create Password</div>
+            <input type="password" id="suPassword" class="account-modal-input" placeholder="At least 8 characters" autocomplete="new-password" required minlength="8">
+            <div id="signupError" class="account-modal-error"></div>
+            <button type="submit" id="signupSubmit" class="account-modal-btn">Create Account</button>
+        </form>
+
+        <form id="loginForm" onsubmit="return submitLogin(event)" style="display:none;">
+            <div class="account-modal-label">Email ID</div>
+            <input type="email" id="liEmail" class="account-modal-input" placeholder="you@example.com" autocomplete="off" required>
+            <div class="account-modal-label">Password</div>
+            <input type="password" id="liPassword" class="account-modal-input" placeholder="Password" autocomplete="current-password" required>
+            <div id="loginError" class="account-modal-error"></div>
+            <button type="submit" id="loginSubmit" class="account-modal-btn">Log In</button>
+        </form>
+
+        <div class="account-modal-skip"><a onclick="closeAccountModal()">Continue without an account</a></div>
+    </div>
+</div>
 
 <div class="container">
 
@@ -248,9 +329,12 @@
                 <div class="header-subtitle">AI-Powered Stress &amp; Trauma · SC/ST Atrocities Analysis</div>
             </div>
         </div>
-        <div class="header-right">
+        <div class="header-right" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
             <div class="status-badge"><span class="dot"></span> Live</div>
             <span class="version-badge">v3.0 · AI-Powered</span>
+            <button class="version-badge" id="accountWidgetBtn" style="cursor:pointer; font-family:inherit;" onclick="openAccountModal()">
+                <i class="fas fa-user"></i> <span id="accountWidgetLabel">Sign up / Log in</span>
+            </button>
         </div>
     </header>
 
@@ -546,6 +630,125 @@
     let chartInstances = {};
     let assessmentHistory = JSON.parse(localStorage.getItem('nhaa_history') || '[]');
 
+    // ============================================================
+    //  OPTIONAL ACCOUNT (email/mobile/password)
+    //  Entirely optional and never blocks the page - see the modal's own
+    //  subtitle and services/auth.js on the backend. sessionStorage (not
+    //  localStorage) so being signed in doesn't persist past this browser
+    //  tab closing, since some people using this tool are on a shared or
+    //  unsafe device and shouldn't have a signed-in session linger after
+    //  they leave.
+    // ============================================================
+    const USER_IDENTITY_STORAGE = 'nhaa_user_identity';
+
+    function getUserIdentity() {
+        try {
+            const raw = sessionStorage.getItem(USER_IDENTITY_STORAGE);
+            return raw ? JSON.parse(raw) : null;
+        } catch { return null; }
+    }
+
+    function updateAccountBadge() {
+        const identity = getUserIdentity();
+        const label = document.getElementById('accountWidgetLabel');
+        const btn = document.getElementById('accountWidgetBtn');
+        if (identity) {
+            label.textContent = identity.email;
+            btn.onclick = logoutUser;
+            btn.title = 'Click to log out';
+        } else {
+            label.textContent = 'Sign up / Log in';
+            btn.onclick = openAccountModal;
+            btn.removeAttribute('title');
+        }
+    }
+
+    function openAccountModal() {
+        document.getElementById('accountModalOverlay').classList.add('open');
+    }
+
+    function closeAccountModal() {
+        document.getElementById('accountModalOverlay').classList.remove('open');
+    }
+
+    function switchAccountMode(mode) {
+        const isSignup = mode === 'signup';
+        document.getElementById('tabSignup').classList.toggle('active', isSignup);
+        document.getElementById('tabLogin').classList.toggle('active', !isSignup);
+        document.getElementById('signupForm').style.display = isSignup ? 'block' : 'none';
+        document.getElementById('loginForm').style.display = isSignup ? 'none' : 'block';
+    }
+
+    async function submitRegister(event) {
+        event.preventDefault();
+        const email = document.getElementById('suEmail').value.trim();
+        const mobile = document.getElementById('suMobile').value.trim();
+        const password = document.getElementById('suPassword').value;
+        const errorEl = document.getElementById('signupError');
+        const submitBtn = document.getElementById('signupSubmit');
+        errorEl.style.display = 'none';
+        submitBtn.disabled = true;
+        try {
+            const response = await fetch(`${API_URL}/auth/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, mobile, password })
+            });
+            const result = await response.json().catch(() => ({}));
+            if (response.ok && result.success) {
+                try { sessionStorage.setItem(USER_IDENTITY_STORAGE, JSON.stringify(result.user)); } catch {}
+                updateAccountBadge();
+                closeAccountModal();
+            } else {
+                errorEl.textContent = result.error || 'Could not create account.';
+                errorEl.style.display = 'block';
+            }
+        } catch (err) {
+            errorEl.textContent = 'Could not reach the server. Try again.';
+            errorEl.style.display = 'block';
+        } finally {
+            submitBtn.disabled = false;
+        }
+        return false;
+    }
+
+    async function submitLogin(event) {
+        event.preventDefault();
+        const email = document.getElementById('liEmail').value.trim();
+        const password = document.getElementById('liPassword').value;
+        const errorEl = document.getElementById('loginError');
+        const submitBtn = document.getElementById('loginSubmit');
+        errorEl.style.display = 'none';
+        submitBtn.disabled = true;
+        try {
+            const response = await fetch(`${API_URL}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+            const result = await response.json().catch(() => ({}));
+            if (response.ok && result.success) {
+                try { sessionStorage.setItem(USER_IDENTITY_STORAGE, JSON.stringify(result.user)); } catch {}
+                updateAccountBadge();
+                closeAccountModal();
+            } else {
+                errorEl.textContent = result.error || 'Could not log in.';
+                errorEl.style.display = 'block';
+            }
+        } catch (err) {
+            errorEl.textContent = 'Could not reach the server. Try again.';
+            errorEl.style.display = 'block';
+        } finally {
+            submitBtn.disabled = false;
+        }
+        return false;
+    }
+
+    function logoutUser() {
+        try { sessionStorage.removeItem(USER_IDENTITY_STORAGE); } catch {}
+        updateAccountBadge();
+    }
+
     function switchTab(tab) {
         document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -757,6 +960,14 @@
             const formData = new FormData();
             if (text.trim()) formData.append('text', text);
             if (recordedBlob) formData.append('audio', new File([recordedBlob], 'recording.wav', { type: 'audio/wav' }));
+            // Only attaches contact info if the person chose to create/log
+            // into an account first (entirely optional - see the account
+            // widget above) - an anonymous submission sends neither field.
+            const userIdentity = getUserIdentity();
+            if (userIdentity) {
+                formData.append('email', userIdentity.email);
+                formData.append('mobile', userIdentity.mobile);
+            }
 
             const response = await fetch(`${API_URL}/hybrid/assess`, { method: 'POST', body: formData });
             if (!response.ok) {
@@ -1421,6 +1632,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         loadHistory();
         restoreSession();
+        updateAccountBadge();
         document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
 
         // ✅ FIX: the landing page's "SC/ST Atrocities" card links to

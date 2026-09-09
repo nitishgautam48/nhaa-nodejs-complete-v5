@@ -46,6 +46,12 @@ const upload = multer({ storage, limits: { fileSize: 15 * 1024 * 1024 }, fileFil
 router.post('/hybrid/assess', upload.single('audio'), controller.hybridAssessment.bind(controller));
 router.post('/assess/text', controller.textAssessment.bind(controller));
 
+// Optional victim/user accounts - entirely optional, see the account widget
+// in advanced_dashboard.html and services/auth.js. No password is ever
+// returned in a response.
+router.post('/auth/register', controller.registerUser.bind(controller));
+router.post('/auth/login', controller.loginUser.bind(controller));
+
 // SC/ST endpoints
 router.post('/scst/analyze', controller.scstAnalyze.bind(controller));
 
