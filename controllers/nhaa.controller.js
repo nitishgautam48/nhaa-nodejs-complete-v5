@@ -172,7 +172,7 @@ class NHHAController {
             const semanticAnalysis = text ? await this.semanticAnalyzer.analyze(text, lang) : null;
 
             const aiResult = this.hybridAI.assess(textAnalysis, audioAnalysis, this.feedbackLearning.getLearnedParameters(), semanticAnalysis);
-            const scales = this.clinicalScales.calculate(aiResult);
+            const scales = this.clinicalScales.calculate(aiResult, text);
             const expertRules = this.expertSystem.applyRules(aiResult);
             const humanIntelligence = this.humanIntelligence.synthesize(aiResult, expertRules, text);
             const expertOpinions = this.consensusBuilder.getExpertOpinions(aiResult, expertRules);

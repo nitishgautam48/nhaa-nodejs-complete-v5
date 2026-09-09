@@ -280,6 +280,8 @@ class TextAnalyzer {
                         'everyone would be better off without me': 32, "everyone's better off without me": 32,
                         "i'm a burden to everyone": 22, "i'm just a burden": 20,
                         "what's the point of living": 25, "what's the point anymore": 18,
+                        'what is the point of living': 25,
+                        "don't think i'm gonna make it": 30,
                         'no one would notice if i was gone': 28, 'nobody would notice if i disappeared': 28,
                         // ✅ NEW: clinically-recognized suicide warning
                         // signs - giving away possessions and saying
