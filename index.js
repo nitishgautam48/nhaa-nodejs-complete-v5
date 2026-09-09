@@ -51,8 +51,15 @@ app.use(express.static(frontendDir));
 // the *.html paths directly too, so existing bookmarks/links keep working.
 app.get('/', (req, res) => res.sendFile(path.join(frontendDir, 'landing.html')));
 app.get('/assessment', (req, res) => res.sendFile(path.join(frontendDir, 'advanced_dashboard.html')));
-app.get('/scst', (req, res) => res.redirect('/assessment#scst'));
 app.get('/authority', (req, res) => res.sendFile(path.join(frontendDir, 'authority_dashboard.html')));
+// ✅ Lawyer Assistant (SC/ST quick pattern check + case document summary)
+// moved to its own dedicated page - it's a tool for lawyers, not the
+// victim-facing assessment flow it used to live inside as a tab. /scst
+// keeps working as an alias (Quick Pattern Check is the default mode),
+// since landing.html's "Lawyer Assistant" card and any existing links
+// still point at /lawyer directly.
+app.get('/lawyer', (req, res) => res.sendFile(path.join(frontendDir, 'lawyer_dashboard.html')));
+app.get('/scst', (req, res) => res.redirect('/lawyer'));
 
 // ✅ NEW: with no error-handling middleware at all, an error thrown
 // synchronously in middleware (e.g. multer's fileFilter rejecting an
