@@ -158,14 +158,13 @@
         @media (max-width: 992px) { .main-grid { grid-template-columns: 1fr; } }
 
         /* ============================================================
-           ACCESS GATE - this dashboard shows real victim case records
-           (SC/ST atrocity testimony, suicide-risk assessments, free-text
-           disclosures). It used to be reachable from the public landing
-           page with a single click and no check of any kind. This overlay
-           blocks the dashboard content until an access code is verified
-           against the server (see /api/v1/authority/verify and
-           middleware/authorityAccess.js - the actual data endpoints are
-           gated server-side too, this isn't just a UI curtain).
+           OFFICER IDENTIFICATION - this dashboard shows real victim case
+           records (SC/ST atrocity testimony, suicide-risk assessments,
+           free-text disclosures). This overlay collects a self-reported
+           name/authority/state/district/designation before showing any
+           case content - it identifies who is viewing, it does not
+           verify identity or restrict access (the case-management
+           endpoints are otherwise open - see routes/nhaa.routes.js).
            ============================================================ */
         .access-gate {
             position: fixed; inset: 0; z-index: 1000; display: flex;
@@ -185,9 +184,12 @@
         .access-gate-input {
             width: 100%; padding: 12px 16px; background: rgba(255,255,255,0.04);
             border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
-            color: #ffffff; font-size: 14px; font-family: inherit; text-align: center;
-            letter-spacing: 2px; margin-bottom: 12px;
+            color: #ffffff; font-size: 14px; font-family: inherit;
+            margin-bottom: 12px;
         }
+        .access-gate-input:not([type="password"]) { text-align: left; letter-spacing: normal; }
+        .access-gate-input[type="password"] { text-align: center; letter-spacing: 2px; }
+        .access-gate-label { text-align: left; font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.5); margin: 0 0 6px 2px; text-transform: uppercase; letter-spacing: 0.5px; }
         .access-gate-input:focus { outline: none; border-color: #6c5ce7; box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.1); }
         .access-gate-error {
             display: none; font-size: 12px; color: #ff8787; margin-bottom: 12px;
@@ -205,13 +207,22 @@
 
 <div id="accessGate" class="access-gate">
     <div class="access-gate-card">
-        <div class="access-gate-icon">🔒</div>
-        <div class="access-gate-title">Authority Access Required</div>
-        <div class="access-gate-subtitle">This dashboard shows real, identifiable victim case records. Enter the authority access code to continue.</div>
-        <form id="accessGateForm" onsubmit="return submitAccessCode(event)">
-            <input type="password" id="accessCodeInput" class="access-gate-input" placeholder="Access code" autocomplete="off" autofocus>
+        <div class="access-gate-icon">🏛️</div>
+        <div class="access-gate-title">Officer Identification</div>
+        <div class="access-gate-subtitle">This dashboard shows real, identifiable victim case records. Enter your details before continuing - this identifies who is viewing each session, not a password.</div>
+        <form id="accessGateForm" onsubmit="return submitAccessCode(event)" style="text-align:left;">
+            <div class="access-gate-label">Name</div>
+            <input type="text" id="idName" class="access-gate-input" placeholder="Full name" autocomplete="off" required autofocus>
+            <div class="access-gate-label">Authority Name</div>
+            <input type="text" id="idAuthority" class="access-gate-input" placeholder="e.g. District SC/ST Cell, Police Dept." autocomplete="off" required>
+            <div class="access-gate-label">State</div>
+            <input type="text" id="idState" class="access-gate-input" placeholder="State" autocomplete="off" required>
+            <div class="access-gate-label">District</div>
+            <input type="text" id="idDistrict" class="access-gate-input" placeholder="District" autocomplete="off" required>
+            <div class="access-gate-label">Designation</div>
+            <input type="text" id="idDesignation" class="access-gate-input" placeholder="e.g. SHO, DSP, Welfare Officer" autocomplete="off" required>
             <div id="accessGateError" class="access-gate-error"></div>
-            <button type="submit" id="accessGateSubmit" class="access-gate-btn"><i class="fas fa-unlock"></i> Continue</button>
+            <button type="submit" id="accessGateSubmit" class="access-gate-btn"><i class="fas fa-arrow-right"></i> Continue</button>
         </form>
     </div>
 </div>
@@ -231,6 +242,7 @@
                 <span id="liveStatus">Live</span>
             </span>
             <span style="font-size:11px; color:rgba(255,255,255,0.4);">v3.0</span>
+            <span id="identityBadge" style="font-size:11px; color:rgba(255,255,255,0.7);"></span>
             <button class="btn btn-outline btn-sm" onclick="signOut()"><i class="fas fa-right-from-bracket"></i> Sign out</button>
         </div>
     </header>
@@ -391,81 +403,66 @@
     let searchDebounce = null;
 
     // ============================================================
-    //  ACCESS GATE
-    //  sessionStorage (not localStorage) so the code doesn't persist past
-    //  the browser tab/session closing - appropriate for a shared/on-duty
-    //  workstation. authFetch() is a drop-in replacement for fetch() used
-    //  by every /cases* call below: it attaches the access code header and,
-    //  if the server ever rejects it (revoked/expired), re-shows the gate
-    //  instead of the page silently going blank/erroring.
+    //  OFFICER IDENTIFICATION
+    //  This is NOT access control - it does not verify the person is who
+    //  they say they are, and the case-management endpoints are otherwise
+    //  open (see routes/nhaa.routes.js). It records who claims to be
+    //  viewing this session, shown in the header, so there's at least a
+    //  named identity attached to each visit rather than an anonymous one.
+    //  sessionStorage (not localStorage) so it doesn't persist past the
+    //  browser tab/session closing - appropriate for a shared workstation.
     // ============================================================
-    const ACCESS_KEY_STORAGE = 'nhaa_authority_key';
+    const IDENTITY_STORAGE = 'nhaa_authority_identity';
 
-    function getAccessKey() {
-        try { return sessionStorage.getItem(ACCESS_KEY_STORAGE) || ''; }
-        catch { return ''; }
+    function getIdentity() {
+        try {
+            const raw = sessionStorage.getItem(IDENTITY_STORAGE);
+            return raw ? JSON.parse(raw) : null;
+        } catch { return null; }
     }
 
     function showAccessGate() {
         document.getElementById('dashboardContainer').style.display = 'none';
         document.getElementById('accessGate').style.display = 'flex';
-        const input = document.getElementById('accessCodeInput');
-        if (input) { input.value = ''; input.focus(); }
+        const input = document.getElementById('idName');
+        if (input) input.focus();
     }
 
-    function showDashboard() {
+    function showDashboard(identity) {
         document.getElementById('accessGate').style.display = 'none';
         document.getElementById('dashboardContainer').style.display = 'block';
-    }
-
-    async function authFetch(url, options = {}) {
-        const headers = { ...(options.headers || {}), 'x-authority-key': getAccessKey() };
-        const response = await fetch(url, { ...options, headers });
-        if (response.status === 401) {
-            try { sessionStorage.removeItem(ACCESS_KEY_STORAGE); } catch {}
-            showAccessGate();
-            document.getElementById('accessGateError').textContent = 'Session expired or access code no longer valid - please re-enter it.';
-            document.getElementById('accessGateError').style.display = 'block';
+        const badge = document.getElementById('identityBadge');
+        if (badge && identity) {
+            badge.textContent = `${identity.name} · ${identity.designation}`;
+            badge.title = `${identity.authority}, ${identity.district}, ${identity.state}`;
         }
-        return response;
     }
 
-    async function submitAccessCode(event) {
+    function submitAccessCode(event) {
         event.preventDefault();
-        const code = document.getElementById('accessCodeInput').value;
+        const identity = {
+            name: document.getElementById('idName').value.trim(),
+            authority: document.getElementById('idAuthority').value.trim(),
+            state: document.getElementById('idState').value.trim(),
+            district: document.getElementById('idDistrict').value.trim(),
+            designation: document.getElementById('idDesignation').value.trim()
+        };
         const errorEl = document.getElementById('accessGateError');
-        const submitBtn = document.getElementById('accessGateSubmit');
-        errorEl.style.display = 'none';
-        if (!code) return false;
-        submitBtn.disabled = true;
-        try {
-            const response = await fetch(`${API_URL}/authority/verify`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ code })
-            });
-            const result = await response.json().catch(() => ({}));
-            if (response.ok && result.success) {
-                try { sessionStorage.setItem(ACCESS_KEY_STORAGE, code); } catch {}
-                showDashboard();
-                loadCases();
-            } else {
-                errorEl.textContent = response.status === 503
-                    ? 'Authority access is not configured on this server yet. Contact your administrator.'
-                    : 'Incorrect access code.';
-                errorEl.style.display = 'block';
-            }
-        } catch (err) {
-            errorEl.textContent = 'Could not reach the server. Try again.';
+        if (Object.values(identity).some(v => !v)) {
+            errorEl.textContent = 'Please fill in every field.';
             errorEl.style.display = 'block';
-        } finally {
-            submitBtn.disabled = false;
+            return false;
         }
+        errorEl.style.display = 'none';
+        try { sessionStorage.setItem(IDENTITY_STORAGE, JSON.stringify(identity)); } catch {}
+        showDashboard(identity);
+        loadCases();
         return false;
     }
 
     function signOut() {
-        try { sessionStorage.removeItem(ACCESS_KEY_STORAGE); } catch {}
+        try { sessionStorage.removeItem(IDENTITY_STORAGE); } catch {}
+        document.getElementById('accessGateForm').reset();
         showAccessGate();
     }
 
@@ -501,7 +498,7 @@
         try {
             const params = new URLSearchParams();
             if (currentSearch) params.set('search', currentSearch);
-            const response = await authFetch(`${API_URL}/cases?${params.toString()}`);
+            const response = await fetch(`${API_URL}/cases?${params.toString()}`);
             if (!response.ok) throw new Error(`Server returned status ${response.status}`);
             const result = await response.json();
             if (!result.success) throw new Error('Failed to load cases');
@@ -776,7 +773,7 @@
         const status = document.getElementById('modalStatus').value;
         const officer = document.getElementById('modalOfficer').value.trim() || 'Unassigned';
         try {
-            const response = await authFetch(`${API_URL}/cases/${selectedCaseId}`, {
+            const response = await fetch(`${API_URL}/cases/${selectedCaseId}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status, officer })
@@ -798,7 +795,7 @@
         const target = selectedCaseId || (cases.find(c => (tier(c.severity) === 'Critical' || tier(c.severity) === 'High') && c.status === 'Pending') || {}).id;
         if (!target) { alert('No case selected or pending to attach this note to.'); return; }
         try {
-            await authFetch(`${API_URL}/cases/${target}`, {
+            await fetch(`${API_URL}/cases/${target}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ notes: note })
@@ -815,7 +812,7 @@
         const officer = officers[Math.floor(Math.random() * officers.length)];
         const target = selectedCaseId || (cases.find(c => (tier(c.severity) === 'Critical' || tier(c.severity) === 'High') && c.status === 'Pending') || {}).id;
         if (!target) { alert('No pending case to assign.'); return; }
-        await authFetch(`${API_URL}/cases/${target}`, {
+        await fetch(`${API_URL}/cases/${target}`, {
             method: 'PATCH', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ officer, status: 'Assigned' })
         });
@@ -826,7 +823,7 @@
         const target = selectedCaseId || (cases.find(c => tier(c.severity) === 'Critical' && c.status === 'Pending') || {}).id;
         if (!target) { alert('No critical pending case to escalate.'); return; }
         if (!confirm(`Escalate case ${target} to senior authority?`)) return;
-        await authFetch(`${API_URL}/cases/${target}`, {
+        await fetch(`${API_URL}/cases/${target}`, {
             method: 'PATCH', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: 'Escalated' })
         });
@@ -834,20 +831,20 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-        // Only auto-load case data if a code from an earlier session is
-        // still stored; otherwise stay on the access gate and wait for
-        // submitAccessCode() to reveal the dashboard. If a stored code has
-        // since been revoked/changed, the first authFetch() 401 sends the
-        // user back to the gate anyway.
-        if (getAccessKey()) {
-            showDashboard();
+        // Only auto-load case data if identification from earlier in this
+        // browser tab's session is still stored; otherwise stay on the
+        // identification form and wait for submitAccessCode() to reveal
+        // the dashboard.
+        const identity = getIdentity();
+        if (identity) {
+            showDashboard(identity);
             loadCases();
         } else {
             showAccessGate();
         }
         // Auto-refresh every 20s so newly submitted victim reports appear
         // without a manual reload - only while actually past the gate.
-        setInterval(() => { if (getAccessKey()) loadCases(); }, 20000);
+        setInterval(() => { if (getIdentity()) loadCases(); }, 20000);
         console.log('🏛️ NHAA Authority Dashboard loaded (live backend).');
     });
 </script>
