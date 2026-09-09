@@ -42,9 +42,32 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({ storage, limits: { fileSize: 15 * 1024 * 1024 }, fileFilter });
 
+// Separate multer config for the Lawyer tab's document upload - a
+// distinct allowed-type list (PDF/DOCX/TXT, not audio) and a larger size
+// limit, since case documents/judgments can run much longer than a 15s
+// voice clip.
+const documentFileFilter = (req, file, cb) => {
+    const allowed = [
+        'application/pdf',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'text/plain'
+    ];
+    if (allowed.includes(file.mimetype) || /\.(pdf|docx|txt)$/i.test(file.originalname)) {
+        cb(null, true);
+    } else {
+        cb(new Error('Only PDF, DOCX, or TXT files are allowed'), false);
+    }
+};
+const uploadDocument = multer({ storage, limits: { fileSize: 25 * 1024 * 1024 }, fileFilter: documentFileFilter });
+
 // Assessment endpoints
 router.post('/hybrid/assess', upload.single('audio'), controller.hybridAssessment.bind(controller));
 router.post('/assess/text', controller.textAssessment.bind(controller));
+
+// Lawyer tab: upload a case document (PDF/DOCX/TXT) or paste text, get a
+// structured case summary - see controller.summarizeCaseDocument /
+// models/caseSummarizer.js.
+router.post('/lawyer/summarize', uploadDocument.single('document'), controller.summarizeCaseDocument.bind(controller));
 
 // Optional victim/user accounts - entirely optional, see the account widget
 // in advanced_dashboard.html and services/auth.js. No password is ever

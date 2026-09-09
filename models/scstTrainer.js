@@ -50,9 +50,27 @@ class SCSTTrainer {
                     // at all - same gap as textAnalyzer.js's trauma
                     // category, fixed the same way (explicit entries, not
                     // relying on fuzzy/stemming across "-ation").
-                    'molested', 'molestation', 'molesting', 'molests', 'groped'],
+                    'molested', 'molestation', 'molesting', 'molests', 'groped',
+                    // ✅ FIX: every phrase above was written for FIRST-PERSON
+                    // victim disclosure ("touched ME inappropriately", "forced
+                    // ME", "against MY will") - real gap found building the
+                    // Lawyer tab's case-document summarizer (caseSummarizer.js),
+                    // which runs this SAME engine against THIRD-PERSON legal
+                    // narration ("the accused touched HER inappropriately",
+                    // an FIR/chargesheet/judgment's normal voice). The
+                    // inserted pronoun breaks the original phrase-as-substring
+                    // match entirely - "touched her inappropriately" does not
+                    // contain the substring "touched inappropriately". Third-
+                    // person equivalents added so case documents get the same
+                    // detection victim self-disclosure already had.
+                    'touched her inappropriately', 'touched him inappropriately',
+                    'against her will', 'against his will',
+                    "she didn't want it", "he didn't want it",
+                    'she did not want it', 'he did not want it',
+                    'made her uncomfortable', 'made him uncomfortable',
+                    'took advantage of her', 'took advantage of him'],
                 severity: 85,
-                description: 'Sexual abuse described in victim\'s own indirect language'
+                description: 'Sexual abuse or unwanted touching described indirectly, in the victim\'s own words or a case document\'s narration'
             },
             'police_brutality': {
                 keywords: ['police beat', 'beaten by police', 'police torture',
@@ -486,9 +504,29 @@ class SCSTTrainer {
             }
         }
 
+        // ✅ FIX: communityKeywords.dalit/tribal include the bare 2-letter
+        // abbreviations 'sc'/'st', which word-boundary matching correctly
+        // finds as standalone tokens - but "SC/ST Act", "SC/ST Commission",
+        // etc. (the name of the LAW itself) also satisfies that boundary
+        // check on both sides of the slash, since '/' isn't a letter. Real
+        // gap found building the Lawyer tab's case-document summarizer:
+        // legal documents cite "SC/ST (Prevention of Atrocities) Act" as
+        // routine boilerplate in nearly every case, which was silently
+        // asserting BOTH communities were identified even for a
+        // Scheduled-Caste-only victim, purely from the Act's name being
+        // mentioned - not from any actual identification of who the victim
+        // is. This blanks out the Act-name references (and its full
+        // official name) before community-keyword matching only, so
+        // legitimate individual identification ("she is from the ST
+        // community", "SC category") still matches normally.
+        const communityDetectionText = textLower
+            .replace(/\bsc\s*\/\s*st\b/g, ' the atrocities ')
+            .replace(/\bscheduled\s+castes?\s+and\s+scheduled\s+tribes?\b/g, ' the atrocities ');
+        const communityDetectionTokens = this._tokenize(communityDetectionText);
+
         // Check communities (word-boundary safe)
         for (const [community, keywords] of Object.entries(this.communityKeywords)) {
-            if (keywords.some(kw => this._matchesKeyword(textLower, tokens, kw))) {
+            if (keywords.some(kw => this._matchesKeyword(communityDetectionText, communityDetectionTokens, kw))) {
                 results.communities.push(community);
             }
         }

@@ -41,10 +41,22 @@
       "molestation",
       "molesting",
       "molests",
-      "groped"
+      "groped",
+      "touched her inappropriately",
+      "touched him inappropriately",
+      "against her will",
+      "against his will",
+      "she didn't want it",
+      "he didn't want it",
+      "she did not want it",
+      "he did not want it",
+      "made her uncomfortable",
+      "made him uncomfortable",
+      "took advantage of her",
+      "took advantage of him"
     ],
     "severity": 85,
-    "description": "Sexual abuse described in victim's own indirect language"
+    "description": "Sexual abuse or unwanted touching described indirectly, in the victim's own words or a case document's narration"
   },
   "police_brutality": {
     "keywords": [

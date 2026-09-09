@@ -54,6 +54,20 @@ app.get('/assessment', (req, res) => res.sendFile(path.join(frontendDir, 'advanc
 app.get('/scst', (req, res) => res.redirect('/assessment#scst'));
 app.get('/authority', (req, res) => res.sendFile(path.join(frontendDir, 'authority_dashboard.html')));
 
+// ✅ NEW: with no error-handling middleware at all, an error thrown
+// synchronously in middleware (e.g. multer's fileFilter rejecting an
+// unsupported upload) fell through to Express's default handler, which
+// returns a raw HTML page with a full stack trace instead of a JSON
+// error the frontend can actually parse and show the person. Any route
+// handler that calls `next(err)` or throws synchronously now gets a
+// clean JSON response instead - existing routes that already send their
+// own res.status(...).json(...) on error are unaffected, since this only
+// runs when nothing else has already handled the error.
+app.use((err, req, res, next) => {
+    console.error('Unhandled error:', err.message);
+    res.status(400).json({ success: false, error: err.message || 'Request failed' });
+});
+
 app.listen(PORT, () => {
     console.log('\n' + '='.repeat(60));
     console.log('🧠 NHAA Complete System');
