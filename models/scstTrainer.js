@@ -143,7 +143,13 @@ class SCSTTrainer {
                     // ✅ FIX: "sexually exploited" and "touched ... without
                     // consent" are specific, unambiguous phrasings that
                     // weren't covered by any existing entry.
-                    'sexually exploited', 'touched her without consent', 'touched him without consent'],
+                    'sexually exploited', 'touched her without consent', 'touched him without consent',
+                    // ✅ FIX (round 2): consent language on its own ("without
+                    // my consent", "didn't consent to") is a common way a
+                    // victim describes this euphemistically/indirectly,
+                    // without naming the act - "he did things to me I
+                    // didn't consent to" matched nothing.
+                    'without my consent', "didn't consent", 'did not consent'],
                 severity: 85,
                 description: 'Sexual abuse or unwanted touching described indirectly, in the victim\'s own words or a case document\'s narration'
             },
@@ -225,7 +231,18 @@ class SCSTTrainer {
                     // correctly identified) matched no pattern whatsoever.
                     'refused to rent', 'denied housing', 'refused housing',
                     'refused to sell the house', 'refused to sell him the house',
-                    'refused to sell her the house', 'refused to let the house'],
+                    'refused to sell her the house', 'refused to let the house',
+                    // ✅ FIX (round 2, found stress-testing further): "not
+                    // giving me house on rent" (a common non-native-English
+                    // phrasing of the same housing-refusal disclosure),
+                    // being fired specifically for one's community, and a
+                    // fine/penalty imposed on an SC/ST family for using a
+                    // shared public road all matched nothing.
+                    'not giving me house on rent', 'denied rental housing', 'refuses to rent',
+                    'fired for being sc', 'fired for being dalit', 'fired for being a dalit',
+                    'terminated for being dalit', 'fined for using the road',
+                    'penalized for using the road', 'fine for using the road',
+                    'fine for using the main road', 'imposed a fine on the family'],
                 severity: 65,
                 description: 'Caste discrimination against SC/ST individual (workplace, healthcare, school, or general)'
             },
@@ -254,7 +271,16 @@ class SCSTTrainer {
                     // covered by the already-listed "forced to eat human
                     // waste"/"forced to lick".
                     'forced to eat from the ground', 'forced him to eat from the ground',
-                    'forced her to eat from the ground'],
+                    'forced her to eat from the ground',
+                    // ✅ FIX (round 2): "chappals" (the common Indian-English
+                    // word for sandals) wasn't recognized by the existing
+                    // "made to remove footwear"; pouring cow urine to
+                    // "purify" a place/object an SC/ST person touched is a
+                    // specific, well-documented humiliation ritual with no
+                    // coverage at all.
+                    'made to remove his chappals', 'made to remove her chappals',
+                    'remove his chappals', 'remove her chappals',
+                    'poured cow urine on him', 'poured cow urine on her', 'cow urine was poured'],
                 severity: 80,
                 description: 'Public humiliation of SC/ST victim'
             },
@@ -277,7 +303,15 @@ class SCSTTrainer {
                     // evidence" (evidence planted within a case).
                     'a crime he did not commit', 'a crime she did not commit',
                     "a crime he didn't commit", "a crime she didn't commit",
-                    'fabricated fir'],
+                    'fabricated fir',
+                    // ✅ FIX (round 2): "arrested on false charges" and
+                    // "filed a false [dowry] case" are both very common
+                    // real phrasings that didn't match the existing
+                    // "false charges filed against" (different word order)
+                    // or "foisted a false case" (different verb).
+                    'arrested on false charges', 'arrested on fabricated charges',
+                    'filed a false case', 'filed a false dowry case', 'false dowry case',
+                    'filed false charges'],
                 severity: 85,
                 description: 'False conviction of SC/ST individual'
             },
@@ -345,7 +379,22 @@ class SCSTTrainer {
                     // (land as the grammatical subject) is distinct from
                     // the already-covered "grabbed + possessive land".
                     'made to work without wages', 'forced to work without pay',
-                    'worked without wages', 'land was grabbed'],
+                    'worked without wages', 'land was grabbed',
+                    // ✅ FIX (round 2): deaths of sanitation/sewer workers
+                    // (overwhelmingly Dalit, especially Valmiki community)
+                    // due to unsafe manual-scavenging-adjacent conditions
+                    // are a real, recurring, well-documented atrocity that
+                    // the existing "manual scavenging"/"forced to clean
+                    // sewers" phrases didn't cover when the account
+                    // describes the resulting DEATH rather than the forced
+                    // labor itself; arson against an SC/ST person's home is
+                    // a separate, severe form of livelihood destruction
+                    // with no coverage at all.
+                    'died while cleaning a sewer', 'died cleaning the sewer',
+                    'died inside the sewer', 'sewer death', 'manhole death', 'died in the manhole',
+                    'set his house on fire', 'set her house on fire', 'house was set on fire',
+                    'burned down his house', 'burned down her house', 'burnt down his house',
+                    'burnt down her house'],
                 severity: 78,
                 description: 'Illegal dispossession of SC/ST land, coerced/bonded labor, or forced manual scavenging'
             },
@@ -428,7 +477,14 @@ class SCSTTrainer {
                     'refuse to sell him', 'refuse to sell her', 'refused to sell him anything',
                     'refused to sell her anything', 'sit at the back of the classroom',
                     'made to sit separately', 'touching a common utensil', 'touched a common utensil',
-                    'separate utensils', 'separate cups', 'separate glasses'],
+                    'separate utensils', 'separate cups', 'separate glasses',
+                    // ✅ FIX (round 2): denial of a share of temple prasad
+                    // (a religious offering distributed to devotees) is a
+                    // specific, real form of temple-related exclusion,
+                    // distinct from the already-covered outright temple
+                    // entry denial.
+                    'denied prasad', 'excluded from prasad', 'denied a share of prasad',
+                    'denied a portion of prasad', 'excluded from the prasad distribution'],
                 severity: 68,
                 description: 'Denial of access to public resources (water, temple, cremation ground, school), forced expulsion from a village, or organized social/economic boycott'
             },
@@ -449,7 +505,13 @@ class SCSTTrainer {
                     // prevented); "sarpanch election" (the election itself)
                     // is distinct from the already-covered "sarpanch post"
                     // (the office/seat).
-                    'threatened not to contest', 'sarpanch election'],
+                    'threatened not to contest', 'sarpanch election',
+                    // ✅ FIX (round 2): denying an elected Dalit/tribal
+                    // sarpanch their ceremonial duties (most commonly,
+                    // hoisting the national flag on Independence/Republic
+                    // Day) is a specific, real, well-documented form of
+                    // this intimidation with no coverage at all.
+                    'not allowed to hoist the flag', 'prevented from hoisting the flag'],
                 severity: 80,
                 description: 'Intimidation preventing an SC/ST person from voting, contesting, or holding office'
             },

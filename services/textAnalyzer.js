@@ -23,6 +23,39 @@ class TextAnalyzer {
             hi: ['नहीं', 'ना', 'कभी नहीं', 'कोई नहीं']
         };
 
+        // ============================================================
+        //  ✅ CRITICAL FIX: fuzzy matching's "same first letter" safeguard
+        //  (see _fuzzyFindKeyword) does not stop two same-length, common,
+        //  unrelated English words that happen to differ by one interior
+        //  letter and share a first letter too - the exact same class of
+        //  bug already found and fixed in the SC/ST model's own fuzzy
+        //  matcher (scstTrainer.js). Systematically checked every single-
+        //  word keyword (length >=7) against a real English wordlist for
+        //  distance-1, same-length collisions and verified each entry
+        //  below against a real running server. The worst: a plain
+        //  comment about an overcooked steak ("a bit overdone tonight")
+        //  fuzzy-matched the suicide-category keyword "overdose" and
+        //  scored "High distress: Suicide Risk (72%)" - the single most
+        //  safety-critical false positive this tool could produce. An
+        //  explicit denylist of verified real-word collisions is safer
+        //  than a general heuristic that could suppress legitimate typo-
+        //  catching for everything else. Format: 'token:keyword'.
+        // ============================================================
+        this.FUZZY_COLLISION_DENYLIST = new Set([
+            'attached:attacked',    // trauma - "I attached the file"
+            'overdone:overdose',    // suicide - "the steak was overdone"
+            'homeless:hopeless',    // depression - "he became homeless"
+            'swearing:sweating',    // trauma/fear - "swearing at the referee"
+            'tensing:teasing', 'teaming:teasing', 'tearing:teasing', // trauma - "teaming up", "tearing paper"
+            'stacking:stalking', 'stalling:stalking',                // fear - "stacking boxes", "stalling for time"
+            'warming:warning', 'warping:warning', 'warring:warning', // "global warming", "warring factions"
+            'sharing:scaring', 'soaring:scaring', 'scoring:scaring', // "sharing a meal", "prices soaring", "scoring a goal"
+            'staring:scaring', 'sparing:scaring', 'scaling:scaring', // "scaling a wall"
+            'soaking:shaking', 'sharing:shaking', 'shading:shaking', // trauma - "soaking wet", "shading the yard"
+            'shaping:shaking', 'shaving:shaking', 'staking:shaking', // "shaping the future", "shaving cream"
+            'snaking:shaking'                                        // "the road was snaking through the hills"
+        ]);
+
         // ================================================================
         //  COMPREHENSIVE KEYWORD DATABASE WITH WEIGHTS
         // ================================================================
@@ -998,6 +1031,7 @@ class TextAnalyzer {
                 // Real typos/inflections ('asaulted' vs 'assault') almost
                 // always preserve the first character.
                 if (variant[0] !== keyword[0]) continue;
+                if (this.FUZZY_COLLISION_DENYLIST.has(`${variant}:${keyword}`)) continue;
                 if (this._levenshtein(variant, keyword) <= threshold) return token;
             }
         }
