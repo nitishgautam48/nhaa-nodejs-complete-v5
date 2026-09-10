@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>⚖️ RAKSHAK AI Lawyer Assistant</title>
+    <!-- PWA: makes this installable and, once installed, registers it as a
+         share target - "Share" a case PDF from WhatsApp/Drive/Files straight
+         into this page instead of it just opening in the browser's own PDF
+         viewer. See frontend/manifest.json's share_target and the
+         DOMContentLoaded handler below that picks up a shared file. -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#6c5ce7">
+    <link rel="apple-touch-icon" href="/icon-192.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -322,6 +330,9 @@
                 </div>
                 <div class="divider-or">OR PASTE TEXT</div>
                 <label class="field-label">Paste the case text directly:</label>
+                <div id="sharedFileNote" style="display:none; margin-bottom:8px; padding:8px 12px; background:rgba(0,184,148,0.08); border:1px solid rgba(0,184,148,0.25); border-radius:8px; font-size:12px; color:#00b894;">
+                    <i class="fas fa-share-nodes"></i> <span id="sharedFileNoteText"></span>
+                </div>
                 <textarea id="lawyerTextInput" rows="6" placeholder="Paste FIR / chargesheet / judgment text here..."></textarea>
                 <div id="docTrackFields" style="display:none;">
                     <div class="track-fields-hint"><i class="fas fa-bookmark"></i> Logged in as a lawyer - optionally tag this summary to a case for follow-up.</div>
@@ -911,10 +922,55 @@
         URL.revokeObjectURL(url);
     }
 
+    // Registers this page as installable and (once installed) as a PWA
+    // share target - see frontend/manifest.json. Safe to call even in
+    // browsers with no service worker support (e.g. some in-app
+    // webviews) since it's feature-detected first.
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+
+    // Picks up a file shared from the phone's OS share sheet (WhatsApp,
+    // Drive, Files, email, ...) - see controller.shareTargetReceive,
+    // which extracts the text server-side and redirects here with
+    // ?shared=<token>. Deliberately does NOT auto-run the summary: the
+    // extracted text is only dropped into the same textarea a manual
+    // paste would use, so the lawyer still reviews it and explicitly
+    // clicks Generate, same as every other path into this tool.
+    async function loadSharedFileIfPresent() {
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get('shared');
+        if (!token) return;
+
+        // Clean the token out of the visible URL immediately, whether or
+        // not the fetch below succeeds - it's one-time-use server-side
+        // regardless, so leaving it visible/bookmarkable would be
+        // misleading.
+        const cleanUrl = window.location.pathname + window.location.hash;
+        window.history.replaceState({}, '', cleanUrl);
+
+        try {
+            const response = await fetch(`${API_URL}/lawyer/shared-text/${encodeURIComponent(token)}`);
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok || !result.success) return;
+
+            switchMode('doc');
+            document.getElementById('lawyerTextInput').value = result.text;
+            const note = document.getElementById('sharedFileNote');
+            document.getElementById('sharedFileNoteText').textContent =
+                `Loaded from "${result.sourceName}" - review below, then click Generate Case Summary.`;
+            note.style.display = 'block';
+        } catch (err) {
+            // Shared file just doesn't appear - no error shown, since the
+            // person can still upload/paste manually.
+        }
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         const hash = window.location.hash.replace('#', '');
         if (hash === 'doc') switchMode('doc');
         updateAccountBadge();
+        loadSharedFileIfPresent();
     });
 </script>
 </body>
