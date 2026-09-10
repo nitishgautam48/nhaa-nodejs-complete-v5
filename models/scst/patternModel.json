@@ -17,7 +17,9 @@
       "attempt to rape",
       "rape attempt",
       "abducted and raped",
-      "sexual assault"
+      "sexual assault",
+      "abducted",
+      "abducted and violated"
     ],
     "severity": 100,
     "description": "Gang rape of SC/ST victim"
@@ -38,7 +40,18 @@
       "abused the child",
       "child sexual abuse",
       "minor victim",
-      "school-going girl"
+      "school-going girl",
+      "5-year-old",
+      "6-year-old",
+      "7-year-old",
+      "8-year-old",
+      "9-year-old",
+      "10-year-old",
+      "11-year-old",
+      "12-year-old",
+      "13-year-old",
+      "15-year-old",
+      "17-year-old"
     ],
     "severity": 100,
     "description": "Child sexual abuse of SC/ST minor"
@@ -83,7 +96,17 @@
       "unwanted physical contact",
       "inappropriate contact",
       "sexually harassed",
-      "sexual harassment"
+      "sexual harassment",
+      "sexually abused",
+      "inappropriately touched her",
+      "inappropriately touched him",
+      "force himself on",
+      "force herself on",
+      "tried to force himself",
+      "tried to force herself",
+      "sexually exploited",
+      "touched her without consent",
+      "touched him without consent"
     ],
     "severity": 85,
     "description": "Sexual abuse or unwanted touching described indirectly, in the victim's own words or a case document's narration"
@@ -115,7 +138,22 @@
       "forest officers beat",
       "beaten by forest officials",
       "assaulted by forest department",
-      "forest guards beat"
+      "forest guards beat",
+      "dragged him out",
+      "dragged her out",
+      "dragged out of his house",
+      "dragged out of her house",
+      "beat him with sticks",
+      "beat her with sticks",
+      "beaten with sticks",
+      "beaten with rods",
+      "beaten with lathis",
+      "died in police custody",
+      "died in custody",
+      "death in police custody",
+      "tortured in the lockup",
+      "held in the lockup",
+      "beaten in the lockup"
     ],
     "severity": 85,
     "description": "Police or forest-department brutality against SC/ST victim"
@@ -153,7 +191,14 @@
       "caste name calling",
       "insulted by caste name",
       "lower caste",
-      "upper caste"
+      "upper caste",
+      "refused to rent",
+      "denied housing",
+      "refused housing",
+      "refused to sell the house",
+      "refused to sell him the house",
+      "refused to sell her the house",
+      "refused to let the house"
     ],
     "severity": 65,
     "description": "Caste discrimination against SC/ST individual (workplace, healthcare, school, or general)"
@@ -173,7 +218,14 @@
       "forced to lick",
       "made to remove footwear",
       "forced to remove clothes",
-      "forced to remove clothing"
+      "forced to remove clothing",
+      "garland himself with shoes",
+      "garland herself with shoes",
+      "garlanded with shoes",
+      "made to garland",
+      "forced to eat from the ground",
+      "forced him to eat from the ground",
+      "forced her to eat from the ground"
     ],
     "severity": 80,
     "description": "Public humiliation of SC/ST victim"
@@ -193,7 +245,12 @@
       "wrongly accused",
       "wrongly implicated",
       "false fir",
-      "foisted a false case"
+      "foisted a false case",
+      "a crime he did not commit",
+      "a crime she did not commit",
+      "a crime he didn't commit",
+      "a crime she didn't commit",
+      "fabricated fir"
     ],
     "severity": 85,
     "description": "False conviction of SC/ST individual"
@@ -235,7 +292,11 @@
       "witness intimidated",
       "threatened the witness",
       "pressured to drop the case",
-      "forced to withdraw the complaint"
+      "forced to withdraw the complaint",
+      "warned to stay quiet",
+      "told to stay quiet",
+      "warned her family to stay quiet",
+      "warned his family to stay quiet"
     ],
     "severity": 80,
     "description": "Victim actively threatened or coerced into silence"
@@ -257,7 +318,19 @@
       "denied ownership of land",
       "illegally acquired land",
       "grabbed their land",
-      "land grab"
+      "land grab",
+      "took over his farmland",
+      "took over her farmland",
+      "took over their farmland",
+      "occupied his farmland",
+      "occupied her farmland",
+      "occupied their farmland",
+      "grabbed his land",
+      "grabbed her land",
+      "made to work without wages",
+      "forced to work without pay",
+      "worked without wages",
+      "land was grabbed"
     ],
     "severity": 78,
     "description": "Illegal dispossession of SC/ST land, coerced/bonded labor, or forced manual scavenging"
@@ -317,7 +390,28 @@
       "evicted from the village",
       "thrown out of the village",
       "not allowed to live in the village",
-      "barred from the village"
+      "barred from the village",
+      "stopped talking to",
+      "refused to talk to",
+      "refused to speak to",
+      "cut off all contact",
+      "ostracized",
+      "ostracised",
+      "not allowed to fetch water",
+      "refused to fetch water",
+      "denied access to the common tap",
+      "barred from the common tap",
+      "refuse to sell him",
+      "refuse to sell her",
+      "refused to sell him anything",
+      "refused to sell her anything",
+      "sit at the back of the classroom",
+      "made to sit separately",
+      "touching a common utensil",
+      "touched a common utensil",
+      "separate utensils",
+      "separate cups",
+      "separate glasses"
     ],
     "severity": 68,
     "description": "Denial of access to public resources (water, temple, cremation ground, school), forced expulsion from a village, or organized social/economic boycott"
@@ -337,7 +431,9 @@
       "threatened to withdraw candidacy",
       "sarpanch post",
       "gram panchayat seat",
-      "prevented from taking office"
+      "prevented from taking office",
+      "threatened not to contest",
+      "sarpanch election"
     ],
     "severity": 80,
     "description": "Intimidation preventing an SC/ST person from voting, contesting, or holding office"

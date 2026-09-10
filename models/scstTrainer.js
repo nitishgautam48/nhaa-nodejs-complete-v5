@@ -17,9 +17,23 @@ class SCSTTrainer {
         this.patternModel = {};
         this.severityModel = {};
 
+        // ✅ FIX: only a generic label ('dalit'/'sc') or a couple of
+        // tribal community names (lambada/koli/gond) were recognized - a
+        // real account naming the specific Scheduled Caste/Tribe
+        // sub-community (as most FIRs and personal accounts do, e.g. "A
+        // Mahar community member was assaulted...") identified no
+        // community at all, which matters because several severity rules
+        // (COMMUNITY_VULNERABILITY_FLOOR, the priority-review escalation)
+        // require a community to be identified. Added well-documented,
+        // officially Scheduled Caste/Tribe names only - not a full list of
+        // every sub-caste in India, but the commonly-referenced ones.
         this.communityKeywords = {
-            'dalit': ['dalit', 'sc', 'scheduled caste', 'untouchable', 'harijan'],
-            'tribal': ['tribal', 'adivasi', 'st', 'scheduled tribe', 'lambada', 'koli', 'gond']
+            'dalit': ['dalit', 'sc', 'scheduled caste', 'untouchable', 'harijan',
+                'mahar', 'chamar', 'valmiki', 'balmiki', 'mala', 'madiga', 'pasi',
+                'bhangi', 'mehtar', 'paraiyar', 'adi dravida', 'namasudra'],
+            'tribal': ['tribal', 'adivasi', 'st', 'scheduled tribe', 'lambada', 'koli', 'gond',
+                'bhil', 'santhal', 'munda', 'oraon', 'naga', 'bodo', 'warli',
+                'toda', 'korku', 'garo', 'khasi']
         };
 
         // ============================================================
@@ -38,7 +52,16 @@ class SCSTTrainer {
                     // often use these equally common alternate phrasings.
                     'sexually assaulted', 'raped her', 'raped him', 'sexually violated',
                     'brutally raped', 'multiple men raped', 'attempted rape', 'tried to rape',
-                    'attempt to rape', 'rape attempt', 'abducted and raped', 'sexual assault'],
+                    'attempt to rape', 'rape attempt', 'abducted and raped', 'sexual assault',
+                    // ✅ FIX: "abducted" (as common a synonym as "kidnapped",
+                    // which was already covered alone) was missing entirely -
+                    // "she was abducted and violated by several men" matched
+                    // nothing, since "sexually violated" requires the word
+                    // "sexually" and bare "violated" is too generic/risky to
+                    // add alone (it's commonly used for "violated the law",
+                    // "violated his rights", etc. with no connection to this
+                    // pattern).
+                    'abducted', 'abducted and violated'],
                 severity: 100,
                 description: 'Gang rape of SC/ST victim'
             },
@@ -51,7 +74,16 @@ class SCSTTrainer {
                     // every time was previously missed.
                     'raped the minor', 'raped the child', 'sexually abused the child',
                     'sexually abused the minor', 'abused the child', 'child sexual abuse',
-                    'minor victim', 'school-going girl'],
+                    'minor victim', 'school-going girl',
+                    // ✅ FIX: only 14 and 16 were covered as literal ages -
+                    // any other real child age (5 through 17, the range
+                    // this pattern is meant to cover under POCSO) scored no
+                    // signal at all from the age itself. Found stress-
+                    // testing: "A 10-year-old Dalit girl was sexually
+                    // abused..." matched nothing.
+                    '5-year-old', '6-year-old', '7-year-old', '8-year-old', '9-year-old',
+                    '10-year-old', '11-year-old', '12-year-old', '13-year-old', '15-year-old',
+                    '17-year-old'],
                 severity: 100,
                 description: 'Child sexual abuse of SC/ST minor'
             },
@@ -92,7 +124,26 @@ class SCSTTrainer {
                     'outraged her modesty', 'outraging her modesty', 'attempted to molest',
                     'tried to molest', 'indecently touched', 'indecent touching',
                     'unwanted physical contact', 'inappropriate contact', 'sexually harassed',
-                    'sexual harassment'],
+                    'sexual harassment',
+                    // ✅ FIX: "sexually abused" - arguably the single most
+                    // common general phrase for this category - was
+                    // missing entirely; every existing phrase was either
+                    // narrower ("touched inappropriately") or child-specific
+                    // (child_abuse's "sexually abused the child"). A plain
+                    // "she was sexually abused by her employer" scored zero.
+                    // Also: the adverb-before-verb word order ("inappropriately
+                    // touched her") is at least as common as the order
+                    // already covered ("touched her inappropriately"), and
+                    // "force himself/herself ON someone" (rather than the
+                    // already-covered bare "forced himself") is the more
+                    // natural real phrasing.
+                    'sexually abused', 'inappropriately touched her', 'inappropriately touched him',
+                    'force himself on', 'force herself on', 'tried to force himself',
+                    'tried to force herself',
+                    // ✅ FIX: "sexually exploited" and "touched ... without
+                    // consent" are specific, unambiguous phrasings that
+                    // weren't covered by any existing entry.
+                    'sexually exploited', 'touched her without consent', 'touched him without consent'],
                 severity: 85,
                 description: 'Sexual abuse or unwanted touching described indirectly, in the victim\'s own words or a case document\'s narration'
             },
@@ -116,7 +167,22 @@ class SCSTTrainer {
                     // legalGuidance.js), but scored zero since only
                     // "police" specifically was covered here.
                     'forest officers beat', 'beaten by forest officials',
-                    'assaulted by forest department', 'forest guards beat'],
+                    'assaulted by forest department', 'forest guards beat',
+                    // ✅ FIX: common real-world phrasings for a police-
+                    // violence account weren't covered - "dragged him out"/
+                    // "beat him with sticks" describe the same thing as
+                    // "police beat"/"police assault" but in different,
+                    // very common words; "died in (police) custody" is the
+                    // natural phrasing, distinct from the already-covered
+                    // "custodial death" (a more formal/legal term).
+                    'dragged him out', 'dragged her out', 'dragged out of his house',
+                    'dragged out of her house', 'beat him with sticks', 'beat her with sticks',
+                    'beaten with sticks', 'beaten with rods', 'beaten with lathis',
+                    'died in police custody', 'died in custody', 'death in police custody',
+                    // ✅ FIX: "lockup" (the police holding cell) is a
+                    // specific, unambiguous location word for custodial
+                    // abuse that wasn't covered by "custody"/"detained".
+                    'tortured in the lockup', 'held in the lockup', 'beaten in the lockup'],
                 severity: 85,
                 description: 'Police or forest-department brutality against SC/ST victim'
             },
@@ -150,7 +216,16 @@ class SCSTTrainer {
                     'refused service', 'refused entry due to caste', 'caste based abuse',
                     'caste abuse', 'used casteist language', 'called by caste name',
                     'caste name calling', 'insulted by caste name', 'lower caste',
-                    'upper caste'],
+                    'upper caste',
+                    // ✅ FIX: housing discrimination (a landlord refusing to
+                    // rent or sell to an SC/ST family) is one of the most
+                    // commonly reported forms of caste discrimination, but
+                    // had no phrasing here at all - a plain "refused to
+                    // rent the house to a Dalit family" (with the community
+                    // correctly identified) matched no pattern whatsoever.
+                    'refused to rent', 'denied housing', 'refused housing',
+                    'refused to sell the house', 'refused to sell him the house',
+                    'refused to sell her the house', 'refused to let the house'],
                 severity: 65,
                 description: 'Caste discrimination against SC/ST individual (workplace, healthcare, school, or general)'
             },
@@ -164,7 +239,22 @@ class SCSTTrainer {
                     'garlanded with footwear', 'garlanded with slippers', 'tonsured',
                     'blackened face', 'forced to eat human waste', 'forced to lick',
                     'made to remove footwear', 'forced to remove clothes',
-                    'forced to remove clothing'],
+                    'forced to remove clothing',
+                    // ✅ FIX: "made to garland HIMSELF with shoes" (the
+                    // victim forced to perform the act on themselves) is a
+                    // distinct, common real phrasing from the already-
+                    // covered passive "garlanded with footwear/slippers",
+                    // and "shoes" is at least as common a word choice as
+                    // "footwear"/"slippers".
+                    'garland himself with shoes', 'garland herself with shoes',
+                    'garlanded with shoes', 'made to garland',
+                    // ✅ FIX: forcing someone to eat food (or worse) placed
+                    // directly on the ground, in front of others, is a
+                    // distinct, well-documented humiliation ritual not
+                    // covered by the already-listed "forced to eat human
+                    // waste"/"forced to lick".
+                    'forced to eat from the ground', 'forced him to eat from the ground',
+                    'forced her to eat from the ground'],
                 severity: 80,
                 description: 'Public humiliation of SC/ST victim'
             },
@@ -176,7 +266,18 @@ class SCSTTrainer {
                     // actually described, beyond the word "convicted" itself.
                     'framed in a false case', 'falsely implicated', 'fabricated evidence',
                     'planted evidence', 'malicious prosecution', 'wrongly accused',
-                    'wrongly implicated', 'false fir', 'foisted a false case'],
+                    'wrongly implicated', 'false fir', 'foisted a false case',
+                    // ✅ FIX: "jailed for a crime he didn't commit" is
+                    // probably the single most natural way a victim or
+                    // lawyer would actually phrase a false-conviction
+                    // account, but wasn't covered - only formal/legal terms
+                    // ("wrongful conviction", "malicious prosecution") were.
+                    // "fabricated FIR" (the complaint itself being fake) is
+                    // distinct from the already-covered "fabricated
+                    // evidence" (evidence planted within a case).
+                    'a crime he did not commit', 'a crime she did not commit',
+                    "a crime he didn't commit", "a crime she didn't commit",
+                    'fabricated fir'],
                 severity: 85,
                 description: 'False conviction of SC/ST individual'
             },
@@ -200,7 +301,14 @@ class SCSTTrainer {
                     'pressured to withdraw', 'pressured to compromise', 'forced to compromise',
                     'asked to settle', 'pressured to settle', 'witness intimidated',
                     'threatened the witness', 'pressured to drop the case',
-                    'forced to withdraw the complaint'],
+                    'forced to withdraw the complaint',
+                    // ✅ FIX: being warned/told to "stay quiet" is a very
+                    // direct, common phrasing of coercion that wasn't
+                    // covered - the existing list required a more specific
+                    // threat verb ("threatened to...", "warned me not to
+                    // tell") which this simpler construction doesn't use.
+                    'warned to stay quiet', 'told to stay quiet', 'warned her family to stay quiet',
+                    'warned his family to stay quiet'],
                 severity: 80,
                 description: 'Victim actively threatened or coerced into silence'
             },
@@ -221,7 +329,23 @@ class SCSTTrainer {
                     // the generic "bonded labor" phrasing.
                     'manual scavenging', 'forced to clean sewers', 'forced to clean drains',
                     'forced sanitation work', 'denied ownership of land', 'illegally acquired land',
-                    'grabbed their land', 'land grab'],
+                    'grabbed their land', 'land grab',
+                    // ✅ FIX: "took over his farmland (by force)" is a very
+                    // common real phrasing for land dispossession, distinct
+                    // from the already-covered "land occupied"/"forcibly
+                    // occupied" (passive constructions) - the active
+                    // "took over ... farmland" didn't match either.
+                    'took over his farmland', 'took over her farmland', 'took over their farmland',
+                    'occupied his farmland', 'occupied her farmland', 'occupied their farmland',
+                    'grabbed his land', 'grabbed her land',
+                    // ✅ FIX: unpaid forced labor ("made to work without
+                    // wages") is the plain-language description of bonded
+                    // labor that didn't match the more formal "bonded
+                    // labor"/"bonded labour" terms; "land was grabbed"
+                    // (land as the grammatical subject) is distinct from
+                    // the already-covered "grabbed + possessive land".
+                    'made to work without wages', 'forced to work without pay',
+                    'worked without wages', 'land was grabbed'],
                 severity: 78,
                 description: 'Illegal dispossession of SC/ST land, coerced/bonded labor, or forced manual scavenging'
             },
@@ -278,7 +402,33 @@ class SCSTTrainer {
                     'expelled from the village', 'banished from the village',
                     'ordered to leave the village', 'chased out of the village',
                     'evicted from the village', 'thrown out of the village',
-                    'not allowed to live in the village', 'barred from the village'],
+                    'not allowed to live in the village', 'barred from the village',
+                    // ✅ FIX: "the community stopped talking to his family"
+                    // is a very common real description of a social
+                    // boycott, but didn't match "shunned"/"social boycott"
+                    // (different wording for the same thing). "Ostracized"
+                    // was previously only reachable via honor_based_violence's
+                    // marriage-specific "ostracized for marrying" - a
+                    // general boycott unrelated to marriage (e.g. after
+                    // filing a complaint) matched nothing. "Fetch water"
+                    // is at least as common a verb choice as the already-
+                    // covered "draw water".
+                    'stopped talking to', 'refused to talk to', 'refused to speak to',
+                    'cut off all contact', 'ostracized', 'ostracised',
+                    'not allowed to fetch water', 'refused to fetch water',
+                    'denied access to the common tap', 'barred from the common tap',
+                    // ✅ FIX: a shopkeeper refusing to sell to an SC/ST
+                    // customer is a real, common form of economic boycott
+                    // that didn't match the more abstract "economic
+                    // boycott" phrase; separate seating in a classroom
+                    // ("back of the classroom", not "outside" it) and
+                    // separate-utensils untouchability practice (a
+                    // historically well-documented form, e.g. a separate
+                    // cup at a tea stall) had no coverage at all.
+                    'refuse to sell him', 'refuse to sell her', 'refused to sell him anything',
+                    'refused to sell her anything', 'sit at the back of the classroom',
+                    'made to sit separately', 'touching a common utensil', 'touched a common utensil',
+                    'separate utensils', 'separate cups', 'separate glasses'],
                 severity: 68,
                 description: 'Denial of access to public resources (water, temple, cremation ground, school), forced expulsion from a village, or organized social/economic boycott'
             },
@@ -292,7 +442,14 @@ class SCSTTrainer {
                     // from contesting" alone.
                     'forced to resign', 'forced resignation', 'forced her to resign',
                     'forced him to resign', 'threatened to withdraw candidacy',
-                    'sarpanch post', 'gram panchayat seat', 'prevented from taking office'],
+                    'sarpanch post', 'gram panchayat seat', 'prevented from taking office',
+                    // ✅ FIX: "threatened not to contest" is a very direct,
+                    // common phrasing that didn't match "prevented from
+                    // contesting" (different verb - threatened vs
+                    // prevented); "sarpanch election" (the election itself)
+                    // is distinct from the already-covered "sarpanch post"
+                    // (the office/seat).
+                    'threatened not to contest', 'sarpanch election'],
                 severity: 80,
                 description: 'Intimidation preventing an SC/ST person from voting, contesting, or holding office'
             },
@@ -372,6 +529,33 @@ class SCSTTrainer {
         // these before real-world deployment.
         this.COMMUNITY_VULNERABILITY_FLOOR = 50;
         this.AUTHORITY_POWER_ESCALATION = 10;
+
+        // ============================================================
+        //  ✅ CRITICAL FIX: fuzzy matching's "same first letter" safeguard
+        //  (see _matchesKeyword) does not prevent two same-length, common,
+        //  unrelated English words that happen to differ by one interior
+        //  letter and share a first letter too. Found stress-testing:
+        //  "The police DRAGGED him out of his house and beat him" was
+        //  fuzzy-matching the single-word keyword "drugged" (edit distance
+        //  1, both 7 letters, both start with 'd') - silently scoring a
+        //  police-brutality account as gang_rape/Critical. This is a
+        //  dangerous class of false positive (wrong pattern, wrong legal
+        //  guidance, inflated severity), not just a missed keyword. An
+        //  explicit denylist of verified real-word collisions is safer
+        //  than a general heuristic that could suppress legitimate typo-
+        //  catching for everything else. Format: 'token:phrase'.
+        // ============================================================
+        this.FUZZY_COLLISION_DENYLIST = new Set([
+            'dragged:drugged',
+            // Found auditing the new community sub-caste names below:
+            // 'orion' (the constellation/name) fuzzy-matches the tribal
+            // name 'oraon' at distance 1, and the very common word 'khaki'
+            // fuzzy-matches the tribal name 'khasi' at distance 1 - both
+            // would wrongly tag unrelated text as identifying a tribal
+            // victim.
+            'orion:oraon',
+            'khaki:khasi'
+        ]);
 
         this.loadModels();
     }
@@ -605,6 +789,7 @@ class SCSTTrainer {
                 // distance 1 from 'death', scoring a neutral sentence about
                 // the weather as Critical/100.
                 if (variant[0] !== phrase[0]) continue;
+                if (this.FUZZY_COLLISION_DENYLIST.has(`${variant}:${phrase}`)) continue;
                 if (this._levenshtein(variant, phrase) <= threshold) return true;
             }
         }
