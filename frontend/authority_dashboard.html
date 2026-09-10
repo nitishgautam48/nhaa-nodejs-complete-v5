@@ -467,6 +467,33 @@
             </select>
             <label style="font-size:12px; color:rgba(255,255,255,0.6); display:block; margin-bottom:6px;">Assigned Officer</label>
             <input type="text" id="modalOfficer" style="width:100%; padding:8px; border-radius:6px; background:rgba(255,255,255,0.05); color:#fff; border:1px solid rgba(255,255,255,0.1); margin-bottom:10px;">
+
+            <div style="margin-top:6px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.06); font-size:11px; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">Court Details</div>
+            <label style="font-size:12px; color:rgba(255,255,255,0.6); display:block; margin-bottom:6px;">Court Status</label>
+            <select id="modalCourtStatus" style="width:100%; padding:8px; border-radius:6px; background:rgba(255,255,255,0.05); color:#fff; border:1px solid rgba(255,255,255,0.1); margin-bottom:10px;">
+                <option>Pending</option>
+                <option>Hearing Scheduled</option>
+                <option>In Progress</option>
+                <option>Adjourned</option>
+                <option>Disposed</option>
+            </select>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px;">
+                <div>
+                    <label style="font-size:12px; color:rgba(255,255,255,0.6); display:block; margin-bottom:6px;">Courtroom</label>
+                    <input type="text" id="modalCourtroom" placeholder="e.g. Court Room 4" style="width:100%; padding:8px; border-radius:6px; background:rgba(255,255,255,0.05); color:#fff; border:1px solid rgba(255,255,255,0.1);">
+                </div>
+                <div>
+                    <label style="font-size:12px; color:rgba(255,255,255,0.6); display:block; margin-bottom:6px;">Hearing Date</label>
+                    <input type="date" id="modalHearingDate" style="width:100%; padding:8px; border-radius:6px; background:rgba(255,255,255,0.05); color:#fff; border:1px solid rgba(255,255,255,0.1);">
+                </div>
+            </div>
+            <label style="font-size:12px; color:rgba(255,255,255,0.6); display:block; margin-bottom:6px;">Judge</label>
+            <input type="text" id="modalJudgeName" placeholder="e.g. Hon. Justice R. Sharma" style="width:100%; padding:8px; border-radius:6px; background:rgba(255,255,255,0.05); color:#fff; border:1px solid rgba(255,255,255,0.1); margin-bottom:10px;">
+            <label style="font-size:12px; color:rgba(255,255,255,0.6); display:block; margin-bottom:6px;">Complainant / Victim</label>
+            <input type="text" id="modalComplainant" placeholder="Complainant's name" style="width:100%; padding:8px; border-radius:6px; background:rgba(255,255,255,0.05); color:#fff; border:1px solid rgba(255,255,255,0.1); margin-bottom:10px;">
+            <label style="font-size:12px; color:rgba(255,255,255,0.6); display:block; margin-bottom:6px;">Accused (comma-separated for more than one)</label>
+            <input type="text" id="modalAccused" placeholder="e.g. Suresh Patil, Mahesh Jadhav" style="width:100%; padding:8px; border-radius:6px; background:rgba(255,255,255,0.05); color:#fff; border:1px solid rgba(255,255,255,0.1); margin-bottom:10px;">
+
             <button class="btn btn-primary btn-sm" onclick="saveModalCase()"><i class="fas fa-save"></i> Save Changes</button>
         </div>
     </div>
@@ -897,12 +924,38 @@
             </div>`;
         }
 
+        // ✅ NEW: court-proceeding tracking (case number, court, courtroom,
+        // hearing date, judge, parties) - manually entered by whoever's
+        // tracking the case (lawyer or officer), not a live government
+        // feed (India's e-Courts/NJDG has no public API for that). Only
+        // shown when at least one of these fields is actually set, so an
+        // ordinary assessment case (no lawyer tracking involved) doesn't
+        // render an empty "Court Details" block.
+        const hasCourtTracking = c.caseNumber || c.court || c.courtroom || c.hearingDate || c.judgeName || c.complainantName || (c.accusedNames && c.accusedNames.length);
+        if (hasCourtTracking) {
+            body += `<div style="margin-top:12px; padding:12px; background:rgba(0,184,148,0.06); border-radius:8px; font-size:12px; line-height:1.8;">
+                <strong>Court Details:</strong><br>
+                ${c.caseNumber ? `Case No.: ${c.caseNumber}<br>` : ''}
+                ${c.court || c.courtroom ? `Court: ${[c.court, c.courtroom].filter(Boolean).join(' · ')}<br>` : ''}
+                ${c.hearingDate ? `Hearing Date: ${c.hearingDate}<br>` : ''}
+                ${c.judgeName ? `Judge: ${c.judgeName}<br>` : ''}
+                ${c.complainantName ? `Complainant: ${c.complainantName}<br>` : ''}
+                ${c.accusedNames && c.accusedNames.length ? `Accused: ${c.accusedNames.join(', ')}` : ''}
+            </div>`;
+        }
+
         body += `<p style="margin-top:10px; font-size:12px; color:rgba(255,255,255,0.5);">Legal guidance applicable: ${c.legalApplicable ? 'Yes' : 'No'} · Source: ${c.source || 'assessment'}</p>`;
         if (c.notes) {
             body += `<p style="margin-top:10px;"><strong>Officer notes:</strong> ${c.notes}</p>`;
         }
 
         document.getElementById('modalBody').innerHTML = body;
+        document.getElementById('modalCourtStatus').value = c.courtStatus || 'Pending';
+        document.getElementById('modalCourtroom').value = c.courtroom || '';
+        document.getElementById('modalHearingDate').value = c.hearingDate || '';
+        document.getElementById('modalJudgeName').value = c.judgeName || '';
+        document.getElementById('modalComplainant').value = c.complainantName || '';
+        document.getElementById('modalAccused').value = (c.accusedNames || []).join(', ');
         document.getElementById('caseModal').style.display = 'flex';
     }
 
@@ -924,7 +977,15 @@
             const response = await fetch(`${API_URL}/cases/${selectedCaseId}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status, officer })
+                body: JSON.stringify({
+                    status, officer,
+                    courtStatus: document.getElementById('modalCourtStatus').value,
+                    courtroom: document.getElementById('modalCourtroom').value.trim(),
+                    hearingDate: document.getElementById('modalHearingDate').value,
+                    judgeName: document.getElementById('modalJudgeName').value.trim(),
+                    complainantName: document.getElementById('modalComplainant').value.trim(),
+                    accusedNames: document.getElementById('modalAccused').value.trim()
+                })
             });
             const result = await response.json();
             if (!result.success) throw new Error('Update failed');

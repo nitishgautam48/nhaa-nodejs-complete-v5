@@ -261,6 +261,49 @@
     </div>
 </div>
 
+<!-- MANAGE CASE MODAL - court-proceeding tracking (status, courtroom,
+     hearing date, judge, parties). Manually updated by the lawyer, not a
+     live feed - see the caseManageModal-related JS below for why. -->
+<div id="caseManageModalOverlay" class="account-modal-overlay">
+    <div class="account-modal" style="max-width:440px;">
+        <button class="account-modal-close" onclick="closeCaseManageModal()"><i class="fas fa-xmark"></i></button>
+        <div class="account-modal-title">Manage case</div>
+        <div class="account-modal-subtitle" id="manageModalCaseId"></div>
+
+        <div class="account-modal-label">Court Status</div>
+        <select id="manageCourtStatus" class="account-modal-input">
+            <option>Pending</option>
+            <option>Hearing Scheduled</option>
+            <option>In Progress</option>
+            <option>Adjourned</option>
+            <option>Disposed</option>
+        </select>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+            <div>
+                <div class="account-modal-label">Courtroom</div>
+                <input type="text" id="manageCourtroom" class="account-modal-input" placeholder="e.g. Court Room 4">
+            </div>
+            <div>
+                <div class="account-modal-label">Hearing Date</div>
+                <input type="date" id="manageHearingDate" class="account-modal-input">
+            </div>
+        </div>
+
+        <div class="account-modal-label">Judge</div>
+        <input type="text" id="manageJudgeName" class="account-modal-input" placeholder="e.g. Hon. Justice R. Sharma">
+
+        <div class="account-modal-label">Complainant / Victim</div>
+        <input type="text" id="manageComplainant" class="account-modal-input" placeholder="Complainant's name">
+
+        <div class="account-modal-label">Accused (comma-separated for more than one)</div>
+        <input type="text" id="manageAccused" class="account-modal-input" placeholder="e.g. Suresh Patil, Mahesh Jadhav">
+
+        <div id="manageModalError" class="account-modal-error"></div>
+        <button type="button" id="manageModalSave" class="account-modal-btn" onclick="saveCaseManageModal()">Save</button>
+    </div>
+</div>
+
 <div class="container">
     <header class="header">
         <div class="header-left">
@@ -377,13 +420,16 @@
                         <th style="text-align:left; padding:8px 12px; color:var(--text-faint); border-bottom:1px solid rgba(255,255,255,0.06);">Case ID</th>
                         <th style="text-align:left; padding:8px 12px; color:var(--text-faint); border-bottom:1px solid rgba(255,255,255,0.06);">Date</th>
                         <th style="text-align:left; padding:8px 12px; color:var(--text-faint); border-bottom:1px solid rgba(255,255,255,0.06);">Case No.</th>
-                        <th style="text-align:left; padding:8px 12px; color:var(--text-faint); border-bottom:1px solid rgba(255,255,255,0.06);">Court</th>
+                        <th style="text-align:left; padding:8px 12px; color:var(--text-faint); border-bottom:1px solid rgba(255,255,255,0.06);">Court / Room</th>
                         <th style="text-align:left; padding:8px 12px; color:var(--text-faint); border-bottom:1px solid rgba(255,255,255,0.06);">Severity</th>
-                        <th style="text-align:left; padding:8px 12px; color:var(--text-faint); border-bottom:1px solid rgba(255,255,255,0.06);">Status</th>
+                        <th style="text-align:left; padding:8px 12px; color:var(--text-faint); border-bottom:1px solid rgba(255,255,255,0.06);">Court Status</th>
+                        <th style="text-align:left; padding:8px 12px; color:var(--text-faint); border-bottom:1px solid rgba(255,255,255,0.06);">Hearing Date</th>
+                        <th style="text-align:left; padding:8px 12px; color:var(--text-faint); border-bottom:1px solid rgba(255,255,255,0.06);">Parties</th>
+                        <th style="text-align:left; padding:8px 12px; color:var(--text-faint); border-bottom:1px solid rgba(255,255,255,0.06);"></th>
                     </tr>
                 </thead>
                 <tbody id="myCasesTableBody">
-                    <tr><td colspan="6" style="text-align:center; color:var(--text-faint); padding:20px 0;">Loading...</td></tr>
+                    <tr><td colspan="9" style="text-align:center; color:var(--text-faint); padding:20px 0;">Loading...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -444,6 +490,15 @@
     const MY_CASES_SEVERITY_COLOR = {
         Critical: '#d63031', Severe: '#e17055', Moderate: '#fdcb6e', Mild: '#00b894', Minimal: '#00b894'
     };
+    const COURT_STATUS_COLOR = {
+        'Pending': 'var(--text-dim)', 'Hearing Scheduled': '#a29bfe', 'In Progress': '#fdcb6e',
+        'Adjourned': '#e17055', 'Disposed': '#00b894'
+    };
+
+    // Cache of the last-loaded "My Cases" rows, keyed by id - lets the
+    // Manage modal populate its fields from data already on the page
+    // instead of a second round-trip to the server just to open a form.
+    let myCasesById = {};
 
     async function loadMyCases() {
         const identity = getUserIdentity();
@@ -467,26 +522,102 @@
                     logoutUser();
                     return;
                 }
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#ff8787; padding:20px 0;">Could not load your cases.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#ff8787; padding:20px 0;">Could not load your cases.</td></tr>';
                 return;
             }
             const myCases = result.data.cases || [];
+            myCasesById = Object.fromEntries(myCases.map(c => [c.id, c]));
             if (myCases.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-faint); padding:20px 0;">No checks or summaries submitted yet while logged in.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:var(--text-faint); padding:20px 0;">No checks or summaries submitted yet while logged in.</td></tr>';
                 return;
             }
-            tbody.innerHTML = myCases.map(c => `
+            tbody.innerHTML = myCases.map(c => {
+                const courtRoom = [c.court, c.courtroom].filter(Boolean).map(escapeHtml).join(' · ');
+                const accused = c.accusedNames || [];
+                const partiesSummary = c.complainantName || accused.length
+                    ? `${c.complainantName ? escapeHtml(c.complainantName) : 'Complainant: -'}${accused.length ? ` vs ${accused.length} accused` : ''}`
+                    : '<span style="color:var(--text-faint);">-</span>';
+                const partiesTitle = [
+                    c.complainantName ? `Complainant: ${c.complainantName}` : '',
+                    accused.length ? `Accused: ${accused.join(', ')}` : ''
+                ].filter(Boolean).join(' | ');
+                return `
                 <tr>
                     <td style="padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.04);">${escapeHtml(c.id)}</td>
                     <td style="padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.04);">${new Date(c.timestamp).toLocaleString()}</td>
                     <td style="padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.04);">${escapeHtml(c.caseNumber) || '<span style="color:var(--text-faint);">-</span>'}</td>
-                    <td style="padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.04);">${escapeHtml(c.court) || '<span style="color:var(--text-faint);">-</span>'}</td>
+                    <td style="padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.04);">${courtRoom || '<span style="color:var(--text-faint);">-</span>'}</td>
                     <td style="padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.04); color:${MY_CASES_SEVERITY_COLOR[c.severity] || '#fff'};">${escapeHtml(c.severity)}</td>
-                    <td style="padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.04);">${escapeHtml(c.status || 'Pending')}</td>
+                    <td style="padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.04); color:${COURT_STATUS_COLOR[c.courtStatus] || '#fff'};">${escapeHtml(c.courtStatus || 'Pending')}</td>
+                    <td style="padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.04);">${c.hearingDate ? escapeHtml(c.hearingDate) : '<span style="color:var(--text-faint);">-</span>'}</td>
+                    <td style="padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.04);" title="${escapeHtml(partiesTitle)}">${partiesSummary}</td>
+                    <td style="padding:8px 12px; border-bottom:1px solid rgba(255,255,255,0.04);"><button class="btn" style="padding:5px 10px; font-size:11px; background:rgba(255,255,255,0.06); color:var(--text-dim);" onclick="openCaseManageModal('${c.id}')"><i class="fas fa-pen"></i> Manage</button></td>
                 </tr>
-            `).join('');
+            `;
+            }).join('');
         } catch (err) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#ff8787; padding:20px 0;">Could not reach the server.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; color:#ff8787; padding:20px 0;">Could not reach the server.</td></tr>';
+        }
+    }
+
+    // ============================================================
+    //  MANAGE CASE MODAL - update court status/courtroom/hearing date/
+    //  judge/parties after a case has already been created. Deliberately
+    //  editable at any time, not just once at filing - a lawyer usually
+    //  doesn't know the courtroom or hearing date until the court
+    //  actually schedules it, so this needs to support coming back later
+    //  and filling it in incrementally.
+    // ============================================================
+    let manageModalCaseId = null;
+
+    function openCaseManageModal(caseId) {
+        const c = myCasesById[caseId];
+        if (!c) return;
+        manageModalCaseId = caseId;
+        document.getElementById('manageModalCaseId').textContent = `${caseId}${c.caseNumber ? ' · ' + c.caseNumber : ''}`;
+        document.getElementById('manageCourtStatus').value = c.courtStatus || 'Pending';
+        document.getElementById('manageCourtroom').value = c.courtroom || '';
+        document.getElementById('manageHearingDate').value = c.hearingDate || '';
+        document.getElementById('manageJudgeName').value = c.judgeName || '';
+        document.getElementById('manageComplainant').value = c.complainantName || '';
+        document.getElementById('manageAccused').value = (c.accusedNames || []).join(', ');
+        document.getElementById('manageModalError').style.display = 'none';
+        document.getElementById('caseManageModalOverlay').classList.add('open');
+    }
+
+    function closeCaseManageModal() {
+        document.getElementById('caseManageModalOverlay').classList.remove('open');
+        manageModalCaseId = null;
+    }
+
+    async function saveCaseManageModal() {
+        if (!manageModalCaseId) return;
+        const errorEl = document.getElementById('manageModalError');
+        const saveBtn = document.getElementById('manageModalSave');
+        errorEl.style.display = 'none';
+        saveBtn.disabled = true;
+        try {
+            const response = await fetch(`${API_URL}/cases/${manageModalCaseId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    courtStatus: document.getElementById('manageCourtStatus').value,
+                    courtroom: document.getElementById('manageCourtroom').value.trim(),
+                    hearingDate: document.getElementById('manageHearingDate').value,
+                    judgeName: document.getElementById('manageJudgeName').value.trim(),
+                    complainantName: document.getElementById('manageComplainant').value.trim(),
+                    accusedNames: document.getElementById('manageAccused').value.trim()
+                })
+            });
+            const result = await response.json().catch(() => ({}));
+            if (!response.ok || !result.success) throw new Error('Could not save changes.');
+            closeCaseManageModal();
+            loadMyCases();
+        } catch (err) {
+            errorEl.textContent = 'Could not save changes. Try again.';
+            errorEl.style.display = 'block';
+        } finally {
+            saveBtn.disabled = false;
         }
     }
 
