@@ -123,7 +123,7 @@ class NHHAController {
     // `contact` is entirely optional - only present if the person chose to
     // create/log into an account before submitting (see the account widget
     // in advanced_dashboard.html); anonymous submissions omit it.
-    _persistCase({ caseId, text, language, hybridDecision, scstAnalysis, legalGuidance, source, contact, clinicalScales, clinicalReasoning, expertRules, caseNumber, court }) {
+    _persistCase({ caseId, text, language, hybridDecision, scstAnalysis, legalGuidance, source, contact, clinicalScales, clinicalReasoning, expertRules, caseNumber, court, courtroom, hearingDate, judgeName, complainantName, accusedNames }) {
         try {
             const severityLevel = hybridDecision?.severity?.level ||
                 scstAnalysis?.severityLevel || 'Minimal';
@@ -182,6 +182,29 @@ class NHHAController {
                 // caseSummarizer.js's separate extractedEntities.firNumbers).
                 caseNumber: caseNumber || null,
                 court: court || null,
+                // ✅ NEW: court-proceeding tracking - distinct from `status`
+                // above, which is the authority dashboard's own internal
+                // triage state (Pending/Assigned/Escalated/Resolved, i.e.
+                // "has an officer picked this up"). courtStatus is the
+                // actual state of the legal proceeding itself (a case can
+                // be "Assigned" internally while its courtStatus is
+                // "Hearing Scheduled") - manually updated by whoever's
+                // tracking the case (lawyer or authority), since there's
+                // no public live-data feed from India's e-Courts/NJDG
+                // system available to pull this automatically.
+                courtStatus: 'Pending',
+                courtroom: courtroom || null,
+                hearingDate: hearingDate || null,
+                judgeName: judgeName || null,
+                // ✅ NEW: structured party details. accusedNames arrives as
+                // a single comma-separated string from the form (a case can
+                // name several accused persons) and is normalized into an
+                // array here, once, rather than every UI that reads it
+                // having to re-parse a delimited string.
+                complainantName: complainantName || null,
+                accusedNames: accusedNames
+                    ? String(accusedNames).split(',').map(n => n.trim()).filter(Boolean)
+                    : [],
                 status: 'Pending',
                 officer: 'Unassigned',
                 contact: contact && (contact.email || contact.mobile)
@@ -327,11 +350,12 @@ class NHHAController {
 
     async scstAnalyze(req, res) {
         try {
-            // email/caseNumber/court are optional - only sent from the
-            // Lawyer Assistant page's Quick Pattern Check when the lawyer
-            // is logged in and chooses to track this check (see
+            // email/caseNumber/court/courtroom/hearingDate/judgeName/
+            // complainantName/accusedNames are all optional - only sent
+            // from the Lawyer Assistant page's Quick Pattern Check when
+            // the lawyer is logged in and chooses to track this check (see
             // _persistCase's caseNumber/court note).
-            const { text, email, caseNumber, court } = req.body;
+            const { text, email, caseNumber, court, courtroom, hearingDate, judgeName, complainantName, accusedNames } = req.body;
             if (!text) {
                 return res.status(400).json({ success: false, error: 'Text required' });
             }
@@ -347,7 +371,7 @@ class NHHAController {
                 hybridDecision: { finalScores: textAnalysis.scores },
                 scstAnalysis: result, legalGuidance, source: 'scst_tab',
                 contact: email ? { email } : null,
-                caseNumber, court
+                caseNumber, court, courtroom, hearingDate, judgeName, complainantName, accusedNames
             });
 
             res.status(200).json({
@@ -422,13 +446,14 @@ class NHHAController {
     async summarizeCaseDocument(req, res) {
         try {
             const file = req.file;
-            // email/caseNumber/court are optional, multer parses them as
-            // regular body fields alongside the uploaded file for a
-            // multipart request the same way it does for a pasted-text
+            // email/caseNumber/court/courtroom/hearingDate/judgeName/
+            // complainantName/accusedNames are optional, multer parses
+            // them as regular body fields alongside the uploaded file for
+            // a multipart request the same way it does for a pasted-text
             // JSON request - only present when the lawyer is logged in
             // and chooses to track this summary (see _persistCase's
             // caseNumber/court note).
-            const { text: pastedText, email, caseNumber, court } = req.body;
+            const { text: pastedText, email, caseNumber, court, courtroom, hearingDate, judgeName, complainantName, accusedNames } = req.body;
 
             if (!file && !pastedText) {
                 return res.status(400).json({
@@ -472,7 +497,7 @@ class NHHAController {
                     legalGuidance: summary.applicableLaw,
                     source: 'lawyer_doc',
                     contact: { email },
-                    caseNumber, court
+                    caseNumber, court, courtroom, hearingDate, judgeName, complainantName, accusedNames
                 });
             }
 
@@ -935,12 +960,25 @@ class NHHAController {
             if (!caseRecord) {
                 return res.status(404).json({ success: false, error: 'Case not found' });
             }
-            const { status, officer, notes } = req.body;
+            const { status, officer, notes, courtStatus, courtroom, hearingDate, judgeName, complainantName, accusedNames } = req.body;
             const updated = {
                 ...caseRecord,
                 status: status || caseRecord.status,
                 officer: officer || caseRecord.officer,
                 notes: notes !== undefined ? notes : caseRecord.notes,
+                // ✅ NEW: court-proceeding tracking fields (see
+                // _persistCase's note on why this is separate from
+                // `status`) - each editable independently, falling back to
+                // the existing value when omitted so a partial PATCH (e.g.
+                // just updating the hearing date) doesn't blank out the rest.
+                courtStatus: courtStatus || caseRecord.courtStatus || 'Pending',
+                courtroom: courtroom !== undefined ? (courtroom || null) : (caseRecord.courtroom ?? null),
+                hearingDate: hearingDate !== undefined ? (hearingDate || null) : (caseRecord.hearingDate ?? null),
+                judgeName: judgeName !== undefined ? (judgeName || null) : (caseRecord.judgeName ?? null),
+                complainantName: complainantName !== undefined ? (complainantName || null) : (caseRecord.complainantName ?? null),
+                accusedNames: accusedNames !== undefined
+                    ? String(accusedNames).split(',').map(n => n.trim()).filter(Boolean)
+                    : (caseRecord.accusedNames || []),
                 lastUpdated: new Date().toISOString()
             };
             // Database.saveCase() prepends a new record rather than editing
