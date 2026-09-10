@@ -106,7 +106,10 @@
       "tried to force herself",
       "sexually exploited",
       "touched her without consent",
-      "touched him without consent"
+      "touched him without consent",
+      "without my consent",
+      "didn't consent",
+      "did not consent"
     ],
     "severity": 85,
     "description": "Sexual abuse or unwanted touching described indirectly, in the victim's own words or a case document's narration"
@@ -198,7 +201,19 @@
       "refused to sell the house",
       "refused to sell him the house",
       "refused to sell her the house",
-      "refused to let the house"
+      "refused to let the house",
+      "not giving me house on rent",
+      "denied rental housing",
+      "refuses to rent",
+      "fired for being sc",
+      "fired for being dalit",
+      "fired for being a dalit",
+      "terminated for being dalit",
+      "fined for using the road",
+      "penalized for using the road",
+      "fine for using the road",
+      "fine for using the main road",
+      "imposed a fine on the family"
     ],
     "severity": 65,
     "description": "Caste discrimination against SC/ST individual (workplace, healthcare, school, or general)"
@@ -225,7 +240,14 @@
       "made to garland",
       "forced to eat from the ground",
       "forced him to eat from the ground",
-      "forced her to eat from the ground"
+      "forced her to eat from the ground",
+      "made to remove his chappals",
+      "made to remove her chappals",
+      "remove his chappals",
+      "remove her chappals",
+      "poured cow urine on him",
+      "poured cow urine on her",
+      "cow urine was poured"
     ],
     "severity": 80,
     "description": "Public humiliation of SC/ST victim"
@@ -250,7 +272,13 @@
       "a crime she did not commit",
       "a crime he didn't commit",
       "a crime she didn't commit",
-      "fabricated fir"
+      "fabricated fir",
+      "arrested on false charges",
+      "arrested on fabricated charges",
+      "filed a false case",
+      "filed a false dowry case",
+      "false dowry case",
+      "filed false charges"
     ],
     "severity": 85,
     "description": "False conviction of SC/ST individual"
@@ -330,7 +358,20 @@
       "made to work without wages",
       "forced to work without pay",
       "worked without wages",
-      "land was grabbed"
+      "land was grabbed",
+      "died while cleaning a sewer",
+      "died cleaning the sewer",
+      "died inside the sewer",
+      "sewer death",
+      "manhole death",
+      "died in the manhole",
+      "set his house on fire",
+      "set her house on fire",
+      "house was set on fire",
+      "burned down his house",
+      "burned down her house",
+      "burnt down his house",
+      "burnt down her house"
     ],
     "severity": 78,
     "description": "Illegal dispossession of SC/ST land, coerced/bonded labor, or forced manual scavenging"
@@ -411,7 +452,12 @@
       "touched a common utensil",
       "separate utensils",
       "separate cups",
-      "separate glasses"
+      "separate glasses",
+      "denied prasad",
+      "excluded from prasad",
+      "denied a share of prasad",
+      "denied a portion of prasad",
+      "excluded from the prasad distribution"
     ],
     "severity": 68,
     "description": "Denial of access to public resources (water, temple, cremation ground, school), forced expulsion from a village, or organized social/economic boycott"
@@ -433,7 +479,9 @@
       "gram panchayat seat",
       "prevented from taking office",
       "threatened not to contest",
-      "sarpanch election"
+      "sarpanch election",
+      "not allowed to hoist the flag",
+      "prevented from hoisting the flag"
     ],
     "severity": 80,
     "description": "Intimidation preventing an SC/ST person from voting, contesting, or holding office"
