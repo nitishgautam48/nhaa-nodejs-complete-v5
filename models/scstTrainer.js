@@ -262,9 +262,25 @@ class SCSTTrainer {
                     'refused to draw water',
                     'refused entry to the temple', 'refused temple entry', 'temple entry denied',
                     'not allowed inside the temple', 'barred from the temple',
-                    'denied cremation ground', 'refused burial ground', 'barred from the cremation ground'],
+                    'denied cremation ground', 'refused burial ground', 'barred from the cremation ground',
+                    // ✅ FIX: forced expulsion from a village over caste -
+                    // a real, well-documented form of collective social
+                    // boycott (the whole community forcing a family out,
+                    // often over a land, marriage, or "purity" dispute) -
+                    // had no phrasing at all in this pattern. A plain
+                    // account like "was forced to get out of the village"
+                    // scored zero patterns and Low/0 severity despite the
+                    // victim's community being identified, found stress-
+                    // testing this exact scenario.
+                    'forced to get out of the village', 'forced out of the village',
+                    'forced to leave the village', 'forced to leave her village',
+                    'forced to leave his village', 'driven out of the village',
+                    'expelled from the village', 'banished from the village',
+                    'ordered to leave the village', 'chased out of the village',
+                    'evicted from the village', 'thrown out of the village',
+                    'not allowed to live in the village', 'barred from the village'],
                 severity: 68,
-                description: 'Denial of access to public resources (water, temple, cremation ground, school) or organized social/economic boycott'
+                description: 'Denial of access to public resources (water, temple, cremation ground, school), forced expulsion from a village, or organized social/economic boycott'
             },
             'election_and_political_intimidation': {
                 keywords: ['election violence', 'reserved seat', 'prevented from voting',
