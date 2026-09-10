@@ -1,5 +1,5 @@
 // ================================================================
-//  NHAA COMPLETE SERVER
+//  RAKSHAK AI COMPLETE SERVER
 //  Node.js Implementation with Human Intelligence
 // ================================================================
 
@@ -36,7 +36,7 @@ app.use('/api/v1', nhaaRoutes);
 app.get('/ping', (req, res) => {
     res.json({
         status: 'ok',
-        message: 'NHAA Complete System is running',
+        message: 'RAKSHAK AI Complete System is running',
         version: '3.0.0',
         timestamp: new Date().toISOString()
     });
@@ -77,7 +77,7 @@ app.use((err, req, res, next) => {
 
 app.listen(PORT, () => {
     console.log('\n' + '='.repeat(60));
-    console.log('🧠 NHAA Complete System');
+    console.log('🧠 RAKSHAK AI Complete System');
     console.log('='.repeat(60));
     console.log(`🚀 Server running on http://localhost:${PORT}`);
     console.log(`📡 API: http://localhost:${PORT}/api/v1`);
