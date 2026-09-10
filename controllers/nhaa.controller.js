@@ -3,6 +3,7 @@
 // ================================================================
 
 import fs from 'fs';
+import crypto from 'crypto';
 import HybridAIService from '../models/hybridAI.js';
 import ClinicalScales from '../models/clinicalScales.js';
 import ExpertSystem from '../models/expertSystem.js';
@@ -49,6 +50,28 @@ class NHHAController {
         this.documentParser = new DocumentParser();
         this.caseSummarizer = new CaseSummarizer();
         this.caseCounter = 0;
+
+        // ============================================================
+        //  PWA Share Target hand-off cache (see shareTargetReceive /
+        //  getSharedText below). When someone shares a PDF into the app
+        //  from their phone's OS share sheet, the browser POSTs it to a
+        //  page route (not an API call the frontend JS controls), so
+        //  there's no way to hand the extracted text straight back in
+        //  that same response - the response IS the next page load. This
+        //  short-lived, one-time-use, in-memory cache bridges that POST
+        //  to the GET the lawyer_dashboard.html page makes right after,
+        //  without ever writing the (potentially sensitive) case text to
+        //  disk. Token expires after 5 minutes and is deleted the moment
+        //  it's read, whichever comes first - it only needs to survive
+        //  one redirect.
+        // ============================================================
+        this.sharedDocumentCache = new Map();
+        setInterval(() => {
+            const now = Date.now();
+            for (const [token, entry] of this.sharedDocumentCache) {
+                if (entry.expiresAt < now) this.sharedDocumentCache.delete(token);
+            }
+        }, 60 * 1000).unref();
     }
 
     // ============================================================
@@ -469,6 +492,72 @@ class NHHAController {
             }
             res.status(500).json({ success: false, error: error.message });
         }
+    }
+
+    // ============================================================
+    //  PWA SHARE TARGET - receives a file/text shared from the phone's
+    //  OS share sheet (see frontend/manifest.json's share_target). This
+    //  is a real browser navigation (POST, not a fetch call the
+    //  frontend's own JS controls), so the response must be a redirect
+    //  to a real page - it can't just return JSON the way
+    //  summarizeCaseDocument does. Extracts the text server-side (same
+    //  DocumentParser as the normal upload flow), stashes it in the
+    //  short-lived sharedDocumentCache, then redirects to the Lawyer
+    //  Assistant page, which picks the text up via getSharedText below
+    //  and drops it into the same textarea a manual paste would use -
+    //  the user still reviews and explicitly clicks Generate, this never
+    //  auto-runs an analysis on an unreviewed shared file.
+    // ============================================================
+    async shareTargetReceive(req, res) {
+        try {
+            const file = req.file;
+            const { text: sharedText, title } = req.body || {};
+
+            let text = sharedText || '';
+            let sourceName = title || 'shared file';
+
+            if (file) {
+                sourceName = file.originalname;
+                const extracted = await this.documentParser.extractText(file.path, file.mimetype, file.originalname);
+                fs.unlinkSync(file.path);
+                text = extracted.text;
+            }
+
+            if (!text || !text.trim()) {
+                // Nothing usable came through (e.g. a scanned PDF, or an
+                // empty share) - send them to the page anyway rather than
+                // a dead-end error screen; they can still upload manually.
+                return res.redirect(303, '/lawyer');
+            }
+
+            const token = crypto.randomBytes(16).toString('hex');
+            this.sharedDocumentCache.set(token, {
+                text,
+                sourceName,
+                expiresAt: Date.now() + 5 * 60 * 1000
+            });
+
+            res.redirect(303, `/lawyer?shared=${token}`);
+        } catch (error) {
+            console.error('Share target error:', error.message);
+            if (req.file && fs.existsSync(req.file.path)) {
+                fs.unlinkSync(req.file.path);
+            }
+            res.redirect(303, '/lawyer');
+        }
+    }
+
+    // One-time-use lookup for the token shareTargetReceive hands off in
+    // the redirect URL. Deleted on read (or after 5 minutes, whichever
+    // is first) - this cache only ever needs to survive one page load.
+    getSharedText(req, res) {
+        const { token } = req.params;
+        const entry = this.sharedDocumentCache.get(token);
+        if (!entry) {
+            return res.status(404).json({ success: false, error: 'This shared file has expired or was already loaded.' });
+        }
+        this.sharedDocumentCache.delete(token);
+        res.status(200).json({ success: true, text: entry.text, sourceName: entry.sourceName });
     }
 
     async textAssessment(req, res) {

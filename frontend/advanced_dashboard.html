@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🧠 RAKSHAK AI Advanced Assessment</title>
+    <!-- PWA: makes the whole app installable to a home screen/app drawer.
+         See frontend/manifest.json. -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#6c5ce7">
+    <link rel="apple-touch-icon" href="/icon-192.png">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -629,6 +634,11 @@
 </div>
 
 <script>
+    // Registers this app as installable (see frontend/manifest.json).
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+
     // ✅ FIX: this used to be window.location.origin + '/api/v1', which
     // assumed the page is always served BY the Node/Express backend itself.
     // If you open this file through a separate static server instead (e.g.

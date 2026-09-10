@@ -69,6 +69,15 @@ router.post('/assess/text', controller.textAssessment.bind(controller));
 // models/caseSummarizer.js.
 router.post('/lawyer/summarize', uploadDocument.single('document'), controller.summarizeCaseDocument.bind(controller));
 
+// PWA Share Target: the phone's OS share sheet POSTs the shared file
+// straight here (see frontend/manifest.json's share_target.action) - a
+// real browser navigation, not a fetch call the frontend JS controls,
+// so controller.shareTargetReceive responds with a redirect to the
+// Lawyer Assistant page rather than JSON. getSharedText is the follow-up
+// GET that page makes to actually retrieve the extracted text.
+router.post('/lawyer/share-target', uploadDocument.single('document'), controller.shareTargetReceive.bind(controller));
+router.get('/lawyer/shared-text/:token', controller.getSharedText.bind(controller));
+
 // Optional victim/user accounts - entirely optional, see the account widget
 // in advanced_dashboard.html and services/auth.js. No password is ever
 // returned in a response.
