@@ -2,7 +2,7 @@
   "name": "nhaa-nodejs-complete",
   "version": "3.0.0",
   "type": "module",
-  "description": "NHAA Complete System with Human Intelligence & SC/ST Training",
+  "description": "RAKSHAK AI Complete System with Human Intelligence & SC/ST Training",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🧠 NHAA Advanced Assessment</title>
+    <title>🧠 RAKSHAK AI Advanced Assessment</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -325,7 +325,7 @@
         <div class="header-left">
             <span class="header-logo">🧠</span>
             <div>
-                <div class="header-title">NHAA Advanced Assessment</div>
+                <div class="header-title">RAKSHAK AI Advanced Assessment</div>
                 <div class="header-subtitle">AI-Powered Stress &amp; Trauma · SC/ST Atrocities Analysis</div>
             </div>
         </div>
@@ -622,7 +622,7 @@
 
     <!-- FOOTER -->
     <div style="margin-top:20px; padding:10px 0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; border-top:1px solid rgba(255,255,255,0.06);">
-        <span style="font-size:11px; color:rgba(255,255,255,0.4);"><i class="fas fa-shield-alt"></i> NHAA System · All data encrypted</span>
+        <span style="font-size:11px; color:rgba(255,255,255,0.4);"><i class="fas fa-shield-alt"></i> RAKSHAK AI System · All data encrypted</span>
         <span style="font-size:11px; color:rgba(255,255,255,0.4);"><i class="fas fa-robot"></i> AI-Powered · SC/ST Analytics</span>
         <span style="font-size:11px; color:rgba(255,255,255,0.4);">Last updated: <span id="lastUpdated">Just now</span></span>
     </div>
@@ -1148,7 +1148,7 @@
             // people never open). Every failure path now surfaces the same
             // always-visible inline banner instead of relying on alert(),
             // which some browsers/embedded views silently suppress.
-            console.error('NHAA assessment error:', error);
+            console.error('RAKSHAK AI assessment error:', error);
             document.getElementById('resultsCard').style.display = 'none';
             errorBox.style.display = 'block';
             errorBox.innerHTML = `<i class="fas fa-circle-exclamation"></i> Something went wrong: ${error.message}. Check that the server is running (node server.js) and reachable at <code>${API_URL}</code>.`;
@@ -1418,7 +1418,7 @@
         const scst = lastAssessmentData.scstAnalysis;
 
         const lines = [];
-        lines.push('NHAA ASSESSMENT REPORT');
+        lines.push('RAKSHAK AI ASSESSMENT REPORT');
         lines.push('='.repeat(50));
         lines.push(`Case ID: ${lastCaseId || 'N/A'}`);
         lines.push(`Date: ${new Date(lastAssessmentData.timestamp || Date.now()).toLocaleString()}`);
@@ -1476,7 +1476,7 @@
         const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = `NHAA_Report_${lastCaseId || Date.now()}.txt`;
+        link.download = `RAKSHAK_AI_Report_${lastCaseId || Date.now()}.txt`;
         link.click();
     }
 
@@ -1647,7 +1647,7 @@
         try {
             const authorityCases = JSON.parse(localStorage.getItem('nhaa_authority_cases') || '[]');
             authorityCases.unshift({
-                id: data.caseId || `NHAA-${Date.now().toString().slice(-8)}`,
+                id: data.caseId || `RAKSHAK-${Date.now().toString().slice(-8)}`,
                 title: `${hybrid.primaryConcern ? hybrid.primaryConcern.replace(/_/g, ' ') : 'General'} case (auto-detected)`,
                 severity: mapSeverityTier(hybrid.severity?.level || 'Minimal'),
                 svi: Math.round(hybrid.svi || 0),
@@ -1744,7 +1744,7 @@
         const blob = new Blob([csv], { type: 'text/csv' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = `nhaa_assessment_${new Date().toISOString().slice(0,10)}.csv`;
+        link.download = `rakshak_ai_assessment_${new Date().toISOString().slice(0,10)}.csv`;
         link.click();
     }
 
@@ -1833,7 +1833,7 @@
             switchTab(requestedTab);
         }
 
-        console.log('🧠 NHAA Advanced Dashboard loaded.');
+        console.log('🧠 RAKSHAK AI Advanced Dashboard loaded.');
         console.log(`📡 API: ${API_URL}`);
         console.log(`📊 ${assessmentHistory.length} cases loaded`);
     });

@@ -1,5 +1,5 @@
 // ================================================================
-//  NHAA CONTROLLER - Complete Request Handler
+//  RAKSHAK AI CONTROLLER - Complete Request Handler
 // ================================================================
 
 import fs from 'fs';
@@ -240,7 +240,7 @@ class NHHAController {
                 humanIntelligence.dangerAssessment
             );
 
-            const caseId = `NHAA-${Date.now().toString().slice(-8)}`;
+            const caseId = `RAKSHAK-${Date.now().toString().slice(-8)}`;
 
             this._persistCase({
                 caseId, text, language: lang, hybridDecision, scstAnalysis: scstResult,
@@ -318,7 +318,7 @@ class NHHAController {
             const textAnalysis = this.textAnalyzer.analyze(text, lang);
             const legalGuidance = this.legalGuidance.getGuidanceForSCST(result);
 
-            const caseId = `NHAA-${Date.now().toString().slice(-8)}`;
+            const caseId = `RAKSHAK-${Date.now().toString().slice(-8)}`;
             this._persistCase({
                 caseId, text, language: lang,
                 hybridDecision: { finalScores: textAnalysis.scores },
@@ -442,7 +442,7 @@ class NHHAController {
             // case-creating endpoint already uses.
             let caseId = null;
             if (email) {
-                caseId = `NHAA-${Date.now().toString().slice(-8)}`;
+                caseId = `RAKSHAK-${Date.now().toString().slice(-8)}`;
                 this._persistCase({
                     caseId, text, language: 'en',
                     scstAnalysis: summary.rawScstResult,
