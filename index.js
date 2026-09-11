@@ -9,6 +9,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import nhaaRoutes from './routes/nhaa.routes.js';
+import maternalRoutes from './routes/maternal.routes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,6 +32,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // API Routes
 app.use('/api/v1', nhaaRoutes);
+app.use('/api/v1/maternal', maternalRoutes);
 
 // Health Check
 app.get('/ping', (req, res) => {
