@@ -398,7 +398,16 @@ class TextAnalyzer {
                     en: [
                         { regex: /\bkill(?:s|ing)?\s+myself\b/i, weight: 40 },
                         { regex: /\b(?:want(?:s|ing)?|wanna)\s+to\s+die\b/i, weight: 30 },
-                        { regex: /\bend(?:s|ing)?\s+(my\s+life|it\s+all)\b/i, weight: 35 },
+                        // ✅ FIX: real reported false negative - "just want
+                        // to end up all this" scored zero. The original
+                        // pattern required the object to be exactly "my
+                        // life" or "it all" right after "end" - it missed
+                        // "end up all this"/"end this all" (word-order
+                        // variants of "end it all" that are extremely
+                        // common in fast, distressed, non-native-English
+                        // writing, where "it" and "all" get transposed or
+                        // dropped).
+                        { regex: /\bend(?:s|ing)?\s+(?:up\s+)?(?:all\s+this|this\s+all|it\s+all|my\s+life)\b/i, weight: 35 },
                         { regex: /\btak(?:e|es|ing)\s+my\s+(?:own\s+)?life\b/i, weight: 35 },
                         { regex: /\bthink(?:s|ing)?\s+(?:of|about)\s+(?:killing\s+myself|suicide|ending\s+(?:my\s+life|it\s+all))\b/i, weight: 38 },
                         { regex: /\bsuicidal\s+thoughts?\b/i, weight: 35 },
@@ -454,6 +463,31 @@ class TextAnalyzer {
                         // the MORE common everyday phrasing than the
                         // two-word "do not" form it already covered.
                         { regex: /\b(?:not|don'?t|doesn'?t)\s+want(?:s|ing|ed)?\s+to\s+continue\s+(?:anymore|any\s*longer|living|(?:in\s+)?(?:my|his|her)?\s*life|this\s+(?:anymore|any\s*longer)|this(?!\s+\w))\b/i, weight: 32 },
+                        // ✅ FIX: real reported false negative - "i dont
+                        // want to continue my girlfriend left me..." scored
+                        // zero, because real crisis writing is often a
+                        // comma-less run-on: "I don't want to continue"
+                        // stated as a complete thought, immediately
+                        // followed by an unrelated new clause explaining
+                        // why - not one of the specific completions
+                        // ("anymore"/"living"/"my life") the patterns above
+                        // require. Guarded with a negative lookahead against
+                        // the common BENIGN completions of "continue": any
+                        // gerund ("continue WATCHING/STUDYING/WORKING/
+                        // PLAYING this...") - found stress-testing this
+                        // exact fix, since "continue watching this show"
+                        // otherwise false-positived - plus "the" and a
+                        // specific-noun list for direct-object phrasing
+                        // ("continue this course/job/relationship") that
+                        // isn't a gerund. "with" needed its own nested
+                        // exception: a blanket "with" exclusion (to catch
+                        // benign "continue with this job search") also
+                        // wrongly swallowed the genuinely dangerous
+                        // "continue WITH my life" - so "with" is excluded
+                        // only when NOT immediately followed by "my/his/her
+                        // life". Lower weight than the explicit-completion
+                        // pattern above since it's a weaker signal on its own.
+                        { regex: /\b(?:not|don'?t|doesn'?t)\s+want(?:s|ing|ed)?\s+to\s+continue\b(?!\s+(?:with\b(?!\s+(?:my|his|her)\s+life)|the\b|\w+ing\b|this\s+(?:course|project|job|conversation|relationship|meeting|class|work|book|show|game)))/i, weight: 24 },
                         { regex: /\bdone\s+with\s+(?:my\s+)?life\b/i, weight: 35 },
                         { regex: /\bno\s+longer\s+want(?:s|ing|ed)?\s+to\s+(?:live|be\s+alive|exist)\b/i, weight: 30 },
                         { regex: /\bwant(?:s|ing|ed)?\s+to\s+stop\s+living\b/i, weight: 30 },
