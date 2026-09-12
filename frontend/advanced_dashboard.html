@@ -436,8 +436,18 @@
                      to click through without registering it. This in-page
                      banner + required checkbox replaces it - see
                      _updateAudioOnlyWarning() below for when it shows, and
-                     runAssessment() for the hard gate on the checkbox. -->
-                <div id="audioOnlyWarning" style="display:none; margin-top:10px; padding:14px; background:rgba(214,48,49,0.12); border:2px solid #d63031; border-radius:10px;">
+                     runAssessment() for the hard gate on the checkbox.
+                     NOTE: this is a DIFFERENT element from the similarly-
+                     named #audioOnlyWarning caveat inside the results card
+                     below (a pre-submit gate here vs. a post-submit
+                     "this result was tone-only" notice there) - originally
+                     given the same id by mistake, which meant
+                     getElementById always grabbed this one and the results-
+                     card caveat could never actually be shown/hidden. Kept
+                     deliberately distinct now: #preSubmitAudioOnlyWarning
+                     here, #audioOnlyWarning stays reserved for the
+                     results-card notice. -->
+                <div id="preSubmitAudioOnlyWarning" style="display:none; margin-top:10px; padding:14px; background:rgba(214,48,49,0.12); border:2px solid #d63031; border-radius:10px;">
                     <div style="display:flex; align-items:flex-start; gap:10px;">
                         <i class="fas fa-triangle-exclamation" style="color:#ff6b6b; font-size:18px; margin-top:1px;"></i>
                         <div style="flex:1; min-width:0;">
@@ -449,7 +459,7 @@
                                 <i class="fas fa-microphone"></i> Add what you said (recommended)
                             </button>
                             <label style="display:flex; align-items:flex-start; gap:8px; font-size:12px; color:rgba(255,255,255,0.65); cursor:pointer;">
-                                <input type="checkbox" id="audioOnlyAck" onchange="document.getElementById('audioOnlyWarning').style.outline = ''">
+                                <input type="checkbox" id="audioOnlyAck" onchange="document.getElementById('preSubmitAudioOnlyWarning').style.outline = ''">
                                 I understand this analysis is based on tone only, not what I said, and I want to continue anyway.
                             </label>
                         </div>
@@ -1327,7 +1337,7 @@
     // finish so it appears immediately without needing to touch the box.
     function _updateAudioOnlyWarning() {
         const hasText = document.getElementById('textInput').value.trim().length > 0;
-        const warning = document.getElementById('audioOnlyWarning');
+        const warning = document.getElementById('preSubmitAudioOnlyWarning');
         warning.style.display = (recordedBlob && !hasText) ? 'block' : 'none';
     }
 
@@ -1371,12 +1381,13 @@
             // was said, not how calm/agitated it sounded. This used to be
             // a confirm() popup, which is too easy to click through
             // without reading. It's now a hard gate on the in-page
-            // #audioOnlyWarning banner's checkbox (see _updateAudioOnlyWarning
-            // above) - can't proceed without explicitly acknowledging it.
+            // #preSubmitAudioOnlyWarning banner's checkbox (see
+            // _updateAudioOnlyWarning above) - can't proceed without
+            // explicitly acknowledging it.
             if (!text.trim() && recordedBlob) {
                 const ack = document.getElementById('audioOnlyAck');
                 if (!ack.checked) {
-                    const warning = document.getElementById('audioOnlyWarning');
+                    const warning = document.getElementById('preSubmitAudioOnlyWarning');
                     warning.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     warning.style.outline = '2px solid #ff6b6b';
                     ack.focus();
@@ -2063,7 +2074,7 @@
         document.getElementById('waveContainer').style.display = 'none';
         document.getElementById('recordBtn').innerHTML = '<i class="fas fa-circle"></i> Record';
         document.getElementById('audioOnlyAck').checked = false;
-        document.getElementById('audioOnlyWarning').style.display = 'none';
+        document.getElementById('preSubmitAudioOnlyWarning').style.display = 'none';
         // Explicit clear = don't restore this on the next reload.
         try {
             sessionStorage.removeItem('nhaa_draft_text');
