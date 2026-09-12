@@ -377,18 +377,24 @@
                          unlike server-side transcription (removed after
                          exceeding the hosting memory limit - see
                          services/speechToText.js's git history) this adds
-                         zero load to the server, at any scale. -->
+                         zero load to the server, at any scale.
+                         ✅ REMOVED: the Record/Upload audio-tone-analysis
+                         feature (services/audioAnalyzer.js) is no longer
+                         exposed in this UI - direct feedback asked to drop
+                         it and keep only text + Dictate. The backend still
+                         accepts an optional audio file on /hybrid/assess
+                         (untouched, per "don't touch the AI model
+                         engines/backend" - see this file's earlier git
+                         history) but nothing in this page ever sends one
+                         anymore. -->
                     <button class="btn btn-primary btn-sm" onclick="toggleDictation()" id="dictateBtn"><i class="fas fa-microphone"></i> Dictate</button>
-                    <button class="btn btn-danger" onclick="toggleRecording()" id="recordBtn"><i class="fas fa-circle"></i> Record</button>
-                    <button class="btn btn-success btn-sm" onclick="document.getElementById('audioUpload').click()"><i class="fas fa-upload"></i> Upload</button>
-                    <input type="file" id="audioUpload" accept="audio/*" style="display:none;" onchange="handleAudioUpload(event)">
                     <button class="btn btn-outline btn-sm" onclick="clearAll()"><i class="fas fa-undo"></i> Clear</button>
-                    <!-- ✅ FIX: Dictate and Record's live transcription were
-                         hardcoded to en-IN (English) regardless of what
-                         language was actually spoken - anyone dictating in
-                         Hindi, Tamil, Bengali, etc. got their speech force-
-                         matched to English phonetics, producing garbled
-                         nonsense. Both now read this selection - see
+                    <!-- ✅ FIX: Dictate's live transcription was hardcoded
+                         to en-IN (English) regardless of what language was
+                         actually spoken - anyone dictating in Hindi, Tamil,
+                         Bengali, etc. got their speech force-matched to
+                         English phonetics, producing garbled nonsense. It
+                         now reads this selection - see
                          _speechRecognitionLang() below. Remembered across
                          visits via localStorage since it rarely changes
                          per person. NOTE: the crisis-detection keyword
@@ -396,7 +402,7 @@
                          accurately-transcribed non-English text won't be
                          scored by keywords yet either way - this fixes
                          transcription accuracy, not that separate gap. -->
-                    <select id="speechLangSelect" class="btn btn-outline btn-sm" style="padding:6px 10px;" onchange="localStorage.setItem('nhaa_speech_lang', this.value)" title="Language you'll be speaking, for Dictate and Record">
+                    <select id="speechLangSelect" class="btn btn-outline btn-sm" style="padding:6px 10px;" onchange="localStorage.setItem('nhaa_speech_lang', this.value)" title="Language you'll be speaking, for Dictate">
                         <option value="en-IN">🎙️ English</option>
                         <option value="hi-IN">🎙️ हिन्दी (Hindi)</option>
                         <option value="bn-IN">🎙️ বাংলা (Bengali)</option>
@@ -411,59 +417,7 @@
                     </select>
                 </div>
                 <div id="recordingStatus" style="margin-top:8px; font-size:12px; color:rgba(255,255,255,0.4);">
-                    <i class="fas fa-info-circle"></i> Press Record to speak - take as long as you need, click Stop when done
-                </div>
-                <div id="waveContainer" style="display:none; margin-top:8px; display:flex; align-items:center; gap:3px; height:44px; padding:6px 16px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid rgba(255,255,255,0.06);">
-                    <div style="width:3px;height:10px;background:linear-gradient(135deg,#6c5ce7,#a29bfe);border-radius:4px;animation:wave 0.8s infinite ease-in-out alternate;animation-delay:0.0s;"></div>
-                    <div style="width:3px;height:18px;background:linear-gradient(135deg,#6c5ce7,#a29bfe);border-radius:4px;animation:wave 0.8s infinite ease-in-out alternate;animation-delay:0.1s;"></div>
-                    <div style="width:3px;height:28px;background:linear-gradient(135deg,#6c5ce7,#a29bfe);border-radius:4px;animation:wave 0.8s infinite ease-in-out alternate;animation-delay:0.2s;"></div>
-                    <div style="width:3px;height:22px;background:linear-gradient(135deg,#6c5ce7,#a29bfe);border-radius:4px;animation:wave 0.8s infinite ease-in-out alternate;animation-delay:0.3s;"></div>
-                    <div style="width:3px;height:34px;background:linear-gradient(135deg,#6c5ce7,#a29bfe);border-radius:4px;animation:wave 0.8s infinite ease-in-out alternate;animation-delay:0.4s;"></div>
-                    <div style="width:3px;height:14px;background:linear-gradient(135deg,#6c5ce7,#a29bfe);border-radius:4px;animation:wave 0.8s infinite ease-in-out alternate;animation-delay:0.5s;"></div>
-                    <div style="width:3px;height:10px;background:linear-gradient(135deg,#6c5ce7,#a29bfe);border-radius:4px;animation:wave 0.8s infinite ease-in-out alternate;animation-delay:0.6s;"></div>
-                    <div style="width:3px;height:26px;background:linear-gradient(135deg,#6c5ce7,#a29bfe);border-radius:4px;animation:wave 0.8s infinite ease-in-out alternate;animation-delay:0.7s;"></div>
-                </div>
-                <audio id="audioPlayback" controls style="width:100%; margin-top:8px; display:none;"></audio>
-                <!-- ✅ NEW: a real user recorded themselves saying something
-                     about wanting to end their pain via Record alone (no
-                     text), and it scored Minimal - because Record now only
-                     captures tone (see toggleRecording()'s history), the
-                     words never reached textAnalyzer.js at all, and tone
-                     alone is a weak signal for content that's dangerous in
-                     its words, not its delivery (people describing suicidal
-                     ideation very often sound flat/resigned, not agitated).
-                     The old confirm() popup warning about this was too easy
-                     to click through without registering it. This in-page
-                     banner + required checkbox replaces it - see
-                     _updateAudioOnlyWarning() below for when it shows, and
-                     runAssessment() for the hard gate on the checkbox.
-                     NOTE: this is a DIFFERENT element from the similarly-
-                     named #audioOnlyWarning caveat inside the results card
-                     below (a pre-submit gate here vs. a post-submit
-                     "this result was tone-only" notice there) - originally
-                     given the same id by mistake, which meant
-                     getElementById always grabbed this one and the results-
-                     card caveat could never actually be shown/hidden. Kept
-                     deliberately distinct now: #preSubmitAudioOnlyWarning
-                     here, #audioOnlyWarning stays reserved for the
-                     results-card notice. -->
-                <div id="preSubmitAudioOnlyWarning" style="display:none; margin-top:10px; padding:14px; background:rgba(214,48,49,0.12); border:2px solid #d63031; border-radius:10px;">
-                    <div style="display:flex; align-items:flex-start; gap:10px;">
-                        <i class="fas fa-triangle-exclamation" style="color:#ff6b6b; font-size:18px; margin-top:1px;"></i>
-                        <div style="flex:1; min-width:0;">
-                            <div style="font-weight:600; color:#ff8787; margin-bottom:4px;">This recording will NOT be checked for crisis language</div>
-                            <div style="font-size:13px; color:rgba(255,255,255,0.75); margin-bottom:10px;">
-                                Record only analyzes tone of voice. The actual words you said - including anything about self-harm or being unsafe - will not be read unless you add them below.
-                            </div>
-                            <button type="button" class="btn btn-primary btn-sm" onclick="toggleDictation()" style="margin-bottom:10px;">
-                                <i class="fas fa-microphone"></i> Add what you said (recommended)
-                            </button>
-                            <label style="display:flex; align-items:flex-start; gap:8px; font-size:12px; color:rgba(255,255,255,0.65); cursor:pointer;">
-                                <input type="checkbox" id="audioOnlyAck" onchange="document.getElementById('preSubmitAudioOnlyWarning').style.outline = ''">
-                                I understand this analysis is based on tone only, not what I said, and I want to continue anyway.
-                            </label>
-                        </div>
-                    </div>
+                    <i class="fas fa-info-circle"></i> Type your account above, or press Dictate to speak it instead
                 </div>
             </div>
 
@@ -483,14 +437,6 @@
                         <div id="resultsHeroTitle" class="results-hero-title">Minimal</div>
                         <div id="plainLanguageText" class="results-hero-text"></div>
                     </div>
-                </div>
-                <!-- ✅ NEW: shown only when hybridDecision.contentAnalyzed
-                     is false (audio submitted with no text and no usable
-                     transcript) - see controllers/nhaa.controller.js. Makes
-                     it impossible to mistake a tone-only result for one
-                     that actually read what was said. -->
-                <div id="audioOnlyWarning" style="display:none; margin-top:10px; padding:10px 14px; background:rgba(225,112,85,0.12); border:1px solid rgba(225,112,85,0.4); border-radius:8px; color:#e17055; font-size:13px;">
-                    <i class="fas fa-triangle-exclamation"></i> This result is based on tone of voice only - the words spoken were not transcribed and were not analyzed. Add a text description above and re-run the assessment for an accurate result.
                 </div>
 
                 <div id="emergencyBanner" style="display:none;" class="emergency-banner">
@@ -739,37 +685,15 @@
             ? 'http://localhost:8000/api/v1'
             : window.location.origin + '/api/v1';
     })();
-    let isRecording = false;
-    let mediaRecorder = null;
-    let audioChunks = [];
-    let recordedBlob = null;
-    // ✅ FIX: Record used to ALSO run the Web Speech API simultaneously
-    // alongside MediaRecorder, trying to both capture a tone-analyzable
-    // audio clip AND live-transcribe it in one click (see this file's
-    // earlier git history for that whole saga - a real "I don't want to
-    // live anymore" scoring Minimal because the transcript raced the
-    // recording and lost, then several rounds of timeout tuning trying
-    // to fix that race). Real device testing then showed the deeper
-    // problem: running MediaRecorder and SpeechRecognition at the same
-    // time is fundamentally unreliable on mobile (confirmed directly -
-    // on the same phone, same Chrome, Dictate - which only uses
-    // SpeechRecognition, nothing concurrent - transcribed correctly
-    // every time, while Record's simultaneous version failed every
-    // time, no matter how long the timeout was extended). No amount of
-    // timing tweaks fixes two browser APIs contending for one
-    // microphone. Record now does exactly one job - capture audio for
-    // services/audioAnalyzer.js's tone/pitch analysis, which is the one
-    // thing Dictate and typing genuinely can't give you - and no longer
-    // attempts to transcribe at all. Dictate (a single API, already
-    // proven reliable) is the answer for getting words into the box by
-    // voice; see its own section below.
-
-    // ✅ NEW: "Dictate" button state - a separate, standalone speech-to-
-    // text feature. Purely client-side (the browser's own
-    // SpeechRecognition), so it adds zero load to the server at any scale -
-    // see toggleDictation() below. This is now the only place in the app
-    // that transcribes speech to text (see the note above for why Record
-    // no longer does).
+    // ✅ REMOVED: Record (tone/pitch analysis via services/audioAnalyzer.js,
+    // MediaRecorder) and its Upload counterpart - direct feedback asked to
+    // drop the audio-tone-analysis feature entirely and keep only text +
+    // Dictate. This file's earlier history documents why Record and
+    // Dictate could never safely run at once (real device testing showed
+    // MediaRecorder + SpeechRecognition contending for one microphone is
+    // fundamentally unreliable on mobile) and later a full sequential
+    // merge attempt - both now moot since Record no longer exists at all.
+    // Dictate (below) is the only voice-input path left.
     let isDictating = false;
     let dictationRecognizer = null;
     let dictationBaseText = '';
@@ -973,89 +897,13 @@
     }
 
 
-    // ============================================================
-    //  ✅ FIX: MediaRecorder records in the browser's native codec
-    //  (WebM/Opus in Chrome/Edge, similar in Firefox) - there is no
-    //  real 'audio/wav' recording mode. The old code did
-    //  `new Blob(audioChunks, { type: 'audio/wav' })`, which only
-    //  changes the Blob's metadata LABEL, not the actual bytes - the
-    //  uploaded file was still WebM/Opus data pretending to be WAV.
-    //  The backend's WAV decoder (node-wav) can't parse that, silently
-    //  fails, and falls back to default/zero scores every time -
-    //  which is exactly why voice input never detected anything.
-    //  This decodes the real audio via the Web Audio API and properly
-    //  re-encodes it as 16-bit PCM WAV before upload.
-    // ============================================================
-    async function convertBlobToWav(blob) {
-        const arrayBuffer = await blob.arrayBuffer();
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        const audioCtx = new AudioCtx();
-        const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-        const wavBlob = audioBufferToWavBlob(audioBuffer);
-        audioCtx.close();
-        return wavBlob;
-    }
-
-    function audioBufferToWavBlob(audioBuffer) {
-        const numChannels = audioBuffer.numberOfChannels;
-        const sampleRate = audioBuffer.sampleRate;
-
-        // Downmix to mono - the backend's analyzer only reads
-        // result.channelData[0] (see audioAnalyzer.js), so a stereo file
-        // would silently have its second channel ignored anyway. Mixing
-        // down here keeps the exported file consistent with what's
-        // actually analyzed.
-        let samples;
-        if (numChannels === 1) {
-            samples = audioBuffer.getChannelData(0);
-        } else {
-            const len = audioBuffer.length;
-            samples = new Float32Array(len);
-            for (let ch = 0; ch < numChannels; ch++) {
-                const data = audioBuffer.getChannelData(ch);
-                for (let i = 0; i < len; i++) samples[i] += data[i] / numChannels;
-            }
-        }
-
-        const buffer = new ArrayBuffer(44 + samples.length * 2);
-        const view = new DataView(buffer);
-        const writeString = (offset, str) => {
-            for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
-        };
-
-        writeString(0, 'RIFF');
-        view.setUint32(4, 36 + samples.length * 2, true);
-        writeString(8, 'WAVE');
-        writeString(12, 'fmt ');
-        view.setUint32(16, 16, true);        // PCM subchunk size
-        view.setUint16(20, 1, true);         // PCM format
-        view.setUint16(22, 1, true);         // mono
-        view.setUint32(24, sampleRate, true);
-        view.setUint32(28, sampleRate * 2, true); // byte rate (16-bit mono)
-        view.setUint16(32, 2, true);         // block align
-        view.setUint16(34, 16, true);        // bits per sample
-        writeString(36, 'data');
-        view.setUint32(40, samples.length * 2, true);
-
-        let offset = 44;
-        for (let i = 0; i < samples.length; i++, offset += 2) {
-            const s = Math.max(-1, Math.min(1, samples[i]));
-            view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
-        }
-
-        return new Blob([buffer], { type: 'audio/wav' });
-    }
-
     // ✅ NEW: dictate straight into the Text Narrative box - click, speak,
     // words appear live, click again (or the mic just stops itself after
     // a pause) to finish. No audio is recorded or uploaded at all here;
     // this only ever produces text, via the browser's own speech
-    // recognition - the same API Record used to also (unreliably) run
-    // alongside MediaRecorder; see the note above toggleRecording()'s
-    // declarations for why Record no longer attempts that. Purely
-    // client-side - adds nothing to server memory, unlike the server-side
-    // transcription this app tried and
-    // removed after it exceeded the hosting memory limit.
+    // recognition. Purely client-side - adds nothing to server memory,
+    // unlike the server-side transcription this app tried and removed
+    // after it exceeded the hosting memory limit.
     function toggleDictation() {
         const btn = document.getElementById('dictateBtn');
         const textInput = document.getElementById('textInput');
@@ -1068,10 +916,6 @@
             textInput.readOnly = false;
             return;
         }
-
-        // Mirrors the guard in toggleRecording() - the browser only
-        // supports one active microphone/recognition session at a time.
-        if (isRecording) { alert('Please stop recording first.'); return; }
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (!SpeechRecognition) {
@@ -1194,125 +1038,6 @@
         }
     }
 
-    async function toggleRecording() {
-        // Both features want exclusive use of the microphone - see
-        // toggleDictation() below for the mirror of this guard.
-        if (isDictating) { alert('Please stop dictating first.'); return; }
-        const btn = document.getElementById('recordBtn');
-        const status = document.getElementById('recordingStatus');
-        const waveContainer = document.getElementById('waveContainer');
-        if (isRecording) {
-            isRecording = false; mediaRecorder.stop();
-            btn.innerHTML = '<i class="fas fa-circle"></i> Record';
-            waveContainer.style.display = 'none';
-        } else {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
-                audioChunks = [];
-                mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-                mediaRecorder.onstop = async () => {
-                    status.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing audio...';
-                    try {
-                        const rawBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
-                        recordedBlob = await convertBlobToWav(rawBlob);
-                        const url = URL.createObjectURL(recordedBlob);
-                        document.getElementById('audioPlayback').src = url;
-                        document.getElementById('audioPlayback').style.display = 'block';
-                        // ✅ FIX: this used to also attempt live speech
-                        // recognition alongside recording and branch on
-                        // whether it produced a transcript. Record no
-                        // longer attempts transcription at all (see the
-                        // note above toggleRecording()'s old declarations)
-                        // - this is always a tone-only capture now, so the
-                        // message is unconditional rather than a maybe.
-                        const textInput = document.getElementById('textInput');
-                        if (!textInput.value.trim()) {
-                            status.innerHTML = '<span style="color:#e17055;"><i class="fas fa-triangle-exclamation"></i> Audio ready - this captures tone of voice only, not the words said. Use Dictate, or type in the box above, for an accurate result.</span>';
-                        } else {
-                            status.innerHTML = '<i class="fas fa-check-circle" style="color:#00b894;"></i> Audio ready!';
-                        }
-                        // A fresh recording needs its own acknowledgment -
-                        // don't let a checkbox ticked for a PREVIOUS
-                        // recording silently cover this new one.
-                        document.getElementById('audioOnlyAck').checked = false;
-                        _updateAudioOnlyWarning();
-                    } catch (err) {
-                        console.error('Audio conversion failed:', err);
-                        status.innerHTML = '<i class="fas fa-circle-exclamation" style="color:#d63031;"></i> Could not process audio - please try again or use text instead.';
-                        recordedBlob = null;
-                        _updateAudioOnlyWarning();
-                    }
-                };
-                mediaRecorder.start();
-                isRecording = true;
-                btn.innerHTML = '<i class="fas fa-stop"></i> Stop';
-                status.innerHTML = '<span style="color:#e17055;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#e17055;animation:pulse 1s infinite;vertical-align:middle;margin-right:6px;"></span> Recording... (click Stop when done)</span>';
-                waveContainer.style.display = 'flex';
-                // ✅ REMOVED: the 15s auto-stop. A crisis account often
-                // doesn't fit in 15 seconds, and someone who runs out of
-                // time mid-sentence gets cut off exactly when it matters
-                // most. Recording now runs until the person clicks Stop
-                // themselves - the only real ceiling left is the backend's
-                // 15MB upload limit (routes/nhaa.routes.js). The upload is
-                // uncompressed 16-bit PCM WAV (see audioBufferToWavBlob
-                // below), not the browser's compressed recording format,
-                // so that's roughly 2.5-3 minutes at a typical 48kHz mic -
-                // generous for a spoken account, but a real limit, not a
-                // theoretical one. index.js's global error handler already
-                // turns a too-large upload into a clean JSON error the
-                // existing catch block in runAssessment() displays.
-            } catch(err) { alert('Microphone access required.'); }
-        }
-    }
-
-    // ✅ NEW: the Web Speech API only transcribes live microphone input via
-    // toggleRecording() above - there is no way to run it against an
-    // already-recorded file, so an uploaded audio file is ALWAYS
-    // acoustic-only (tone/pitch, never the actual words) unless the person
-    // also types the text themselves. Shared by both branches below.
-    function _audioLoadedStatusHTML() {
-        const textInput = document.getElementById('textInput');
-        if (textInput.value.trim()) {
-            return '<i class="fas fa-check-circle" style="color:#00b894;"></i> File loaded!';
-        }
-        return '<span style="color:#e17055;"><i class="fas fa-triangle-exclamation"></i> File loaded, but uploaded audio cannot be transcribed automatically. This will only be analyzed by tone, not by what was said - please also type it in the box above for an accurate result.</span>';
-    }
-
-    async function handleAudioUpload(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        const status = document.getElementById('recordingStatus');
-
-        // If it's already a WAV file, no conversion needed. Otherwise (MP3,
-        // M4A, OGG, etc.) it has the same problem as browser recordings -
-        // the backend's node-wav decoder can only parse real PCM WAV bytes.
-        if (file.type === 'audio/wav' || file.name.toLowerCase().endsWith('.wav')) {
-            recordedBlob = new Blob([file], { type: 'audio/wav' });
-            const url = URL.createObjectURL(recordedBlob);
-            document.getElementById('audioPlayback').src = url;
-            document.getElementById('audioPlayback').style.display = 'block';
-            status.innerHTML = _audioLoadedStatusHTML();
-            document.getElementById('audioOnlyAck').checked = false;
-            _updateAudioOnlyWarning();
-            return;
-        }
-
-        status.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Converting audio...';
-        try {
-            recordedBlob = await convertBlobToWav(file);
-            const url = URL.createObjectURL(recordedBlob);
-            document.getElementById('audioPlayback').src = url;
-            document.getElementById('audioPlayback').style.display = 'block';
-            status.innerHTML = _audioLoadedStatusHTML();
-            document.getElementById('audioOnlyAck').checked = false;
-            _updateAudioOnlyWarning();
-        } catch (err) {
-            console.error('Audio conversion failed:', err);
-            status.innerHTML = '<i class="fas fa-circle-exclamation" style="color:#d63031;"></i> Could not process this audio file - try a WAV file or use text instead.';
-            recordedBlob = null;
-        }
-    }
 
     function updateCharCount() {
         const text = document.getElementById('textInput').value;
@@ -1326,19 +1051,6 @@
         // auto-refresh firing on a file save while testing) - see
         // restoreSession() below, called on page load.
         try { sessionStorage.setItem('nhaa_draft_text', text); } catch (e) {}
-        _updateAudioOnlyWarning();
-    }
-
-    // ✅ NEW: shows/hides the in-page "this recording will NOT be checked
-    // for crisis language" banner based on current state - there's audio
-    // captured (Record or Upload) AND the text box is empty. Called on
-    // every keystroke/dictation update (via updateCharCount above) so it
-    // disappears the moment words are added, and after Record/Upload
-    // finish so it appears immediately without needing to touch the box.
-    function _updateAudioOnlyWarning() {
-        const hasText = document.getElementById('textInput').value.trim().length > 0;
-        const warning = document.getElementById('preSubmitAudioOnlyWarning');
-        warning.style.display = (recordedBlob && !hasText) ? 'block' : 'none';
     }
 
     const SAMPLE_TEXTS = {
@@ -1359,7 +1071,7 @@
             const text = document.getElementById('textInput').value;
             const textInput = document.getElementById('textInput');
 
-            if (!text.trim() && !recordedBlob) {
+            if (!text.trim()) {
                 errorBox.style.display = 'block';
                 errorBox.innerHTML = '<i class="fas fa-circle-exclamation"></i> Please type something above, or click one of the "Try:" samples below, before analyzing.';
                 textInput.style.borderColor = '#d63031';
@@ -1368,32 +1080,6 @@
             }
             errorBox.style.display = 'none';
             textInput.style.borderColor = '';
-
-            // ✅ FIX: last line of defense before submitting. If there's
-            // audio but no text at all, this assessment can only be based
-            // on tone/pitch (services/audioAnalyzer.js) - the actual words
-            // spoken are never read by the keyword/pattern engine that
-            // catches things like suicidal statements. This is exactly
-            // the gap that let a real user's spoken "I do not want to
-            // continue this anymore, want to end this pain" score Minimal
-            // - Record alone can't and won't see the words, and tone-only
-            // scoring is a weak signal for content whose danger is in what
-            // was said, not how calm/agitated it sounded. This used to be
-            // a confirm() popup, which is too easy to click through
-            // without reading. It's now a hard gate on the in-page
-            // #preSubmitAudioOnlyWarning banner's checkbox (see
-            // _updateAudioOnlyWarning above) - can't proceed without
-            // explicitly acknowledging it.
-            if (!text.trim() && recordedBlob) {
-                const ack = document.getElementById('audioOnlyAck');
-                if (!ack.checked) {
-                    const warning = document.getElementById('preSubmitAudioOnlyWarning');
-                    warning.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    warning.style.outline = '2px solid #ff6b6b';
-                    ack.focus();
-                    return;
-                }
-            }
 
             document.getElementById('resultsCard').style.display = 'block';
             document.getElementById('gaugeText').textContent = '...';
@@ -1408,8 +1094,7 @@
             document.getElementById('quickIndicators').innerHTML = '';
 
             const formData = new FormData();
-            if (text.trim()) formData.append('text', text);
-            if (recordedBlob) formData.append('audio', new File([recordedBlob], 'recording.wav', { type: 'audio/wav' }));
+            formData.append('text', text);
             // Only attaches contact info if the person chose to create/log
             // into an account first (entirely optional - see the account
             // widget above) - an anonymous submission sends neither field.
@@ -1496,8 +1181,6 @@
         };
         document.getElementById('whatHappensNext').innerHTML =
             `<strong>What happens next:</strong> ${nextStepsCopy[severity.level] || nextStepsCopy.Minimal}`;
-        document.getElementById('audioOnlyWarning').style.display =
-            (hybrid.contentAnalyzed === false) ? 'block' : 'none';
 
         // Plain-language summary - the technical grid below still shows
         // every raw indicator, this just adds a human-readable framing on
@@ -2066,15 +1749,8 @@
 
     function clearAll() {
         document.getElementById('textInput').value = '';
-        document.getElementById('audioPlayback').src = '';
-        document.getElementById('audioPlayback').style.display = 'none';
-        document.getElementById('recordingStatus').innerHTML = '<i class="fas fa-info-circle"></i> Press Record to speak';
-        recordedBlob = null;
+        document.getElementById('recordingStatus').innerHTML = '<i class="fas fa-info-circle"></i> Type your account above, or press Dictate to speak it instead';
         document.getElementById('resultsCard').style.display = 'none';
-        document.getElementById('waveContainer').style.display = 'none';
-        document.getElementById('recordBtn').innerHTML = '<i class="fas fa-circle"></i> Record';
-        document.getElementById('audioOnlyAck').checked = false;
-        document.getElementById('preSubmitAudioOnlyWarning').style.display = 'none';
         // Explicit clear = don't restore this on the next reload.
         try {
             sessionStorage.removeItem('nhaa_draft_text');
