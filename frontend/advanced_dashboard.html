@@ -371,6 +371,14 @@
                 </div>
                 <div style="display:flex; gap:10px; margin-top:12px; flex-wrap:wrap;">
                     <button class="btn btn-primary" onclick="runAssessment()"><i class="fas fa-robot"></i> Analyze</button>
+                    <!-- ✅ NEW: dictates straight into the box using the
+                         browser's own speech recognition - see
+                         toggleDictation() below. Purely client-side, so
+                         unlike server-side transcription (removed after
+                         exceeding the hosting memory limit - see
+                         services/speechToText.js's git history) this adds
+                         zero load to the server, at any scale. -->
+                    <button class="btn btn-primary btn-sm" onclick="toggleDictation()" id="dictateBtn"><i class="fas fa-microphone"></i> Dictate</button>
                     <button class="btn btn-danger" onclick="toggleRecording()" id="recordBtn"><i class="fas fa-circle"></i> Record</button>
                     <button class="btn btn-success btn-sm" onclick="document.getElementById('audioUpload').click()"><i class="fas fa-upload"></i> Upload</button>
                     <input type="file" id="audioUpload" accept="audio/*" style="display:none;" onchange="handleAudioUpload(event)">
@@ -708,6 +716,20 @@
     // results), with a timeout safety net in case a browser never fires
     // it or recognition stalls.
     let speechRecognitionFinished = null;
+
+    // ✅ NEW: "Dictate" button state - a separate, standalone speech-to-
+    // text feature from the recording flow above. Purely client-side (the
+    // browser's own SpeechRecognition, same API toggleRecording() already
+    // uses), so it adds zero load to the server at any scale - see
+    // toggleDictation() below. Kept as its own recognizer/state rather
+    // than reusing speechRecognizer/voiceTranscript above so the two
+    // features (recording a tone-analyzable clip vs. just typing by
+    // voice) can't interfere with each other's state.
+    let isDictating = false;
+    let dictationRecognizer = null;
+    let dictationBaseText = '';
+    let dictationFinalTranscript = '';
+
     let chartInstances = {};
     let assessmentHistory = JSON.parse(localStorage.getItem('nhaa_history') || '[]');
 
@@ -1018,7 +1040,94 @@
         }
     }
 
+    // ✅ NEW: dictate straight into the Text Narrative box - click, speak,
+    // words appear live, click again (or the mic just stops itself after
+    // a pause) to finish. No audio is recorded or uploaded at all here;
+    // this only ever produces text, via the browser's own speech
+    // recognition (see _startSpeechRecognition's header for the same
+    // API's other use). Purely client-side - adds nothing to server
+    // memory, unlike the server-side transcription this app tried and
+    // removed after it exceeded the hosting memory limit.
+    function toggleDictation() {
+        const btn = document.getElementById('dictateBtn');
+        const textInput = document.getElementById('textInput');
+        const status = document.getElementById('recordingStatus');
+
+        if (isDictating) {
+            isDictating = false;
+            if (dictationRecognizer) { try { dictationRecognizer.stop(); } catch (_) {} }
+            btn.innerHTML = '<i class="fas fa-microphone"></i> Dictate';
+            return;
+        }
+
+        // Mirrors the guard in toggleRecording() - the browser only
+        // supports one active microphone/recognition session at a time.
+        if (isRecording) { alert('Please stop recording first.'); return; }
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            alert('Voice dictation isn\'t supported in this browser. Try Chrome or Edge, or just type instead.');
+            return;
+        }
+
+        dictationBaseText = textInput.value.trim();
+        dictationFinalTranscript = '';
+
+        try {
+            dictationRecognizer = new SpeechRecognition();
+            dictationRecognizer.lang = 'en-IN';
+            dictationRecognizer.continuous = true;
+            // Unlike the recording flow (which only needs the final
+            // transcript once recording stops), interim results here
+            // drive the live "words appearing as you speak" experience -
+            // this IS the feature, not just a nice-to-have.
+            dictationRecognizer.interimResults = true;
+
+            dictationRecognizer.onresult = (event) => {
+                let interim = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        dictationFinalTranscript += (dictationFinalTranscript ? ' ' : '') + transcript.trim();
+                    } else {
+                        interim += transcript;
+                    }
+                }
+                const combined = [dictationFinalTranscript, interim].filter(Boolean).join(' ');
+                textInput.value = dictationBaseText
+                    ? `${dictationBaseText}\n\n${combined}`
+                    : combined;
+                updateCharCount();
+            };
+            dictationRecognizer.onerror = (e) => {
+                console.warn('Dictation error:', e.error);
+                if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+                    status.innerHTML = '<span style="color:#e17055;"><i class="fas fa-triangle-exclamation"></i> Microphone access was denied - allow it in your browser to use Dictate.</span>';
+                }
+            };
+            // Fires when the browser's recognition session ends, whether
+            // from silence, an error, or the person clicking Stop -
+            // resets the button either way so it never gets stuck saying
+            // "Stop" after the mic has actually released.
+            dictationRecognizer.onend = () => {
+                isDictating = false;
+                btn.innerHTML = '<i class="fas fa-microphone"></i> Dictate';
+            };
+
+            dictationRecognizer.start();
+            isDictating = true;
+            btn.innerHTML = '<i class="fas fa-stop"></i> Stop';
+        } catch (err) {
+            console.warn('Dictation unavailable:', err);
+            alert('Could not start dictation - try again or type instead.');
+        }
+    }
+
     async function toggleRecording() {
+        // Both features want exclusive use of the microphone and the
+        // browser's single speech-recognition session - see
+        // toggleDictation() below for the mirror of this guard.
+        if (isDictating) { alert('Please stop dictating first.'); return; }
         const btn = document.getElementById('recordBtn');
         const status = document.getElementById('recordingStatus');
         const waveContainer = document.getElementById('waveContainer');
