@@ -424,6 +424,37 @@
                     <div style="width:3px;height:26px;background:linear-gradient(135deg,#6c5ce7,#a29bfe);border-radius:4px;animation:wave 0.8s infinite ease-in-out alternate;animation-delay:0.7s;"></div>
                 </div>
                 <audio id="audioPlayback" controls style="width:100%; margin-top:8px; display:none;"></audio>
+                <!-- ✅ NEW: a real user recorded themselves saying something
+                     about wanting to end their pain via Record alone (no
+                     text), and it scored Minimal - because Record now only
+                     captures tone (see toggleRecording()'s history), the
+                     words never reached textAnalyzer.js at all, and tone
+                     alone is a weak signal for content that's dangerous in
+                     its words, not its delivery (people describing suicidal
+                     ideation very often sound flat/resigned, not agitated).
+                     The old confirm() popup warning about this was too easy
+                     to click through without registering it. This in-page
+                     banner + required checkbox replaces it - see
+                     _updateAudioOnlyWarning() below for when it shows, and
+                     runAssessment() for the hard gate on the checkbox. -->
+                <div id="audioOnlyWarning" style="display:none; margin-top:10px; padding:14px; background:rgba(214,48,49,0.12); border:2px solid #d63031; border-radius:10px;">
+                    <div style="display:flex; align-items:flex-start; gap:10px;">
+                        <i class="fas fa-triangle-exclamation" style="color:#ff6b6b; font-size:18px; margin-top:1px;"></i>
+                        <div style="flex:1; min-width:0;">
+                            <div style="font-weight:600; color:#ff8787; margin-bottom:4px;">This recording will NOT be checked for crisis language</div>
+                            <div style="font-size:13px; color:rgba(255,255,255,0.75); margin-bottom:10px;">
+                                Record only analyzes tone of voice. The actual words you said - including anything about self-harm or being unsafe - will not be read unless you add them below.
+                            </div>
+                            <button type="button" class="btn btn-primary btn-sm" onclick="toggleDictation()" style="margin-bottom:10px;">
+                                <i class="fas fa-microphone"></i> Add what you said (recommended)
+                            </button>
+                            <label style="display:flex; align-items:flex-start; gap:8px; font-size:12px; color:rgba(255,255,255,0.65); cursor:pointer;">
+                                <input type="checkbox" id="audioOnlyAck" onchange="document.getElementById('audioOnlyWarning').style.outline = ''">
+                                I understand this analysis is based on tone only, not what I said, and I want to continue anyway.
+                            </label>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="card" id="resultsCard" style="display:none;">
@@ -1191,10 +1222,16 @@
                         } else {
                             status.innerHTML = '<i class="fas fa-check-circle" style="color:#00b894;"></i> Audio ready!';
                         }
+                        // A fresh recording needs its own acknowledgment -
+                        // don't let a checkbox ticked for a PREVIOUS
+                        // recording silently cover this new one.
+                        document.getElementById('audioOnlyAck').checked = false;
+                        _updateAudioOnlyWarning();
                     } catch (err) {
                         console.error('Audio conversion failed:', err);
                         status.innerHTML = '<i class="fas fa-circle-exclamation" style="color:#d63031;"></i> Could not process audio - please try again or use text instead.';
                         recordedBlob = null;
+                        _updateAudioOnlyWarning();
                     }
                 };
                 mediaRecorder.start();
@@ -1246,6 +1283,8 @@
             document.getElementById('audioPlayback').src = url;
             document.getElementById('audioPlayback').style.display = 'block';
             status.innerHTML = _audioLoadedStatusHTML();
+            document.getElementById('audioOnlyAck').checked = false;
+            _updateAudioOnlyWarning();
             return;
         }
 
@@ -1256,6 +1295,8 @@
             document.getElementById('audioPlayback').src = url;
             document.getElementById('audioPlayback').style.display = 'block';
             status.innerHTML = _audioLoadedStatusHTML();
+            document.getElementById('audioOnlyAck').checked = false;
+            _updateAudioOnlyWarning();
         } catch (err) {
             console.error('Audio conversion failed:', err);
             status.innerHTML = '<i class="fas fa-circle-exclamation" style="color:#d63031;"></i> Could not process this audio file - try a WAV file or use text instead.';
@@ -1275,6 +1316,19 @@
         // auto-refresh firing on a file save while testing) - see
         // restoreSession() below, called on page load.
         try { sessionStorage.setItem('nhaa_draft_text', text); } catch (e) {}
+        _updateAudioOnlyWarning();
+    }
+
+    // ✅ NEW: shows/hides the in-page "this recording will NOT be checked
+    // for crisis language" banner based on current state - there's audio
+    // captured (Record or Upload) AND the text box is empty. Called on
+    // every keystroke/dictation update (via updateCharCount above) so it
+    // disappears the moment words are added, and after Record/Upload
+    // finish so it appears immediately without needing to touch the box.
+    function _updateAudioOnlyWarning() {
+        const hasText = document.getElementById('textInput').value.trim().length > 0;
+        const warning = document.getElementById('audioOnlyWarning');
+        warning.style.display = (recordedBlob && !hasText) ? 'block' : 'none';
     }
 
     const SAMPLE_TEXTS = {
@@ -1305,23 +1359,27 @@
             errorBox.style.display = 'none';
             textInput.style.borderColor = '';
 
-            // ✅ NEW: last line of defense before submitting. If there's
+            // ✅ FIX: last line of defense before submitting. If there's
             // audio but no text at all, this assessment can only be based
             // on tone/pitch (services/audioAnalyzer.js) - the actual words
             // spoken are never read by the keyword/pattern engine that
             // catches things like suicidal statements. This is exactly
-            // the gap that let "I don't want to live anymore" score
-            // Minimal when spoken but not typed. Give the person one more
-            // chance to add the text rather than silently submitting an
-            // assessment that can't see what they actually said.
+            // the gap that let a real user's spoken "I do not want to
+            // continue this anymore, want to end this pain" score Minimal
+            // - Record alone can't and won't see the words, and tone-only
+            // scoring is a weak signal for content whose danger is in what
+            // was said, not how calm/agitated it sounded. This used to be
+            // a confirm() popup, which is too easy to click through
+            // without reading. It's now a hard gate on the in-page
+            // #audioOnlyWarning banner's checkbox (see _updateAudioOnlyWarning
+            // above) - can't proceed without explicitly acknowledging it.
             if (!text.trim() && recordedBlob) {
-                const proceedAudioOnly = confirm(
-                    'Recording only captures your tone of voice - it will NOT read the actual words you said.\n\n' +
-                    'For an accurate result (especially if you mentioned anything about self-harm or being unsafe), click Cancel and either use Dictate or type what you said in the box above.\n\n' +
-                    'Continue with audio-only analysis anyway?'
-                );
-                if (!proceedAudioOnly) {
-                    textInput.focus();
+                const ack = document.getElementById('audioOnlyAck');
+                if (!ack.checked) {
+                    const warning = document.getElementById('audioOnlyWarning');
+                    warning.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    warning.style.outline = '2px solid #ff6b6b';
+                    ack.focus();
                     return;
                 }
             }
@@ -2004,6 +2062,8 @@
         document.getElementById('resultsCard').style.display = 'none';
         document.getElementById('waveContainer').style.display = 'none';
         document.getElementById('recordBtn').innerHTML = '<i class="fas fa-circle"></i> Record';
+        document.getElementById('audioOnlyAck').checked = false;
+        document.getElementById('audioOnlyWarning').style.display = 'none';
         // Explicit clear = don't restore this on the next reload.
         try {
             sessionStorage.removeItem('nhaa_draft_text');
