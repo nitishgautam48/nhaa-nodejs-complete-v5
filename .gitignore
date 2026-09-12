@@ -4,6 +4,11 @@ node_modules/
 .DS_Store
 Thumbs.db
 
+# Claude Code harness-internal state (e.g. temporary git worktrees used to
+# isolate background agents) - never project content, never meant to be
+# committed.
+.claude/
+
 # Password hashes and account contact info should never be committed,
 # even hashed - unlike data/cases.json (already committed by this
 # project's existing convention), this is credential material.
