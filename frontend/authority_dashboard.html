@@ -824,7 +824,21 @@
                 <div style="font-size:12px; color:rgba(255,255,255,0.6); text-transform:capitalize;">${(c.primaryConcern || '').replace(/_/g, ' ')}${c.escalatedBy ? ` · escalated by ${c.escalatedBy.replace(/_/g, ' ')}` : ''}</div>
             </div>
         </div>`;
-        body += `<p style="padding:12px; background:rgba(255,255,255,0.04); border-radius:8px; white-space:pre-wrap;">${(c.text || '(no text recorded)').slice(0, 800)}</p>`;
+        // ✅ FIX: found while verifying the voice-transcript fix reaches
+        // this dashboard. Two bugs: (1) c.text is the victim's own
+        // narrative, submitted with no authentication at all - exactly the
+        // "attacker-controllable content" this file's own Lawyer Assistant
+        // section (see its comment below) already says must go through
+        // escapeHtml() before hitting innerHTML, yet this was interpolated
+        // raw - a stored-XSS hole an anonymous submitter could use against
+        // every officer who opens their case. (2) `.slice(0, 800)` silently
+        // cut off anything past 800 characters with no indication - for a
+        // combined typed+voice narrative (see advanced_dashboard.html's
+        // "[Voice recording transcript]:" append), that could hide the
+        // very statement that drove the case's severity from the officer
+        // reviewing it. Officers need to see the complete narrative, so the
+        // cap is removed entirely rather than raised.
+        body += `<p style="padding:12px; background:rgba(255,255,255,0.04); border-radius:8px; white-space:pre-wrap;">${escapeHtml(c.text || '(no text recorded)')}</p>`;
 
         // ✅ NEW: full evaluation breakdown - previously the authority
         // dashboard only ever showed the single SVI number, with no way to
@@ -933,20 +947,25 @@
         // render an empty "Court Details" block.
         const hasCourtTracking = c.caseNumber || c.court || c.courtroom || c.hearingDate || c.judgeName || c.complainantName || (c.accusedNames && c.accusedNames.length);
         if (hasCourtTracking) {
+            // ✅ FIX: same escapeHtml gap as c.text above - these are
+            // free-text fields entered via the Lawyer Assistant's Quick
+            // Pattern Check tab (see scstAnalyze in nhaa.controller.js),
+            // not curated server strings.
             body += `<div style="margin-top:12px; padding:12px; background:rgba(0,184,148,0.06); border-radius:8px; font-size:12px; line-height:1.8;">
                 <strong>Court Details:</strong><br>
-                ${c.caseNumber ? `Case No.: ${c.caseNumber}<br>` : ''}
-                ${c.court || c.courtroom ? `Court: ${[c.court, c.courtroom].filter(Boolean).join(' · ')}<br>` : ''}
-                ${c.hearingDate ? `Hearing Date: ${c.hearingDate}<br>` : ''}
-                ${c.judgeName ? `Judge: ${c.judgeName}<br>` : ''}
-                ${c.complainantName ? `Complainant: ${c.complainantName}<br>` : ''}
-                ${c.accusedNames && c.accusedNames.length ? `Accused: ${c.accusedNames.join(', ')}` : ''}
+                ${c.caseNumber ? `Case No.: ${escapeHtml(c.caseNumber)}<br>` : ''}
+                ${c.court || c.courtroom ? `Court: ${escapeHtml([c.court, c.courtroom].filter(Boolean).join(' · '))}<br>` : ''}
+                ${c.hearingDate ? `Hearing Date: ${escapeHtml(c.hearingDate)}<br>` : ''}
+                ${c.judgeName ? `Judge: ${escapeHtml(c.judgeName)}<br>` : ''}
+                ${c.complainantName ? `Complainant: ${escapeHtml(c.complainantName)}<br>` : ''}
+                ${c.accusedNames && c.accusedNames.length ? `Accused: ${escapeHtml(c.accusedNames.join(', '))}` : ''}
             </div>`;
         }
 
         body += `<p style="margin-top:10px; font-size:12px; color:rgba(255,255,255,0.5);">Legal guidance applicable: ${c.legalApplicable ? 'Yes' : 'No'} · Source: ${c.source || 'assessment'}</p>`;
         if (c.notes) {
-            body += `<p style="margin-top:10px;"><strong>Officer notes:</strong> ${c.notes}</p>`;
+            // ✅ FIX: same escapeHtml gap - officer notes are free text too.
+            body += `<p style="margin-top:10px;"><strong>Officer notes:</strong> ${escapeHtml(c.notes)}</p>`;
         }
 
         document.getElementById('modalBody').innerHTML = body;
