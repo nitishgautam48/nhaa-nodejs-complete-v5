@@ -269,6 +269,18 @@ class NHHAController {
             const expertOpinions = this.consensusBuilder.getExpertOpinions(aiResult, expertRules);
             const consensus = this.consensusBuilder.buildConsensus(expertOpinions);
             const hybridDecision = this._hybridDecision(aiResult, humanIntelligence, consensus, scstResult);
+            // ✅ NEW: services/audioAnalyzer.js only ever measures acoustic
+            // features (tone/pitch/energy) - it has no way to read what was
+            // actually said, so suicidal_ideation and every keyword-driven
+            // category can ONLY come from `text` (typed, or transcribed
+            // client-side from a recording - see advanced_dashboard.html's
+            // Web Speech API integration). When a voice submission arrives
+            // with no text at all, the resulting severity reflects tone
+            // alone and must never be presented as if the words spoken were
+            // understood. Exposed here so any consumer of this response
+            // (the dashboard, a caseworker view, an API integration) can
+            // show that caveat instead of silently trusting a "Minimal".
+            hybridDecision.contentAnalyzed = !!(text && text.trim());
 
             // Legal tab: redressal channels + provisions, combining SC/ST
             // pattern matches with any clinical crisis findings (e.g.

@@ -409,6 +409,14 @@
                         <div id="plainLanguageText" class="results-hero-text"></div>
                     </div>
                 </div>
+                <!-- ✅ NEW: shown only when hybridDecision.contentAnalyzed
+                     is false (audio submitted with no text and no usable
+                     transcript) - see controllers/nhaa.controller.js. Makes
+                     it impossible to mistake a tone-only result for one
+                     that actually read what was said. -->
+                <div id="audioOnlyWarning" style="display:none; margin-top:10px; padding:10px 14px; background:rgba(225,112,85,0.12); border:1px solid rgba(225,112,85,0.4); border-radius:8px; color:#e17055; font-size:13px;">
+                    <i class="fas fa-triangle-exclamation"></i> This result is based on tone of voice only - the words spoken were not transcribed and were not analyzed. Add a text description above and re-run the assessment for an accurate result.
+                </div>
 
                 <div id="emergencyBanner" style="display:none;" class="emergency-banner">
                     🚨 EMERGENCY: Immediate intervention required. Call <strong>112</strong> or <strong>1800-599-0019</strong>
@@ -675,6 +683,31 @@
     // SAME text pipeline typed input already uses.
     let speechRecognizer = null;
     let voiceTranscript = '';
+    // ✅ FIX: critical safety bug - a person recorded themselves saying
+    // "I don't want to live anymore" and the assessment came back
+    // "Minimal". Root cause: speechRecognizer.stop() and
+    // mediaRecorder.stop() were both called synchronously in
+    // toggleRecording(), but they finalize on completely different
+    // timelines. mediaRecorder.onstop fires almost instantly (it's just
+    // packaging local audio bytes into a Blob). The Web Speech API's
+    // stop(), on the other hand, only *requests* finalization - the
+    // actual final transcript arrives later via onresult, after a
+    // network round-trip to the browser's speech service. For a short
+    // utterance recorded well under the 15s cap, onstop's transcript
+    // check ran before that final result ever landed, so voiceTranscript
+    // was still '' every time, the Text Narrative box never got filled,
+    // `text` was omitted from the request entirely, and
+    // controller.hybridAssessment() (text ? this.textAnalyzer.analyze(...)
+    // : null) skipped the keyword/pattern engine altogether - the exact
+    // words spoken were never read by anything. The recording was then
+    // scored on acoustic features alone (services/audioAnalyzer.js: RMS
+    // energy/zero-crossing-rate/pitch variance), which say nothing about
+    // *what* was said and can easily come back low for someone speaking
+    // calmly or flatly. This resolves once the recognizer actually
+    // reports it's done (its `onend` event, which fires after all final
+    // results), with a timeout safety net in case a browser never fires
+    // it or recognition stalls.
+    let speechRecognitionFinished = null;
     let chartInstances = {};
     let assessmentHistory = JSON.parse(localStorage.getItem('nhaa_history') || '[]');
 
@@ -945,7 +978,10 @@
     // API at all (e.g. Firefox as of this writing).
     function _startSpeechRecognition() {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) return null;
+        if (!SpeechRecognition) {
+            speechRecognitionFinished = Promise.resolve();
+            return null;
+        }
         try {
             const recognizer = new SpeechRecognition();
             recognizer.lang = 'en-IN';
@@ -962,10 +998,22 @@
             // enhancement on top of the acoustic analysis that already
             // works, never a requirement for submitting a voice recording.
             recognizer.onerror = (e) => console.warn('Speech recognition:', e.error);
+            // ✅ FIX (see speechRecognitionFinished note above): resolve
+            // this promise only once the recognizer itself signals it has
+            // truly finished (onend fires after any pending final result),
+            // with a 4s timeout so a browser that never fires onend (or a
+            // stalled network) can't hang the recording indefinitely.
+            speechRecognitionFinished = new Promise((resolve) => {
+                let settled = false;
+                const done = () => { if (!settled) { settled = true; resolve(); } };
+                recognizer.onend = done;
+                setTimeout(done, 4000);
+            });
             recognizer.start();
             return recognizer;
         } catch (err) {
             console.warn('Speech recognition unavailable:', err);
+            speechRecognitionFinished = Promise.resolve();
             return null;
         }
     }
@@ -991,7 +1039,13 @@
                     status.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing audio...';
                     try {
                         const rawBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
-                        recordedBlob = await convertBlobToWav(rawBlob);
+                        // ✅ FIX: wait for speech recognition to actually
+                        // finish (see speechRecognitionFinished note above)
+                        // before looking at voiceTranscript - it used to be
+                        // checked immediately here, which almost always ran
+                        // ahead of the transcript actually arriving.
+                        const [wav] = await Promise.all([convertBlobToWav(rawBlob), speechRecognitionFinished]);
+                        recordedBlob = wav;
                         const url = URL.createObjectURL(recordedBlob);
                         document.getElementById('audioPlayback').src = url;
                         document.getElementById('audioPlayback').style.display = 'block';
@@ -1007,6 +1061,14 @@
                             textInput.value = voiceTranscript.trim();
                             updateCharCount();
                             status.innerHTML = `<i class="fas fa-check-circle" style="color:#00b894;"></i> Audio ready! Transcribed: "${voiceTranscript.trim().substring(0, 80)}${voiceTranscript.trim().length > 80 ? '...' : ''}" (edit above if it misheard anything)`;
+                        } else if (!textInput.value.trim()) {
+                            // ✅ NEW: without a transcript AND without any
+                            // typed text, the assessment can only run on
+                            // acoustic tone/pitch - it will never see the
+                            // actual words spoken. Say so plainly instead of
+                            // a generic "Audio ready!" that implies the
+                            // content was understood.
+                            status.innerHTML = '<span style="color:#e17055;"><i class="fas fa-triangle-exclamation"></i> Audio ready, but your speech could not be transcribed automatically. This will only be analyzed by tone, not by what you said - please also type it in the box above for an accurate result.</span>';
                         } else {
                             status.innerHTML = '<i class="fas fa-check-circle" style="color:#00b894;"></i> Audio ready!';
                         }
@@ -1026,6 +1088,19 @@
         }
     }
 
+    // ✅ NEW: the Web Speech API only transcribes live microphone input via
+    // toggleRecording() above - there is no way to run it against an
+    // already-recorded file, so an uploaded audio file is ALWAYS
+    // acoustic-only (tone/pitch, never the actual words) unless the person
+    // also types the text themselves. Shared by both branches below.
+    function _audioLoadedStatusHTML() {
+        const textInput = document.getElementById('textInput');
+        if (textInput.value.trim()) {
+            return '<i class="fas fa-check-circle" style="color:#00b894;"></i> File loaded!';
+        }
+        return '<span style="color:#e17055;"><i class="fas fa-triangle-exclamation"></i> File loaded, but uploaded audio cannot be transcribed automatically. This will only be analyzed by tone, not by what was said - please also type it in the box above for an accurate result.</span>';
+    }
+
     async function handleAudioUpload(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -1039,7 +1114,7 @@
             const url = URL.createObjectURL(recordedBlob);
             document.getElementById('audioPlayback').src = url;
             document.getElementById('audioPlayback').style.display = 'block';
-            status.innerHTML = '<i class="fas fa-check-circle" style="color:#00b894;"></i> File loaded!';
+            status.innerHTML = _audioLoadedStatusHTML();
             return;
         }
 
@@ -1049,7 +1124,7 @@
             const url = URL.createObjectURL(recordedBlob);
             document.getElementById('audioPlayback').src = url;
             document.getElementById('audioPlayback').style.display = 'block';
-            status.innerHTML = '<i class="fas fa-check-circle" style="color:#00b894;"></i> File loaded!';
+            status.innerHTML = _audioLoadedStatusHTML();
         } catch (err) {
             console.error('Audio conversion failed:', err);
             status.innerHTML = '<i class="fas fa-circle-exclamation" style="color:#d63031;"></i> Could not process this audio file - try a WAV file or use text instead.';
@@ -1098,6 +1173,27 @@
             }
             errorBox.style.display = 'none';
             textInput.style.borderColor = '';
+
+            // ✅ NEW: last line of defense before submitting. If there's
+            // audio but no text at all, this assessment can only be based
+            // on tone/pitch (services/audioAnalyzer.js) - the actual words
+            // spoken are never read by the keyword/pattern engine that
+            // catches things like suicidal statements. This is exactly
+            // the gap that let "I don't want to live anymore" score
+            // Minimal when spoken but not typed. Give the person one more
+            // chance to add the text rather than silently submitting an
+            // assessment that can't see what they actually said.
+            if (!text.trim() && recordedBlob) {
+                const proceedAudioOnly = confirm(
+                    'Your recording could not be automatically transcribed, so this assessment will only judge your tone of voice - it will NOT read the actual words you said.\n\n' +
+                    'For an accurate result (especially if you mentioned anything about self-harm or being unsafe), click Cancel and type what you said in the box above.\n\n' +
+                    'Continue with audio-only analysis anyway?'
+                );
+                if (!proceedAudioOnly) {
+                    textInput.focus();
+                    return;
+                }
+            }
 
             document.getElementById('resultsCard').style.display = 'block';
             document.getElementById('gaugeText').textContent = '...';
@@ -1200,6 +1296,8 @@
         };
         document.getElementById('whatHappensNext').innerHTML =
             `<strong>What happens next:</strong> ${nextStepsCopy[severity.level] || nextStepsCopy.Minimal}`;
+        document.getElementById('audioOnlyWarning').style.display =
+            (hybrid.contentAnalyzed === false) ? 'block' : 'none';
 
         // Plain-language summary - the technical grid below still shows
         // every raw indicator, this just adds a human-readable framing on
