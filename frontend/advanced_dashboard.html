@@ -1075,13 +1075,20 @@
                             updateCharCount();
                             status.innerHTML = `<i class="fas fa-check-circle" style="color:#00b894;"></i> Audio ready! Transcribed: "${voiceTranscript.trim().substring(0, 80)}${voiceTranscript.trim().length > 80 ? '...' : ''}" (edit above if it misheard anything)`;
                         } else if (!textInput.value.trim()) {
-                            // ✅ NEW: without a transcript AND without any
-                            // typed text, the assessment can only run on
-                            // acoustic tone/pitch - it will never see the
-                            // actual words spoken. Say so plainly instead of
-                            // a generic "Audio ready!" that implies the
-                            // content was understood.
-                            status.innerHTML = '<span style="color:#e17055;"><i class="fas fa-triangle-exclamation"></i> Audio ready, but your speech could not be transcribed automatically. This will only be analyzed by tone, not by what you said - please also type it in the box above for an accurate result.</span>';
+                            // ✅ NEW: this browser's own live transcription
+                            // came up empty, but that's no longer the only
+                            // chance the words get read - the server also
+                            // runs a second, independent transcription pass
+                            // when this is submitted (see services/
+                            // speechToText.js), so it's genuinely uncertain
+                            // at this point whether the content will be
+                            // analyzed or not. Say so honestly rather than
+                            // asserting "will only be analyzed by tone",
+                            // which is no longer necessarily true - and
+                            // still encourage typing, since server-side
+                            // transcription is a best-effort second attempt,
+                            // not a guarantee.
+                            status.innerHTML = '<span style="color:#e17055;"><i class="fas fa-triangle-exclamation"></i> Audio ready. This browser couldn\'t transcribe it live, but the server will try again automatically when you submit. For a guaranteed accurate result, also type what you said in the box above.</span>';
                         } else {
                             status.innerHTML = '<i class="fas fa-check-circle" style="color:#00b894;"></i> Audio ready!';
                         }
@@ -1102,16 +1109,21 @@
     }
 
     // ✅ NEW: the Web Speech API only transcribes live microphone input via
-    // toggleRecording() above - there is no way to run it against an
-    // already-recorded file, so an uploaded audio file is ALWAYS
-    // acoustic-only (tone/pitch, never the actual words) unless the person
-    // also types the text themselves. Shared by both branches below.
+    // toggleRecording() above - there is no way to run it in the browser
+    // against an already-recorded file. The server still gets an
+    // independent shot at transcribing it (see services/speechToText.js,
+    // run on every uploaded audio file during submission), so this is no
+    // longer a guaranteed "tone only" outcome - just say the browser-side
+    // step is skipped for uploads and let the honest post-submit result
+    // (the audioOnlyWarning banner, driven by the backend's actual
+    // contentAnalyzed flag) speak to whether it worked. Shared by both
+    // branches below.
     function _audioLoadedStatusHTML() {
         const textInput = document.getElementById('textInput');
         if (textInput.value.trim()) {
             return '<i class="fas fa-check-circle" style="color:#00b894;"></i> File loaded!';
         }
-        return '<span style="color:#e17055;"><i class="fas fa-triangle-exclamation"></i> File loaded, but uploaded audio cannot be transcribed automatically. This will only be analyzed by tone, not by what was said - please also type it in the box above for an accurate result.</span>';
+        return '<span style="color:#e17055;"><i class="fas fa-triangle-exclamation"></i> File loaded. Uploaded audio can\'t be transcribed in-browser, but the server will attempt to transcribe it on submit. For a guaranteed accurate result, also type what was said in the box above.</span>';
     }
 
     async function handleAudioUpload(event) {
@@ -1187,20 +1199,24 @@
             errorBox.style.display = 'none';
             textInput.style.borderColor = '';
 
-            // ✅ NEW: last line of defense before submitting. If there's
-            // audio but no text at all, this assessment can only be based
-            // on tone/pitch (services/audioAnalyzer.js) - the actual words
-            // spoken are never read by the keyword/pattern engine that
-            // catches things like suicidal statements. This is exactly
-            // the gap that let "I don't want to live anymore" score
-            // Minimal when spoken but not typed. Give the person one more
-            // chance to add the text rather than silently submitting an
-            // assessment that can't see what they actually said.
+            // ✅ NEW: last line of defense before submitting, for whichever
+            // gap remains. This browser's own live transcription didn't
+            // produce anything, but the server still gets an independent
+            // shot at transcribing the recording during this exact submit
+            // (see services/speechToText.js) - so it's no longer certain
+            // this will end up tone-only, just not yet confirmed either
+            // way. Give the person one more chance to add the text
+            // themselves as a guarantee, rather than relying entirely on
+            // the server's attempt succeeding, before submitting an
+            // assessment that might not see what they actually said. This
+            // is exactly the gap that let "I don't want to live anymore"
+            // score Minimal when spoken but not typed and not otherwise
+            // transcribed.
             if (!text.trim() && recordedBlob) {
                 const proceedAudioOnly = confirm(
-                    'Your recording could not be automatically transcribed, so this assessment will only judge your tone of voice - it will NOT read the actual words you said.\n\n' +
-                    'For an accurate result (especially if you mentioned anything about self-harm or being unsafe), click Cancel and type what you said in the box above.\n\n' +
-                    'Continue with audio-only analysis anyway?'
+                    'This browser couldn\'t transcribe your recording live. The server will automatically try to transcribe it when you submit - but if that also doesn\'t work, this assessment will only judge tone of voice, not the actual words you said.\n\n' +
+                    'For a GUARANTEED accurate result (especially if you mentioned anything about self-harm or being unsafe), click Cancel and type what you said in the box above.\n\n' +
+                    'Continue and let the server attempt transcription?'
                 );
                 if (!proceedAudioOnly) {
                     textInput.focus();
