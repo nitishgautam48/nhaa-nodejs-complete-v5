@@ -1049,16 +1049,29 @@
                         const url = URL.createObjectURL(recordedBlob);
                         document.getElementById('audioPlayback').src = url;
                         document.getElementById('audioPlayback').style.display = 'block';
-                        // ✅ NEW: if we got a transcript and the person hasn't
-                        // already typed something, fill the Text Narrative
-                        // box with it so it's actually visible, editable
+                        // ✅ NEW: fill (or, if the person already typed
+                        // something, APPEND to) the Text Narrative box with
+                        // the transcript so it's actually visible, editable
                         // (speech recognition can mishear words - never
                         // trust it silently in a crisis-detection context),
                         // and included in the same `text` field the request
-                        // already sends alongside the audio.
+                        // already sends alongside the audio - which is what
+                        // gets persisted on the case record and shown to
+                        // the reviewing authority (see authority_dashboard.
+                        // html rendering `c.text`). Previously this only
+                        // ever filled an EMPTY box; if the person had typed
+                        // even one word first, the entire spoken transcript
+                        // was silently thrown away and never reached the
+                        // authority at all. Recording more than once (stop,
+                        // record again) now accumulates each transcript in
+                        // turn instead of the later one replacing the
+                        // earlier one, for the same reason.
                         const textInput = document.getElementById('textInput');
-                        if (voiceTranscript.trim() && !textInput.value.trim()) {
-                            textInput.value = voiceTranscript.trim();
+                        if (voiceTranscript.trim()) {
+                            const existing = textInput.value.trim();
+                            textInput.value = existing
+                                ? `${existing}\n\n[Voice recording transcript]: ${voiceTranscript.trim()}`
+                                : voiceTranscript.trim();
                             updateCharCount();
                             status.innerHTML = `<i class="fas fa-check-circle" style="color:#00b894;"></i> Audio ready! Transcribed: "${voiceTranscript.trim().substring(0, 80)}${voiceTranscript.trim().length > 80 ? '...' : ''}" (edit above if it misheard anything)`;
                         } else if (!textInput.value.trim()) {
