@@ -93,6 +93,19 @@ class AudioAnalyzer {
             const features = this._extractFeatures(audioData, sampleRate);
             const scores = this._calculateScores(features);
 
+            // ✅ NEW: every threshold in this file (SILENCE_RMS_FLOOR,
+            // the rms/zcr/pitchStd/energyStd/pauseRatio cutoffs in
+            // _calculateScores) was tuned and tested only against
+            // synthetic sine-wave test tones - there is no way to record
+            // or obtain real human speech in the sandboxed environment
+            // that wrote this file. If real microphone recordings
+            // consistently score 0 across the board in production, these
+            // thresholds are the first place to look - this line exists
+            // so that can be diagnosed from real server logs instead of
+            // guessed at again. Same log-and-inspect pattern already used
+            // by textAnalyzer.js's "📝 Analyzing text" line.
+            console.log(`🎤 Audio features: rms=${features.rms.toFixed(4)} zcr=${features.zcr.toFixed(4)} pitchStd=${features.pitchStd.toFixed(2)} pitchSamples=${features.pitchSampleCount} energyStd=${features.energyStd.toFixed(4)} pauseRatio=${features.pauseRatio.toFixed(3)} duration=${(audioData.length / sampleRate).toFixed(1)}s | scores: depression=${scores.depression.toFixed(1)} anxiety=${scores.anxiety.toFixed(1)} trauma=${scores.trauma.toFixed(1)} stress=${scores.stress.toFixed(1)}`);
+
             // ✅ FIX: `reliable: true` was previously set unconditionally
             // whenever the file decoded, even for a clip with no usable
             // pitch signal at all and near-silent energy - HybridAIService.
