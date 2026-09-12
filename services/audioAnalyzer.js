@@ -6,13 +6,19 @@
 //  features (loudness, zero-crossing rate, pitch variance) - it has no
 //  way to read what was said (see services/speechToText.js's removal
 //  from this app for why: real transcription needs a model too heavy
-//  for this app's hosting memory budget). The thresholds below (0.02,
-//  0.04, 0.15, 15) are heuristic estimates, not independently validated
-//  against real recorded speech with known clinical outcomes - same
-//  caveat as services/semanticAnalyzer.js's SIMILARITY_FLOOR/CEILING.
-//  Treat this as a coarse, secondary signal that blends additively with
-//  the text/keyword engine (see hybridAI.js's Math.max blend), never as
-//  a standalone diagnosis.
+//  for this app's hosting memory budget). The thresholds in
+//  _calculateScores are heuristic estimates. The RMS (0.01/0.02) and
+//  pauseRatio (0.7) cutoffs have at least been checked against one real
+//  production data point (a confirmed-calm, non-distressed real
+//  recording that was originally scoring elevated depression/trauma
+//  until these were recalibrated against it - see the ✅ FIX comments
+//  at each threshold) - everything else (zcr, pitchStd, energyStd
+//  ratio) is still an unvalidated estimate, same caveat as services/
+//  semanticAnalyzer.js's SIMILARITY_FLOOR/CEILING. More real samples
+//  (especially a genuinely distressed-sounding one, for contrast) would
+//  further improve this. Treat this as a coarse, secondary signal that
+//  blends additively with the text/keyword engine (see hybridAI.js's
+//  Math.max blend), never as a standalone diagnosis.
 // ================================================================
 
 import fs from 'fs';
@@ -191,13 +197,54 @@ class AudioAnalyzer {
             // `frequency` - confirmed against the library's README/source).
             const detect = createYinDetector({ sampleRate });
             const pitches = [];
-            const chunkSize = 1024;
+            // ✅ FIX: was a fixed 1024 samples regardless of sample rate -
+            // confirmed against real production data (a real 10s speech
+            // recording produced pitchSampleCount=0 across the WHOLE
+            // clip). Root cause: YIN's internal search window is HALF the
+            // largest power-of-two below the chunk size, so a 1024-sample
+            // chunk gives only a 256-sample search window - at 16kHz
+            // (this file's own test tones) that's 16ms, enough to catch
+            // 2+ periods of a typical voice pitch, but at a real browser's
+            // native recording rate (44.1kHz/48kHz - see
+            // advanced_dashboard.html's audioBufferToWavBlob, which
+            // writes the browser's own AudioContext sample rate, not
+            // 16kHz) that same 256-sample window is only ~5.3-5.8ms -
+            // SHORTER than a single period of most adult speaking pitches
+            // (a 150Hz voice has a ~294-sample period at 44.1kHz). YIN
+            // cannot detect periodicity it can't fit inside its window at
+            // all, so it silently returned null for every single chunk of
+            // real speech - not a detection failure, a mathematically
+            // impossible detection. 4096 samples gives a 1024-sample
+            // search window, whose minimum detectable frequency
+            // (sampleRate / 1024) is ~15.6Hz at 16kHz and ~43-47Hz at
+            // 44.1/48kHz - comfortably below any real adult voice pitch
+            // at every sample rate this app actually receives.
+            const chunkSize = 4096;
 
             for (let i = 0; i < audioData.length; i += chunkSize) {
                 const chunk = audioData.slice(i, i + chunkSize);
-                if (chunk.length < 512) break;
+                if (chunk.length < chunkSize / 2) break;
                 try {
-                    const pitch = detect(chunk);
+                    // ✅ FIX: a second, independent pitch-detection bug,
+                    // also only found by testing at real (not this file's
+                    // loud synthetic-test) amplitudes. YIN's difference-
+                    // function computation loses accuracy at quiet signal
+                    // levels and locks onto spurious short-lag "pitches"
+                    // in the multi-kHz range instead of the true one -
+                    // confirmed directly: a clean 150Hz tone at amplitude
+                    // 0.3 (this file's original test amplitude) detected
+                    // correctly, but the SAME tone at 0.06-0.02 (closer to
+                    // real speech's actual recorded level) detected
+                    // ~17,700Hz every time, regardless of YIN's own
+                    // threshold/probabilityThreshold tuning parameters -
+                    // neither changes this. Peak-normalizing each chunk
+                    // before detection fixed it at every amplitude tested,
+                    // including far quieter than any real speech. This
+                    // only affects what gets fed to the pitch detector -
+                    // rms/zcr/energyStd above already ran on the real,
+                    // un-normalized samples, so overall loudness is still
+                    // measured correctly elsewhere in this file.
+                    const pitch = detect(this._normalizeForPitchDetection(chunk));
                     if (pitch !== null && pitch > 50 && pitch < 800) {
                         pitches.push(pitch);
                     }
@@ -228,6 +275,25 @@ class AudioAnalyzer {
         };
     }
 
+    // ✅ NEW: see the ✅ FIX comment at its call site above for why this
+    // exists - scales a chunk so its loudest sample hits a fixed target
+    // peak, purely for feeding the pitch detector (nothing else in this
+    // file sees the normalized version). A silent/near-zero chunk is
+    // returned unchanged rather than divided by ~0.
+    _normalizeForPitchDetection(chunk) {
+        let peak = 0;
+        for (let i = 0; i < chunk.length; i++) {
+            const abs = Math.abs(chunk[i]);
+            if (abs > peak) peak = abs;
+        }
+        if (peak < 1e-6) return chunk;
+        const targetPeak = 0.5;
+        const scale = targetPeak / peak;
+        const out = new Float32Array(chunk.length);
+        for (let i = 0; i < chunk.length; i++) out[i] = chunk[i] * scale;
+        return out;
+    }
+
     _calculateScores(features) {
         const { rms, zcr, pitchStd, pitchSampleCount, energyStd, pauseRatio } = features;
 
@@ -249,11 +315,29 @@ class AudioAnalyzer {
         // literal silence. Below SILENCE_RMS_FLOOR there's no speech
         // energy to read at all, so this contributes nothing rather than
         // treating "no signal" as "low energy = possible flat affect."
+        //
+        // ✅ FIX: the 0.02/0.04 cutoffs below were tuned against this
+        // file's own synthetic sine-wave test tones (amplitude 0.2-0.3) -
+        // confirmed via a real production log line to be miscalibrated:
+        // a real 10s recording of ordinary, calm, non-distressed speech
+        // (confirmed with the person who recorded it) came back
+        // rms=0.0363, which fell inside the OLD `rms < 0.04` branch and
+        // scored 15% depression / 10% trauma for completely normal
+        // speech. Real browser microphone recordings, even at typical/
+        // unremarkable speaking volume, run much quieter than this
+        // file's synthetic test amplitude - browsers commonly apply
+        // automatic gain control and noise suppression to getUserMedia
+        // audio, and typical laptop/phone mic capture without heavy
+        // limiting sits well under the loud, clean tones this was
+        // checked against. Halved both cutoffs so a confirmed-normal
+        // 0.0363 clip now falls above them (no bump) instead of inside
+        // the "mildly quiet" bucket - genuinely soft-spoken/withdrawn
+        // speech should still read meaningfully quieter than that.
         if (rms >= this.SILENCE_RMS_FLOOR) {
-            if (rms < 0.02) {
+            if (rms < 0.01) {
                 depression += 0.3;
                 trauma += 0.2;
-            } else if (rms < 0.04) {
+            } else if (rms < 0.02) {
                 depression += 0.15;
                 trauma += 0.1;
             }
@@ -303,7 +387,17 @@ class AudioAnalyzer {
         // this file) not independently validated against this app's own
         // traffic - see the file header. Modest weight, since ordinary
         // unhurried speech also has real pauses.
-        if (rms >= this.SILENCE_RMS_FLOOR && pauseRatio > 0.4) {
+        //
+        // ✅ FIX: 0.4 was set before any real data existed. The same real,
+        // confirmed-calm/non-distressed 10s recording referenced above
+        // came back pauseRatio=0.558 - well OVER the old 0.4 cutoff for
+        // completely ordinary speech, meaning virtually any real
+        // recording with normal conversational pausing would trigger
+        // this. Raised well above that confirmed-normal value so it
+        // takes meaningfully MORE pausing than ordinary speech shows
+        // before this fires - still a rough estimate pending more real
+        // samples, but no longer guaranteed to fire on typical speech.
+        if (rms >= this.SILENCE_RMS_FLOOR && pauseRatio > 0.7) {
             trauma += 0.1;
         }
 
