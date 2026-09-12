@@ -383,6 +383,32 @@
                     <button class="btn btn-success btn-sm" onclick="document.getElementById('audioUpload').click()"><i class="fas fa-upload"></i> Upload</button>
                     <input type="file" id="audioUpload" accept="audio/*" style="display:none;" onchange="handleAudioUpload(event)">
                     <button class="btn btn-outline btn-sm" onclick="clearAll()"><i class="fas fa-undo"></i> Clear</button>
+                    <!-- ✅ FIX: Dictate and Record's live transcription were
+                         hardcoded to en-IN (English) regardless of what
+                         language was actually spoken - anyone dictating in
+                         Hindi, Tamil, Bengali, etc. got their speech force-
+                         matched to English phonetics, producing garbled
+                         nonsense. Both now read this selection - see
+                         _speechRecognitionLang() below. Remembered across
+                         visits via localStorage since it rarely changes
+                         per person. NOTE: the crisis-detection keyword
+                         engine (textAnalyzer.js) is still English-only, so
+                         accurately-transcribed non-English text won't be
+                         scored by keywords yet either way - this fixes
+                         transcription accuracy, not that separate gap. -->
+                    <select id="speechLangSelect" class="btn btn-outline btn-sm" style="padding:6px 10px;" onchange="localStorage.setItem('nhaa_speech_lang', this.value)" title="Language you'll be speaking, for Dictate and Record">
+                        <option value="en-IN">🎙️ English</option>
+                        <option value="hi-IN">🎙️ हिन्दी (Hindi)</option>
+                        <option value="bn-IN">🎙️ বাংলা (Bengali)</option>
+                        <option value="ta-IN">🎙️ தமிழ் (Tamil)</option>
+                        <option value="te-IN">🎙️ తెలుగు (Telugu)</option>
+                        <option value="mr-IN">🎙️ मराठी (Marathi)</option>
+                        <option value="gu-IN">🎙️ ગુજરાતી (Gujarati)</option>
+                        <option value="kn-IN">🎙️ ಕನ್ನಡ (Kannada)</option>
+                        <option value="ml-IN">🎙️ മലയാളം (Malayalam)</option>
+                        <option value="pa-IN">🎙️ ਪੰਜਾਬੀ (Punjabi)</option>
+                        <option value="ur-IN">🎙️ اردو (Urdu)</option>
+                    </select>
                 </div>
                 <div id="recordingStatus" style="margin-top:8px; font-size:12px; color:rgba(255,255,255,0.4);">
                     <i class="fas fa-info-circle"></i> Press Record to speak - take as long as you need, click Stop when done
@@ -730,6 +756,15 @@
     let dictationBaseText = '';
     let dictationFinalTranscript = '';
 
+    // ✅ FIX: both toggleRecording()'s live transcription and
+    // toggleDictation() were hardcoded to 'en-IN' - see the note above
+    // the #speechLangSelect dropdown in the HTML. Both now call this
+    // instead of hardcoding a locale.
+    function _speechRecognitionLang() {
+        const select = document.getElementById('speechLangSelect');
+        return (select && select.value) || 'en-IN';
+    }
+
     let chartInstances = {};
     let assessmentHistory = JSON.parse(localStorage.getItem('nhaa_history') || '[]');
 
@@ -1006,7 +1041,7 @@
         }
         try {
             const recognizer = new SpeechRecognition();
-            recognizer.lang = 'en-IN';
+            recognizer.lang = _speechRecognitionLang();
             recognizer.continuous = true;
             recognizer.interimResults = false;
             recognizer.onresult = (event) => {
@@ -1057,6 +1092,7 @@
             isDictating = false;
             if (dictationRecognizer) { try { dictationRecognizer.stop(); } catch (_) {} }
             btn.innerHTML = '<i class="fas fa-microphone"></i> Dictate';
+            textInput.readOnly = false;
             return;
         }
 
@@ -1075,7 +1111,7 @@
 
         try {
             dictationRecognizer = new SpeechRecognition();
-            dictationRecognizer.lang = 'en-IN';
+            dictationRecognizer.lang = _speechRecognitionLang();
             dictationRecognizer.continuous = true;
             // Unlike the recording flow (which only needs the final
             // transcript once recording stops), interim results here
@@ -1112,7 +1148,22 @@
             dictationRecognizer.onend = () => {
                 isDictating = false;
                 btn.innerHTML = '<i class="fas fa-microphone"></i> Dictate';
+                textInput.readOnly = false;
             };
+
+            // ✅ FIX: onresult rebuilds textInput.value from scratch on
+            // EVERY event (dictationBaseText + everything transcribed so
+            // far) - if someone clicked into the box and fixed a misheard
+            // word WHILE still dictating, that edit sat in textInput.value
+            // for a moment but had no effect on dictationBaseText/
+            // dictationFinalTranscript, so the very next spoken word's
+            // onresult would silently overwrite the box again and erase
+            // the fix. Locking the box for the few seconds dictation is
+            // actually active removes the conflict instead of leaving a
+            // race between typing and speech recognition - editing (to
+            // fix a misheard word, same as the Record flow already asks
+            // for) is expected to happen after clicking Stop.
+            textInput.readOnly = true;
 
             dictationRecognizer.start();
             isDictating = true;
@@ -1120,6 +1171,7 @@
         } catch (err) {
             console.warn('Dictation unavailable:', err);
             alert('Could not start dictation - try again or type instead.');
+            textInput.readOnly = false;
         }
     }
 
@@ -2027,6 +2079,16 @@
             if (draftText) {
                 document.getElementById('textInput').value = draftText;
                 updateCharCount();
+            }
+
+            // ✅ NEW: remember the person's Dictate/Record speech language
+            // across visits - see the #speechLangSelect note in the HTML.
+            const savedLang = localStorage.getItem('nhaa_speech_lang');
+            if (savedLang) {
+                const langSelect = document.getElementById('speechLangSelect');
+                if (langSelect && [...langSelect.options].some(o => o.value === savedLang)) {
+                    langSelect.value = savedLang;
+                }
             }
 
             const cached = sessionStorage.getItem('nhaa_last_result');
