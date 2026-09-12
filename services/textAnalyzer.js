@@ -188,6 +188,17 @@ class TextAnalyzer {
                         "can't find joy in anything": 16, 'feel hollow': 14,
                         'everything feels pointless': 18, "i don't care about anything anymore": 18,
                         'feel disconnected from everyone': 15, 'feel unworthy': 15,
+                        // ✅ NEW: real reported false negative - "I don't
+                        // have any friends" (alongside "I think I should
+                        // quit my life") scored 0 here too. "lonely"/
+                        // "isolated" above only match those literal words -
+                        // this is the far more common, plain way social
+                        // isolation actually gets described. See the
+                        // pattern below for phrasing variants this exact
+                        // keyword misses ("have no friends", "no friends
+                        // at all", etc.).
+                        "don't have any friends": 15, "don't have any friends at all": 16,
+                        'have no friends': 15, 'no friends at all': 16, "i have no friends": 15,
                         'never good enough': 14, 'not good enough': 12,
                         'feel inadequate': 13, 'feel inferior': 13, 'feel incompetent': 12,
                         // ✅ NEW: functional/behavioral depression markers -
@@ -385,7 +396,15 @@ class TextAnalyzer {
                         'signing off for good': 28, 'final goodbye': 30,
                         'world would be better without me': 30,
                         'urge to self harm': 24, 'self harm urges': 24,
-                        'wanted to hurt myself': 22
+                        'wanted to hurt myself': 22,
+                        // ✅ NEW: real reported false negative - "I think I
+                        // should quit my life" scored a flat 0 across every
+                        // category. "Quit" as a stand-in for "end/give up
+                        // on" life is a common, direct way this gets said
+                        // and had no coverage at all here - see the pattern
+                        // below for word-order variants ("quit on life",
+                        // "quit living", etc.) this single keyword misses.
+                        'quit my life': 32, 'quit living': 30
                     },
                     hi: {
                         'आत्महत्या': 35, 'मर जाना': 30, 'जान ले लेना': 30,
@@ -398,6 +417,14 @@ class TextAnalyzer {
                     en: [
                         { regex: /\bkill(?:s|ing)?\s+myself\b/i, weight: 40 },
                         { regex: /\b(?:want(?:s|ing)?|wanna)\s+to\s+die\b/i, weight: 30 },
+                        // ✅ FIX: real reported false negative - "I think I
+                        // should quit my life" scored 0 (see the 'quit my
+                        // life'/'quit living' keywords above, which only
+                        // catch those two exact phrasings). This pattern
+                        // catches the word-order/preposition variants they
+                        // miss: "quit on life", "quit on my life", "should
+                        // quit life", etc.
+                        { regex: /\bquit(?:s|ting)?\s+(?:on\s+)?(?:my\s+)?life\b/i, weight: 32 },
                         // ✅ FIX: real reported false negative - "just want
                         // to end up all this" scored zero. The original
                         // pattern required the object to be exactly "my
