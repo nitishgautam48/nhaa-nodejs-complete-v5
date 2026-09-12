@@ -838,7 +838,22 @@
         // very statement that drove the case's severity from the officer
         // reviewing it. Officers need to see the complete narrative, so the
         // cap is removed entirely rather than raised.
-        body += `<p style="padding:12px; background:rgba(255,255,255,0.04); border-radius:8px; white-space:pre-wrap;">${escapeHtml(c.text || '(no text recorded)')}</p>`;
+        //
+        // ✅ NEW: the narrative is now collapsed behind a click instead of
+        // shown open by default. The severity/SVI/primary-concern header
+        // just above (already built from real score data, not a re-
+        // wording of the victim's own words) works as the at-a-glance
+        // flag - deliberately NOT a paraphrase or AI summary of the text
+        // itself, since compressing a crisis disclosure risks losing the
+        // exact nuance ("I sometimes think about it" vs "I want to die
+        // right now") that determines how urgently to respond. The full
+        // verbatim narrative stays one click away, never removed - a
+        // summary is never a substitute for it when someone needs to
+        // actually act on a case.
+        body += `<button type="button" onclick="toggleNarrative()" id="toggleNarrativeBtn" class="btn btn-outline btn-sm" style="margin-top:4px;"><i class="fas fa-file-lines"></i> Show full narrative</button>
+            <div id="fullNarrativeBlock" style="display:none; margin-top:8px;">
+                <p style="padding:12px; background:rgba(255,255,255,0.04); border-radius:8px; white-space:pre-wrap;">${escapeHtml(c.text || '(no text recorded)')}</p>
+            </div>`;
 
         // ✅ NEW: full evaluation breakdown - previously the authority
         // dashboard only ever showed the single SVI number, with no way to
@@ -976,6 +991,21 @@
         document.getElementById('modalComplainant').value = c.complainantName || '';
         document.getElementById('modalAccused').value = (c.accusedNames || []).join(', ');
         document.getElementById('caseModal').style.display = 'flex';
+    }
+
+    // ✅ NEW: reveals/hides the full narrative block built in openModal()
+    // above - collapsed by default so the case detail view opens on the
+    // at-a-glance severity flag rather than the raw text, one click away
+    // from the complete, unmodified account whenever someone needs it.
+    function toggleNarrative() {
+        const block = document.getElementById('fullNarrativeBlock');
+        const btn = document.getElementById('toggleNarrativeBtn');
+        if (!block || !btn) return;
+        const nowShowing = block.style.display === 'none';
+        block.style.display = nowShowing ? 'block' : 'none';
+        btn.innerHTML = nowShowing
+            ? '<i class="fas fa-file-lines"></i> Hide full narrative'
+            : '<i class="fas fa-file-lines"></i> Show full narrative';
     }
 
     function closeModal() {
