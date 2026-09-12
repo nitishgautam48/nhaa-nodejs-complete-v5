@@ -702,63 +702,40 @@
     let mediaRecorder = null;
     let audioChunks = [];
     let recordedBlob = null;
-    // ✅ NEW: services/audioAnalyzer.js only ever measured ACOUSTIC
-    // features (loudness/RMS, zero-crossing rate, pitch variance) - it
-    // never transcribes speech, so voice input never ran through
-    // textAnalyzer.js's carefully-tuned keyword/pattern engine at all.
-    // Someone could say "I want to die" out loud and it would score
-    // however calm or agitated their voice sounded, with zero suicide-
-    // risk detection whatsoever, because the words themselves were never
-    // read. Building real server-side speech-to-text hit the same
-    // network-sandboxed model-download wall as the semantic embedding
-    // work earlier - so instead this uses the browser's own built-in
-    // Web Speech API (free, no server model download, no API key) to
-    // transcribe alongside recording and feed the transcript into the
-    // SAME text pipeline typed input already uses.
-    let speechRecognizer = null;
-    let voiceTranscript = '';
-    // ✅ FIX: critical safety bug - a person recorded themselves saying
-    // "I don't want to live anymore" and the assessment came back
-    // "Minimal". Root cause: speechRecognizer.stop() and
-    // mediaRecorder.stop() were both called synchronously in
-    // toggleRecording(), but they finalize on completely different
-    // timelines. mediaRecorder.onstop fires almost instantly (it's just
-    // packaging local audio bytes into a Blob). The Web Speech API's
-    // stop(), on the other hand, only *requests* finalization - the
-    // actual final transcript arrives later via onresult, after a
-    // network round-trip to the browser's speech service. For a short
-    // utterance recorded well under the 15s cap, onstop's transcript
-    // check ran before that final result ever landed, so voiceTranscript
-    // was still '' every time, the Text Narrative box never got filled,
-    // `text` was omitted from the request entirely, and
-    // controller.hybridAssessment() (text ? this.textAnalyzer.analyze(...)
-    // : null) skipped the keyword/pattern engine altogether - the exact
-    // words spoken were never read by anything. The recording was then
-    // scored on acoustic features alone (services/audioAnalyzer.js: RMS
-    // energy/zero-crossing-rate/pitch variance), which say nothing about
-    // *what* was said and can easily come back low for someone speaking
-    // calmly or flatly. This resolves once the recognizer actually
-    // reports it's done (its `onend` event, which fires after all final
-    // results), with a timeout safety net in case a browser never fires
-    // it or recognition stalls.
-    let speechRecognitionFinished = null;
+    // ✅ FIX: Record used to ALSO run the Web Speech API simultaneously
+    // alongside MediaRecorder, trying to both capture a tone-analyzable
+    // audio clip AND live-transcribe it in one click (see this file's
+    // earlier git history for that whole saga - a real "I don't want to
+    // live anymore" scoring Minimal because the transcript raced the
+    // recording and lost, then several rounds of timeout tuning trying
+    // to fix that race). Real device testing then showed the deeper
+    // problem: running MediaRecorder and SpeechRecognition at the same
+    // time is fundamentally unreliable on mobile (confirmed directly -
+    // on the same phone, same Chrome, Dictate - which only uses
+    // SpeechRecognition, nothing concurrent - transcribed correctly
+    // every time, while Record's simultaneous version failed every
+    // time, no matter how long the timeout was extended). No amount of
+    // timing tweaks fixes two browser APIs contending for one
+    // microphone. Record now does exactly one job - capture audio for
+    // services/audioAnalyzer.js's tone/pitch analysis, which is the one
+    // thing Dictate and typing genuinely can't give you - and no longer
+    // attempts to transcribe at all. Dictate (a single API, already
+    // proven reliable) is the answer for getting words into the box by
+    // voice; see its own section below.
 
     // ✅ NEW: "Dictate" button state - a separate, standalone speech-to-
-    // text feature from the recording flow above. Purely client-side (the
-    // browser's own SpeechRecognition, same API toggleRecording() already
-    // uses), so it adds zero load to the server at any scale - see
-    // toggleDictation() below. Kept as its own recognizer/state rather
-    // than reusing speechRecognizer/voiceTranscript above so the two
-    // features (recording a tone-analyzable clip vs. just typing by
-    // voice) can't interfere with each other's state.
+    // text feature. Purely client-side (the browser's own
+    // SpeechRecognition), so it adds zero load to the server at any scale -
+    // see toggleDictation() below. This is now the only place in the app
+    // that transcribes speech to text (see the note above for why Record
+    // no longer does).
     let isDictating = false;
     let dictationRecognizer = null;
     let dictationBaseText = '';
     let dictationFinalTranscript = '';
 
-    // ✅ FIX: both toggleRecording()'s live transcription and
-    // toggleDictation() were hardcoded to 'en-IN' - see the note above
-    // the #speechLangSelect dropdown in the HTML. Both now call this
+    // ✅ FIX: toggleDictation() was hardcoded to 'en-IN' - see the note
+    // above the #speechLangSelect dropdown in the HTML. It now calls this
     // instead of hardcoding a locale.
     function _speechRecognitionLang() {
         const select = document.getElementById('speechLangSelect');
@@ -1028,79 +1005,15 @@
         return new Blob([buffer], { type: 'audio/wav' });
     }
 
-    // ✅ NEW: browser-native transcription alongside recording - see the
-    // note above the `speechRecognizer`/`voiceTranscript` declarations.
-    // Returns null (silently - this is progressive enhancement, not a
-    // required feature) if the browser doesn't support the Web Speech
-    // API at all (e.g. Firefox as of this writing).
-    function _startSpeechRecognition() {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) {
-            speechRecognitionFinished = Promise.resolve();
-            return null;
-        }
-        try {
-            const recognizer = new SpeechRecognition();
-            recognizer.lang = _speechRecognitionLang();
-            recognizer.continuous = true;
-            recognizer.interimResults = false;
-            recognizer.onresult = (event) => {
-                for (let i = event.resultIndex; i < event.results.length; i++) {
-                    if (event.results[i].isFinal) {
-                        voiceTranscript += (voiceTranscript ? ' ' : '') + event.results[i][0].transcript.trim();
-                    }
-                }
-            };
-            // Not treated as an error - speech recognition is a best-effort
-            // enhancement on top of the acoustic analysis that already
-            // works, never a requirement for submitting a voice recording.
-            recognizer.onerror = (e) => console.warn('Speech recognition:', e.error);
-            // ✅ FIX (see speechRecognitionFinished note above): resolve
-            // this promise only once the recognizer itself signals it has
-            // truly finished (onend fires after any pending final result),
-            // with a timeout so a browser that never fires onend (or a
-            // stalled network) can't hang the recording indefinitely.
-            //
-            // ✅ FIX: was 4000ms - reported as still failing to transcribe
-            // on mobile (Samsung Internet) even for a 3-second recording,
-            // while the identical flow worked on desktop. Mobile data
-            // connections commonly have meaningfully higher round-trip
-            // latency to whatever cloud speech service the browser uses
-            // than a desktop's wired/wifi connection, so a real final
-            // result arriving at, say, 5-6s would have been cut off by
-            // the old 4s timeout and silently treated as "couldn't
-            // transcribe." Raised to 8s - still bounded (never hangs
-            // forever), but with real headroom for slower mobile
-            // networks. Unverified against an actual mobile device in
-            // this sandbox (no way to test with real network conditions
-            // here) - if this alone doesn't resolve it, the next thing to
-            // check is whether MediaRecorder and SpeechRecognition
-            // competing for the mic simultaneously behaves differently on
-            // that browser than on desktop (Dictate, which only uses
-            // SpeechRecognition with no concurrent recording, is the
-            // fastest way to tell the two apart).
-            speechRecognitionFinished = new Promise((resolve) => {
-                let settled = false;
-                const done = () => { if (!settled) { settled = true; resolve(); } };
-                recognizer.onend = done;
-                setTimeout(done, 8000);
-            });
-            recognizer.start();
-            return recognizer;
-        } catch (err) {
-            console.warn('Speech recognition unavailable:', err);
-            speechRecognitionFinished = Promise.resolve();
-            return null;
-        }
-    }
-
     // ✅ NEW: dictate straight into the Text Narrative box - click, speak,
     // words appear live, click again (or the mic just stops itself after
     // a pause) to finish. No audio is recorded or uploaded at all here;
     // this only ever produces text, via the browser's own speech
-    // recognition (see _startSpeechRecognition's header for the same
-    // API's other use). Purely client-side - adds nothing to server
-    // memory, unlike the server-side transcription this app tried and
+    // recognition - the same API Record used to also (unreliably) run
+    // alongside MediaRecorder; see the note above toggleRecording()'s
+    // declarations for why Record no longer attempts that. Purely
+    // client-side - adds nothing to server memory, unlike the server-side
+    // transcription this app tried and
     // removed after it exceeded the hosting memory limit.
     function toggleDictation() {
         const btn = document.getElementById('dictateBtn');
@@ -1195,8 +1108,7 @@
     }
 
     async function toggleRecording() {
-        // Both features want exclusive use of the microphone and the
-        // browser's single speech-recognition session - see
+        // Both features want exclusive use of the microphone - see
         // toggleDictation() below for the mirror of this guard.
         if (isDictating) { alert('Please stop dictating first.'); return; }
         const btn = document.getElementById('recordBtn');
@@ -1204,7 +1116,6 @@
         const waveContainer = document.getElementById('waveContainer');
         if (isRecording) {
             isRecording = false; mediaRecorder.stop();
-            if (speechRecognizer) { try { speechRecognizer.stop(); } catch (_) {} }
             btn.innerHTML = '<i class="fas fa-circle"></i> Record';
             waveContainer.style.display = 'none';
         } else {
@@ -1212,56 +1123,25 @@
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 mediaRecorder = new MediaRecorder(stream);
                 audioChunks = [];
-                voiceTranscript = '';
-                speechRecognizer = _startSpeechRecognition();
                 mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
                 mediaRecorder.onstop = async () => {
                     status.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing audio...';
                     try {
                         const rawBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
-                        // ✅ FIX: wait for speech recognition to actually
-                        // finish (see speechRecognitionFinished note above)
-                        // before looking at voiceTranscript - it used to be
-                        // checked immediately here, which almost always ran
-                        // ahead of the transcript actually arriving.
-                        const [wav] = await Promise.all([convertBlobToWav(rawBlob), speechRecognitionFinished]);
-                        recordedBlob = wav;
+                        recordedBlob = await convertBlobToWav(rawBlob);
                         const url = URL.createObjectURL(recordedBlob);
                         document.getElementById('audioPlayback').src = url;
                         document.getElementById('audioPlayback').style.display = 'block';
-                        // ✅ NEW: fill (or, if the person already typed
-                        // something, APPEND to) the Text Narrative box with
-                        // the transcript so it's actually visible, editable
-                        // (speech recognition can mishear words - never
-                        // trust it silently in a crisis-detection context),
-                        // and included in the same `text` field the request
-                        // already sends alongside the audio - which is what
-                        // gets persisted on the case record and shown to
-                        // the reviewing authority (see authority_dashboard.
-                        // html rendering `c.text`). Previously this only
-                        // ever filled an EMPTY box; if the person had typed
-                        // even one word first, the entire spoken transcript
-                        // was silently thrown away and never reached the
-                        // authority at all. Recording more than once (stop,
-                        // record again) now accumulates each transcript in
-                        // turn instead of the later one replacing the
-                        // earlier one, for the same reason.
+                        // ✅ FIX: this used to also attempt live speech
+                        // recognition alongside recording and branch on
+                        // whether it produced a transcript. Record no
+                        // longer attempts transcription at all (see the
+                        // note above toggleRecording()'s old declarations)
+                        // - this is always a tone-only capture now, so the
+                        // message is unconditional rather than a maybe.
                         const textInput = document.getElementById('textInput');
-                        if (voiceTranscript.trim()) {
-                            const existing = textInput.value.trim();
-                            textInput.value = existing
-                                ? `${existing}\n\n[Voice recording transcript]: ${voiceTranscript.trim()}`
-                                : voiceTranscript.trim();
-                            updateCharCount();
-                            status.innerHTML = `<i class="fas fa-check-circle" style="color:#00b894;"></i> Audio ready! Transcribed: "${voiceTranscript.trim().substring(0, 80)}${voiceTranscript.trim().length > 80 ? '...' : ''}" (edit above if it misheard anything)`;
-                        } else if (!textInput.value.trim()) {
-                            // ✅ NEW: without a transcript AND without any
-                            // typed text, the assessment can only run on
-                            // acoustic tone/pitch - it will never see the
-                            // actual words spoken. Say so plainly instead of
-                            // a generic "Audio ready!" that implies the
-                            // content was understood.
-                            status.innerHTML = '<span style="color:#e17055;"><i class="fas fa-triangle-exclamation"></i> Audio ready, but your speech could not be transcribed automatically. This will only be analyzed by tone, not by what you said - please also type it in the box above for an accurate result.</span>';
+                        if (!textInput.value.trim()) {
+                            status.innerHTML = '<span style="color:#e17055;"><i class="fas fa-triangle-exclamation"></i> Audio ready - this captures tone of voice only, not the words said. Use Dictate, or type in the box above, for an accurate result.</span>';
                         } else {
                             status.innerHTML = '<i class="fas fa-check-circle" style="color:#00b894;"></i> Audio ready!';
                         }
@@ -1390,8 +1270,8 @@
             // assessment that can't see what they actually said.
             if (!text.trim() && recordedBlob) {
                 const proceedAudioOnly = confirm(
-                    'Your recording could not be automatically transcribed, so this assessment will only judge your tone of voice - it will NOT read the actual words you said.\n\n' +
-                    'For an accurate result (especially if you mentioned anything about self-harm or being unsafe), click Cancel and type what you said in the box above.\n\n' +
+                    'Recording only captures your tone of voice - it will NOT read the actual words you said.\n\n' +
+                    'For an accurate result (especially if you mentioned anything about self-harm or being unsafe), click Cancel and either use Dictate or type what you said in the box above.\n\n' +
                     'Continue with audio-only analysis anyway?'
                 );
                 if (!proceedAudioOnly) {
@@ -2075,7 +1955,6 @@
         document.getElementById('audioPlayback').style.display = 'none';
         document.getElementById('recordingStatus').innerHTML = '<i class="fas fa-info-circle"></i> Press Record to speak';
         recordedBlob = null;
-        voiceTranscript = '';
         document.getElementById('resultsCard').style.display = 'none';
         document.getElementById('waveContainer').style.display = 'none';
         document.getElementById('recordBtn').innerHTML = '<i class="fas fa-circle"></i> Record';
