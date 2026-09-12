@@ -14,7 +14,6 @@ import SCSTTrainer from '../models/scstTrainer.js';
 import LegalGuidance from '../models/legalGuidance.js';
 import TextAnalyzer from '../services/textAnalyzer.js';
 import AudioAnalyzer from '../services/audioAnalyzer.js';
-import SpeechToText from '../services/speechToText.js';
 import LanguageDetector from '../utils/languageDetector.js';
 import Database from '../utils/database.js';
 import AuthService from '../services/auth.js';
@@ -32,9 +31,6 @@ class NHHAController {
         this.feedbackLearning = new FeedbackLearning();
         this.textAnalyzer = new TextAnalyzer();
         this.audioAnalyzer = new AudioAnalyzer();
-        // Loads its model in the background (see services/speechToText.js -
-        // same lazy/never-blocks-startup pattern as semanticAnalyzer below).
-        this.speechToText = new SpeechToText();
         this.languageDetector = new LanguageDetector();
         this.scstTrainer = new SCSTTrainer();
         this.legalGuidance = new LegalGuidance();
@@ -227,34 +223,16 @@ class NHHAController {
             // email/mobile are optional - only present if the person chose
             // to create/log into an account first (see advanced_dashboard.html's
             // account widget). Anonymous submissions simply omit them.
-            let text = req.body.text;
-            const { email, mobile } = req.body;
+            const { text, email, mobile } = req.body;
             const audioFile = req.file;
 
-            // ✅ NEW: run acoustic analysis AND real server-side speech-to-
-            // text (services/speechToText.js) on the raw upload BEFORE
-            // deleting it, and merge any transcript into `text` before any
-            // of the keyword/semantic/SC-ST analysis below runs. This has
-            // to happen before those steps (not after, and not only on the
-            // client) because the client's own Web Speech API transcript
-            // (see advanced_dashboard.html) is best-effort only - it can
-            // fail silently on unsupported browsers or when the browser
-            // can't reach its own cloud speech service. Running a second,
-            // independent transcription here means a voice submission that
-            // the client failed to transcribe can still have its actual
-            // words read by textAnalyzer.js instead of falling back to
-            // acoustic-tone-only scoring, which cannot detect suicidal
-            // *content* at all (see models/hybridAI.js).
+            const lang = text ? this.languageDetector.detect(text) : 'en';
+            const textAnalysis = text ? this.textAnalyzer.analyze(text, lang) : null;
+
             let audioAnalysis = null;
             if (audioFile) {
                 try {
                     audioAnalysis = await this.audioAnalyzer.analyze(audioFile.path);
-                    const serverTranscript = await this.speechToText.transcribe(audioFile.path);
-                    if (serverTranscript && serverTranscript.trim()) {
-                        text = (text && text.trim())
-                            ? `${text.trim()}\n\n[Voice recording transcript]: ${serverTranscript.trim()}`
-                            : serverTranscript.trim();
-                    }
                 } catch (err) {
                     console.warn('Audio analysis failed:', err.message);
                 } finally {
@@ -269,9 +247,6 @@ class NHHAController {
                     if (fs.existsSync(audioFile.path)) fs.unlinkSync(audioFile.path);
                 }
             }
-
-            const lang = text ? this.languageDetector.detect(text) : 'en';
-            const textAnalysis = text ? this.textAnalyzer.analyze(text, lang) : null;
 
             // ✅ FIX: SC/ST analysis was computed AFTER (and completely
             // separate from) the main severity decision, so a Critical
@@ -297,15 +272,14 @@ class NHHAController {
             // ✅ NEW: services/audioAnalyzer.js only ever measures acoustic
             // features (tone/pitch/energy) - it has no way to read what was
             // actually said, so suicidal_ideation and every keyword-driven
-            // category can ONLY come from `text` (typed, transcribed
-            // client-side via advanced_dashboard.html's Web Speech API, or
-            // transcribed server-side above via services/speechToText.js).
-            // If every one of those came up empty, the resulting severity
-            // reflects tone alone and must never be presented as if the
-            // words spoken were understood. Exposed here so any consumer of
-            // this response (the dashboard, a caseworker view, an API
-            // integration) can show that caveat instead of silently
-            // trusting a "Minimal".
+            // category can ONLY come from `text` (typed, or transcribed
+            // client-side from a recording - see advanced_dashboard.html's
+            // Web Speech API integration). When a voice submission arrives
+            // with no text at all, the resulting severity reflects tone
+            // alone and must never be presented as if the words spoken were
+            // understood. Exposed here so any consumer of this response
+            // (the dashboard, a caseworker view, an API integration) can
+            // show that caveat instead of silently trusting a "Minimal".
             hybridDecision.contentAnalyzed = !!(text && text.trim());
 
             // Legal tab: redressal channels + provisions, combining SC/ST
