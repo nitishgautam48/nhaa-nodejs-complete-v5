@@ -565,13 +565,65 @@ class TextAnalyzer {
                         'no money and nowhere to go': 22, 'nowhere to go if i leave': 22,
                         'no money to leave': 20, 'cant afford to leave': 20,
                         'disowned by my family': 18, 'family disowned me': 18,
-                        'cut off by my family': 16, 'family cut me off': 16
+                        'cut off by my family': 16, 'family cut me off': 16,
+                        // ✅ FIX: real gap found from a real submission - a
+                        // direct, repeated plea for help ("please help me"
+                        // x3) scored 0 across every single category,
+                        // "No significant indicators detected". A bare
+                        // plea for help doesn't name a specific trauma,
+                        // suicidal thought, or abuse pattern the other
+                        // categories key off, but it's exactly the kind of
+                        // language someone in immediate danger or
+                        // overwhelming distress actually uses - it should
+                        // never score as nothing. The more ambiguous
+                        // phrasings ("please help me", "i need help" -
+                        // both extremely common ALSO as the start of an
+                        // ordinary request, "please help me understand
+                        // this section") are handled as guarded regex
+                        // patterns below instead of plain keywords -
+                        // found by testing this exact addition against
+                        // "Please help me understand what section applies
+                        // here", a benign legal question that jumped
+                        // straight to Moderate severity before the guard.
+                        'i need help now': 24, 'save me': 22, 'get me out of here': 20
                     },
                     hi: {
                         'अकेला': 15, 'असहाय': 20, 'बेसहारा': 15, 'बेबस': 15,
                         'लाचार': 15, 'असुरक्षित': 15, 'कमजोर': 10,
-                        'निराश्रित': 12, 'अकेले': 12, 'सहारा नहीं': 15
+                        'निराश्रित': 12, 'अकेले': 12, 'सहारा नहीं': 15,
+                        // ✅ FIX: Hindi equivalent of the "please help me"
+                        // gap above - same bare plea for help, same reason
+                        // it needs to score something rather than nothing.
+                        // Kept to direct imperative pleas here (unlikely to
+                        // precede a benign task, unlike "need help" style
+                        // phrasing - see the English "i need help" pattern
+                        // guard below for why that distinction matters).
+                        // Not verified against real Hindi usage/native
+                        // review - same caveat as the rest of this file's
+                        // hi: dictionaries.
+                        'मेरी मदद करो': 25, 'मुझे बचाओ': 25, 'कोई मेरी मदद करो': 25
                     }
+                },
+                // ✅ FIX: "please help me" and "i need help" are extremely
+                // common ALSO as the opening of an ordinary, benign
+                // request ("please help me understand this section",
+                // "i need help filling this form") - a real risk on a
+                // legal-aid tool where people routinely ask exactly that.
+                // A plain keyword can't tell those apart from a genuine,
+                // standalone plea; these patterns can, via a negative
+                // lookahead excluding the common benign continuations
+                // (same technique as the suicide category's "don't want
+                // to continue" guard above). "help me please" and
+                // "somebody/someone help me" aren't guarded - a request
+                // doesn't naturally continue "help me please with the
+                // form", so the false-positive risk there is much lower.
+                patterns: {
+                    en: [
+                        { regex: /\bplease\s+help\s+me\b(?!\s+(?:understand|understanding|fill|filling|explain|explaining|translate|translating|write|writing|find|finding|read|reading|check|checking|review|reviewing|complete|completing|answer|answering|solve|solving|calculate|calculating|with\b))/i, weight: 25 },
+                        { regex: /\bhelp\s+me\s+please\b/i, weight: 22 },
+                        { regex: /\b(?:somebody|someone)\s+help\s+me\b/i, weight: 22 },
+                        { regex: /\bi\s+need\s+help\b(?!\s+(?:understand|understanding|fill|filling|explain|explaining|translate|translating|write|writing|find|finding|read|reading|check|checking|review|reviewing|complete|completing|answer|answering|solve|solving|calculate|calculating|with\b))/i, weight: 16 }
+                    ]
                 },
                 multiplier: 1.0
             },
