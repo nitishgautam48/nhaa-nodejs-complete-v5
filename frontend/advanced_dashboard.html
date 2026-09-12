@@ -1058,13 +1058,32 @@
             // ✅ FIX (see speechRecognitionFinished note above): resolve
             // this promise only once the recognizer itself signals it has
             // truly finished (onend fires after any pending final result),
-            // with a 4s timeout so a browser that never fires onend (or a
+            // with a timeout so a browser that never fires onend (or a
             // stalled network) can't hang the recording indefinitely.
+            //
+            // ✅ FIX: was 4000ms - reported as still failing to transcribe
+            // on mobile (Samsung Internet) even for a 3-second recording,
+            // while the identical flow worked on desktop. Mobile data
+            // connections commonly have meaningfully higher round-trip
+            // latency to whatever cloud speech service the browser uses
+            // than a desktop's wired/wifi connection, so a real final
+            // result arriving at, say, 5-6s would have been cut off by
+            // the old 4s timeout and silently treated as "couldn't
+            // transcribe." Raised to 8s - still bounded (never hangs
+            // forever), but with real headroom for slower mobile
+            // networks. Unverified against an actual mobile device in
+            // this sandbox (no way to test with real network conditions
+            // here) - if this alone doesn't resolve it, the next thing to
+            // check is whether MediaRecorder and SpeechRecognition
+            // competing for the mic simultaneously behaves differently on
+            // that browser than on desktop (Dictate, which only uses
+            // SpeechRecognition with no concurrent recording, is the
+            // fastest way to tell the two apart).
             speechRecognitionFinished = new Promise((resolve) => {
                 let settled = false;
                 const done = () => { if (!settled) { settled = true; resolve(); } };
                 recognizer.onend = done;
-                setTimeout(done, 4000);
+                setTimeout(done, 8000);
             });
             recognizer.start();
             return recognizer;
