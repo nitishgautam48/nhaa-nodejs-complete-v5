@@ -1052,15 +1052,34 @@
             dictationRecognizer.interimResults = true;
 
             dictationRecognizer.onresult = (event) => {
+                // ✅ FIX: this used to start from event.resultIndex and
+                // append each newly-final result onto dictationFinalTranscript
+                // with +=, trusting that resultIndex only ever points at
+                // results this handler hasn't seen yet. That assumption
+                // holds on desktop Chrome but not on mobile (confirmed via
+                // a real device report) - mobile SpeechRecognition
+                // implementations can report resultIndex as 0 on every
+                // single event even though event.results already contains
+                // everything finalized so far, so each new word caused the
+                // ENTIRE growing results array to be re-appended on top of
+                // what was already there ("I" -> "I I I don't" -> "I I I
+                // don't I don't want ..."). Rebuilding the final transcript
+                // fresh from event.results[0..] on every call - instead of
+                // accumulating with += across calls - fixes this: on
+                // desktop it recomputes the same string it always would
+                // have; on mobile it just reflects the current true state
+                // instead of compounding duplicates.
+                let finalText = '';
                 let interim = '';
-                for (let i = event.resultIndex; i < event.results.length; i++) {
+                for (let i = 0; i < event.results.length; i++) {
                     const transcript = event.results[i][0].transcript;
                     if (event.results[i].isFinal) {
-                        dictationFinalTranscript += (dictationFinalTranscript ? ' ' : '') + transcript.trim();
+                        finalText += (finalText ? ' ' : '') + transcript.trim();
                     } else {
                         interim += transcript;
                     }
                 }
+                dictationFinalTranscript = finalText;
                 const combined = [dictationFinalTranscript, interim].filter(Boolean).join(' ');
                 textInput.value = dictationBaseText
                     ? `${dictationBaseText}\n\n${combined}`
