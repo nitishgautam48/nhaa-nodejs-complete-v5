@@ -45,6 +45,17 @@ class AudioAnalyzer {
         // not "found a genuinely flat/monotone pitch" - see the same
         // comment below.
         this.MIN_PITCH_SAMPLES = 3;
+        // ✅ NEW: frame size for the per-frame energy features below
+        // (energyStd, pauseRatio) - same size already used for pitch
+        // chunking, reused here for consistency.
+        this.FRAME_SIZE = 1024;
+        // ✅ NEW: a frame's RMS below this is a "pause" (near-silent gap
+        // within an otherwise real recording), distinct from
+        // SILENCE_RMS_FLOOR which judges the WHOLE clip. Set higher than
+        // that floor since a pause between spoken words/sentences isn't
+        // total silence (some room tone/breath noise is normal), but
+        // clearly quieter than actual speech.
+        this.PAUSE_FRAME_RMS_THRESHOLD = 0.01;
     }
 
     async analyze(filePath) {
@@ -123,6 +134,40 @@ class AudioAnalyzer {
         }
         const zcr = crossings / audioData.length;
 
+        // ✅ NEW: per-frame energy - splits the clip into fixed windows
+        // and computes RMS per window, which the single whole-clip RMS
+        // above can't capture: a recording that's loud for half the clip
+        // and silent for the other half, and one that's steadily
+        // moderate throughout, can have the SAME overall RMS but very
+        // different delivery. Two features come out of this:
+        //   - energyStd: how much loudness varies frame-to-frame across
+        //     the recording. Now that recordings can run much longer (the
+        //     15s cap was removed), a genuinely flat, unvarying delivery
+        //     across a longer clip is a more meaningful signal than it
+        //     was over a forced-short one.
+        //   - pauseRatio: fraction of frames that are near-silent gaps
+        //     within the recording (hesitation, long pauses, halting
+        //     delivery) as opposed to the whole clip being silent
+        //     (already handled separately by SILENCE_RMS_FLOOR).
+        const frameRmsValues = [];
+        for (let i = 0; i + this.FRAME_SIZE <= audioData.length; i += this.FRAME_SIZE) {
+            let frameSum = 0;
+            for (let j = i; j < i + this.FRAME_SIZE; j++) {
+                frameSum += audioData[j] * audioData[j];
+            }
+            frameRmsValues.push(Math.sqrt(frameSum / this.FRAME_SIZE));
+        }
+
+        let energyStd = 0;
+        let pauseRatio = 0;
+        if (frameRmsValues.length > 0) {
+            const frameAvg = frameRmsValues.reduce((a, b) => a + b, 0) / frameRmsValues.length;
+            const frameVariance = frameRmsValues.reduce((a, b) => a + Math.pow(b - frameAvg, 2), 0) / frameRmsValues.length;
+            energyStd = Math.sqrt(frameVariance);
+            const pauseFrames = frameRmsValues.filter(v => v < this.PAUSE_FRAME_RMS_THRESHOLD).length;
+            pauseRatio = pauseFrames / frameRmsValues.length;
+        }
+
         // Pitch standard deviation
         let pitchStd = 0;
         let pitchSampleCount = 0;
@@ -164,12 +209,14 @@ class AudioAnalyzer {
             rms: rms,
             zcr: zcr,
             pitchStd: pitchStd,
-            pitchSampleCount: pitchSampleCount
+            pitchSampleCount: pitchSampleCount,
+            energyStd: energyStd,
+            pauseRatio: pauseRatio
         };
     }
 
     _calculateScores(features) {
-        const { rms, zcr, pitchStd, pitchSampleCount } = features;
+        const { rms, zcr, pitchStd, pitchSampleCount, energyStd, pauseRatio } = features;
 
         // ✅ FIX: previously these started at a 0.5 "baseline floor" - the same
         // problem that was already fixed in textAnalyzer.js/hybridAI.js. That
@@ -218,6 +265,35 @@ class AudioAnalyzer {
             trauma += 0.15;
         }
 
+        // ✅ NEW: a second, independent flat-affect signal - unvarying
+        // LOUDNESS across the recording, as opposed to unvarying PITCH
+        // above. A person can vary their pitch while still speaking in a
+        // flat, unchanging volume (or vice versa), so this isn't
+        // redundant with the pitch check - it can fire on its own even
+        // when pitch detection found too few samples to say anything.
+        // Uses a coefficient-of-variation style ratio (std relative to
+        // the mean level) rather than a fixed number, so it isn't
+        // conflating "quiet but expressive" with "loud but flat" at
+        // different overall volumes. Only meaningful once there's real
+        // energy to measure variation of at all.
+        if (rms >= this.SILENCE_RMS_FLOOR && (energyStd / rms) < 0.15) {
+            depression += 0.1;
+            trauma += 0.1;
+        }
+
+        // ✅ NEW: a high proportion of the recording being near-silent
+        // gaps (as opposed to the whole clip being silent, handled
+        // separately above) can reflect hesitant, halting delivery -
+        // long pauses mid-account are a documented correlate of
+        // emotional difficulty describing distressing events in the
+        // acoustic-speech literature, though (as with every threshold in
+        // this file) not independently validated against this app's own
+        // traffic - see the file header. Modest weight, since ordinary
+        // unhurried speech also has real pauses.
+        if (rms >= this.SILENCE_RMS_FLOOR && pauseRatio > 0.4) {
+            trauma += 0.1;
+        }
+
         return {
             depression: Math.min(depression * 100, 100),
             anxiety: Math.min(anxiety * 100, 100),
@@ -233,7 +309,7 @@ class AudioAnalyzer {
     // a real measurement and shouldn't count toward assessment confidence.
     _getDefault(error = null) {
         return {
-            features: { rms: 0.05, zcr: 0.08, pitchStd: 30, pitchSampleCount: 0 },
+            features: { rms: 0.05, zcr: 0.08, pitchStd: 30, pitchSampleCount: 0, energyStd: 0.02, pauseRatio: 0 },
             scores: {
                 depression: 0,
                 anxiety: 0,

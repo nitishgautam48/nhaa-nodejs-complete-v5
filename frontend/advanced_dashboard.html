@@ -385,7 +385,7 @@
                     <button class="btn btn-outline btn-sm" onclick="clearAll()"><i class="fas fa-undo"></i> Clear</button>
                 </div>
                 <div id="recordingStatus" style="margin-top:8px; font-size:12px; color:rgba(255,255,255,0.4);">
-                    <i class="fas fa-info-circle"></i> Press Record to speak (max 15s)
+                    <i class="fas fa-info-circle"></i> Press Record to speak - take as long as you need, click Stop when done
                 </div>
                 <div id="waveContainer" style="display:none; margin-top:8px; display:flex; align-items:center; gap:3px; height:44px; padding:6px 16px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid rgba(255,255,255,0.06);">
                     <div style="width:3px;height:10px;background:linear-gradient(135deg,#6c5ce7,#a29bfe);border-radius:4px;animation:wave 0.8s infinite ease-in-out alternate;animation-delay:0.0s;"></div>
@@ -1203,9 +1203,21 @@
                 mediaRecorder.start();
                 isRecording = true;
                 btn.innerHTML = '<i class="fas fa-stop"></i> Stop';
-                status.innerHTML = '<span style="color:#e17055;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#e17055;animation:pulse 1s infinite;vertical-align:middle;margin-right:6px;"></span> Recording...</span>';
+                status.innerHTML = '<span style="color:#e17055;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#e17055;animation:pulse 1s infinite;vertical-align:middle;margin-right:6px;"></span> Recording... (click Stop when done)</span>';
                 waveContainer.style.display = 'flex';
-                setTimeout(() => { if (isRecording) toggleRecording(); }, 15000);
+                // ✅ REMOVED: the 15s auto-stop. A crisis account often
+                // doesn't fit in 15 seconds, and someone who runs out of
+                // time mid-sentence gets cut off exactly when it matters
+                // most. Recording now runs until the person clicks Stop
+                // themselves - the only real ceiling left is the backend's
+                // 15MB upload limit (routes/nhaa.routes.js). The upload is
+                // uncompressed 16-bit PCM WAV (see audioBufferToWavBlob
+                // below), not the browser's compressed recording format,
+                // so that's roughly 2.5-3 minutes at a typical 48kHz mic -
+                // generous for a spoken account, but a real limit, not a
+                // theoretical one. index.js's global error handler already
+                // turns a too-large upload into a clean JSON error the
+                // existing catch block in runAssessment() displays.
             } catch(err) { alert('Microphone access required.'); }
         }
     }
