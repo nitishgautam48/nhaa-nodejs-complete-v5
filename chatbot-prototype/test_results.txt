@@ -1,0 +1,24 @@
+=== Chatbot test run ===
+
+Q: What is the total revenue?
+A: The total revenue for FY2024 is $1,250,000 (up 19.0% from the prior year).
+
+Q: How has net income changed over the last year?
+A: Net income has increased by $43,000 (30.3%) over the last year, from $142,000 to $185,000.
+
+Q: What are the total expenses?
+A: Total expenses for FY2024 are $1,065,000.
+
+Q: What is the profit margin?
+A: The profit margin for FY2024 is 14.8%.
+
+Q: What is the top expense category?
+A: The top expense category is Operations at $420,000 (39.4% of total expenses).
+
+Q: What is the weather today?
+A: Sorry, I can only provide information on predefined queries.
+
+Q: WHAT IS THE TOTAL REVENUE?  (case-insensitivity check)
+A: The total revenue for FY2024 is $1,250,000 (up 19.0% from the prior year).
+
+=== Test run complete ===
