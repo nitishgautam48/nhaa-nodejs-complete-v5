@@ -13,3 +13,8 @@ Thumbs.db
 # even hashed - unlike data/cases.json (already committed by this
 # project's existing convention), this is credential material.
 data/users.json
+
+# ITR assistant cases contain real PAN numbers, salary figures and
+# names extracted from uploaded Form 16s - unlike data/cases.json,
+# this is financial PII and must never be committed.
+data/itr/

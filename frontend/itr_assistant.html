@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>🧾 ITR Filing Assistant</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+        font-family: 'Inter', sans-serif;
+        background: #0a0a1a;
+        color: #fff;
+        min-height: 100vh;
+        background-image: radial-gradient(ellipse at 20% 0%, rgba(26,35,126,0.12), transparent 60%),
+                           radial-gradient(ellipse at 80% 20%, rgba(0,184,148,0.06), transparent 60%);
+        padding: 24px 16px 60px;
+    }
+    .container { max-width: 760px; margin: 0 auto; }
+    header { text-align: center; margin-bottom: 28px; }
+    header h1 { font-size: 26px; font-weight: 800; background: linear-gradient(135deg,#6c5ce7,#00b894); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+    header p { color: rgba(255,255,255,0.6); font-size: 13px; margin-top: 6px; }
+    .card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 22px; margin-bottom: 20px; }
+    .card h2 { font-size: 15px; font-weight: 700; margin-bottom: 14px; color: #a29bfe; }
+    label { display: block; font-size: 12px; color: rgba(255,255,255,0.55); margin: 10px 0 4px; }
+    input[type=text], input[type=number], select {
+        width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12);
+        background: rgba(255,255,255,0.03); color: #fff; font-size: 14px; font-family: inherit;
+    }
+    input[type=file] { color: rgba(255,255,255,0.8); font-size: 13px; }
+    .conf { font-size: 10px; padding: 2px 8px; border-radius: 20px; margin-left: 6px; }
+    .conf-extracted { background: rgba(0,184,148,0.18); color: #55efc4; }
+    .conf-low { background: rgba(253,203,110,0.18); color: #fdcb6e; }
+    .conf-missing { background: rgba(255,107,107,0.18); color: #ff7675; }
+    .conf-user { background: rgba(108,92,231,0.2); color: #a29bfe; }
+    .row { display: flex; gap: 12px; }
+    .row > div { flex: 1; }
+    button {
+        background: linear-gradient(135deg,#6c5ce7,#5a4fd1); color: #fff; border: none; border-radius: 10px;
+        padding: 12px 20px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 16px; font-family: inherit;
+    }
+    button.secondary { background: rgba(255,255,255,0.08); }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .warn { background: rgba(253,203,110,0.1); border: 1px solid rgba(253,203,110,0.25); color: #fdcb6e; padding: 12px 14px; border-radius: 10px; font-size: 12px; margin-bottom: 14px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+    th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+    th { color: rgba(255,255,255,0.5); font-weight: 600; font-size: 11px; text-transform: uppercase; }
+    .regime-pick { display: flex; gap: 10px; margin-top: 14px; }
+    .regime-pick label { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #fff; margin: 0; padding: 10px 14px; border: 1px solid rgba(255,255,255,0.12); border-radius: 10px; flex: 1; cursor: pointer; }
+    .regime-pick label.recommended { border-color: #00b894; }
+    pre { background: rgba(0,0,0,0.35); border-radius: 10px; padding: 14px; font-size: 11px; overflow-x: auto; white-space: pre-wrap; }
+    .disclaimer { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 20px; line-height: 1.6; }
+    .hidden { display: none; }
+    .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+</style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>🧾 ITR Filing Assistant</h1>
+        <p>Upload Form 16 → review the extracted numbers → get old vs new regime tax comparison → export a prefill JSON.</p>
+    </header>
+
+    <div class="warn">This is an assistive tool, not a filer. Every extracted field must be checked against your actual documents before you use these numbers to file. Complex cases (multiple employers, capital gains, business income, tax audit) need a professional.</div>
+
+    <div class="card" id="uploadCard">
+        <h2>1. Upload Form 16 (PDF)</h2>
+        <label>Assessment Year</label>
+        <select id="assessmentYear">
+            <option value="2026-27">2026-27 (income earned FY 2025-26)</option>
+        </select>
+        <label>Form 16 (Part B)</label>
+        <input type="file" id="form16File" accept="application/pdf" />
+        <button id="uploadBtn">Upload &amp; Extract</button>
+        <div id="uploadStatus" style="margin-top:10px;font-size:12px;color:rgba(255,255,255,0.5);"></div>
+    </div>
+
+    <div class="card hidden" id="reviewCard">
+        <h2>2. Review &amp; correct extracted fields</h2>
+        <div id="fieldWarnings"></div>
+        <div class="field-grid" id="fieldGrid"></div>
+        <label>Other income (interest, etc. - enter manually)</label>
+        <input type="number" id="otherIncome" value="0" />
+        <button id="saveFieldsBtn">Save Corrections</button>
+        <button id="computeBtn" class="secondary">Compute Tax →</button>
+    </div>
+
+    <div class="card hidden" id="computeCard">
+        <h2>3. Old vs New Regime</h2>
+        <table>
+            <thead><tr><th></th><th>Old Regime</th><th>New Regime</th></tr></thead>
+            <tbody id="computeTable"></tbody>
+        </table>
+        <div class="regime-pick" id="regimePick"></div>
+        <div id="computeWarnings" class="warn hidden"></div>
+        <button id="prefillBtn">Generate ITR-1 Prefill JSON →</button>
+    </div>
+
+    <div class="card hidden" id="prefillCard">
+        <h2>4. ITR-1 Prefill (review before using)</h2>
+        <pre id="prefillOutput"></pre>
+        <button id="downloadBtn" class="secondary">Download JSON</button>
+    </div>
+
+    <div class="disclaimer">
+        Figures are computed from what you upload/enter, using hardcoded slab rules for the selected assessment year. Nothing here is transmitted to the income tax department automatically - you review and file yourself, or hand this to your CA to shortcut the manual entry.
+    </div>
+</div>
+
+<script>
+const FIELD_LABELS = {
+    grossSalary: 'Gross Salary (Sec 17(1))',
+    exemptAllowances: 'Allowances exempt u/s 10',
+    standardDeduction: 'Standard Deduction (Sec 16)',
+    professionalTax: 'Professional Tax',
+    incomeChargeableUnderSalaries: 'Income chargeable under Salaries',
+    section80C: 'Section 80C',
+    section80D: 'Section 80D',
+    section80CCD1B: 'Section 80CCD(1B)',
+    totalChapterVIADeductions: 'Total Chapter VI-A deductions',
+    totalTaxableIncome: 'Total taxable income (per Form 16)',
+    totalTaxDeducted: 'Total TDS deducted',
+    employeePan: 'Employee PAN',
+    employerTan: 'Employer TAN',
+    employeeName: 'Employee Name',
+    employerName: 'Employer Name'
+};
+
+let currentCase = null;
+
+function money(n) {
+    if (n == null) return '-';
+    return '₹' + Number(n).toLocaleString('en-IN');
+}
+
+async function api(path, opts) {
+    const res = await fetch('/api/itr' + path, opts);
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Request failed');
+    return data;
+}
+
+document.getElementById('uploadBtn').onclick = async () => {
+    const fileInput = document.getElementById('form16File');
+    if (!fileInput.files[0]) return alert('Choose a Form 16 PDF first.');
+    const status = document.getElementById('uploadStatus');
+    status.textContent = 'Extracting...';
+    const fd = new FormData();
+    fd.append('form16', fileInput.files[0]);
+    fd.append('assessmentYear', document.getElementById('assessmentYear').value);
+    try {
+        const data = await api('/form16', { method: 'POST', body: fd });
+        currentCase = data.case;
+        status.textContent = 'Extracted. Review the fields below.';
+        renderFields();
+        document.getElementById('reviewCard').classList.remove('hidden');
+    } catch (e) {
+        status.textContent = 'Error: ' + e.message;
+    }
+};
+
+function renderFields() {
+    const grid = document.getElementById('fieldGrid');
+    grid.innerHTML = '';
+    for (const [key, label] of Object.entries(FIELD_LABELS)) {
+        const field = currentCase.effectiveFields[key] || { value: null, confidence: 'missing' };
+        const wrap = document.createElement('div');
+        // data-original records the value as of this render so Save can
+        // tell "untouched" apart from "user edited" - without it, every
+        // save resends every field as an override (even ones nobody
+        // touched) and every confidence badge collapses to "user",
+        // destroying the whole point of flagging what still needs review.
+        wrap.innerHTML = `
+            <label>${label} <span class="conf conf-${field.confidence}">${field.confidence}</span></label>
+            <input type="text" data-field="${key}" data-original="${field.value != null ? field.value : ''}" value="${field.value != null ? field.value : ''}" />
+        `;
+        grid.appendChild(wrap);
+    }
+    document.getElementById('otherIncome').value = currentCase.otherIncome || 0;
+
+    const warnBox = document.getElementById('fieldWarnings');
+    warnBox.innerHTML = (currentCase.warnings || []).map(w => `<div class="warn">${w}</div>`).join('');
+}
+
+async function saveFields() {
+    const overrides = {};
+    document.querySelectorAll('#fieldGrid input[data-field]').forEach(input => {
+        const raw = input.value.trim();
+        if (raw === '' || raw === input.dataset.original) return;
+        const key = input.dataset.field;
+        const isNumeric = !['employeePan', 'employerTan', 'employeeName', 'employerName'].includes(key);
+        overrides[key] = isNumeric ? Number(raw) : raw;
+    });
+    const otherIncome = Number(document.getElementById('otherIncome').value) || 0;
+    const data = await api(`/case/${currentCase.id}/fields`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ overrides, otherIncome })
+    });
+    currentCase = data.case;
+    renderFields();
+    document.getElementById('computeCard').classList.add('hidden');
+    document.getElementById('prefillCard').classList.add('hidden');
+}
+
+document.getElementById('saveFieldsBtn').onclick = async () => {
+    try {
+        await saveFields();
+        alert('Saved.');
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+};
+
+document.getElementById('computeBtn').onclick = async () => {
+    try {
+        await saveFields();
+        const data = await api(`/case/${currentCase.id}/compute`, { method: 'POST' });
+        currentCase = data.case;
+        renderCompute();
+        document.getElementById('computeCard').classList.remove('hidden');
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+};
+
+function renderCompute() {
+    const c = currentCase.computation;
+    const rows = [
+        ['Taxable Income', money(c.old.taxableIncome), money(c.new.taxableIncome)],
+        ['Tax before rebate', money(c.old.baseTax), money(c.new.baseTax)],
+        ['Rebate (87A)', money(c.old.rebate), money(c.new.rebate)],
+        ['Surcharge', money(c.old.surcharge), money(c.new.surcharge)],
+        ['Health & Education Cess', money(c.old.cess), money(c.new.cess)],
+        ['<strong>Total Tax</strong>', `<strong>${money(c.old.totalTax)}</strong>`, `<strong>${money(c.new.totalTax)}</strong>`]
+    ];
+    document.getElementById('computeTable').innerHTML = rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');
+
+    const pick = document.getElementById('regimePick');
+    pick.innerHTML = ['old', 'new'].map(regime => `
+        <label class="${c.recommended === regime ? 'recommended' : ''}">
+            <input type="radio" name="regime" value="${regime}" ${currentCase.selectedRegime === regime ? 'checked' : ''} />
+            ${regime === 'old' ? 'Old Regime' : 'New Regime'} ${c.recommended === regime ? '(recommended)' : ''}
+        </label>
+    `).join('');
+    pick.querySelectorAll('input[name=regime]').forEach(radio => {
+        radio.onchange = async () => {
+            const data = await api(`/case/${currentCase.id}/regime`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ regime: radio.value })
+            });
+            currentCase = data.case;
+        };
+    });
+
+    const warnBox = document.getElementById('computeWarnings');
+    if (c.warnings && c.warnings.length) {
+        warnBox.classList.remove('hidden');
+        warnBox.innerHTML = c.warnings.join('<br/>');
+    } else {
+        warnBox.classList.add('hidden');
+    }
+}
+
+document.getElementById('prefillBtn').onclick = async () => {
+    try {
+        const data = await api(`/case/${currentCase.id}/prefill`);
+        document.getElementById('prefillOutput').textContent = JSON.stringify(data.prefill, null, 2);
+        document.getElementById('prefillCard').classList.remove('hidden');
+        window._prefill = data.prefill;
+    } catch (e) {
+        alert('Error: ' + e.message);
+    }
+};
+
+document.getElementById('downloadBtn').onclick = () => {
+    const blob = new Blob([JSON.stringify(window._prefill, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `itr1-prefill-${currentCase.id}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+};
+</script>
+</body>
+</html>

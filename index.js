@@ -9,6 +9,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import nhaaRoutes from './routes/nhaa.routes.js';
+import itrRoutes from './routes/itr.routes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,6 +32,9 @@ app.use(express.urlencoded({ extended: true }));
 
 // API Routes
 app.use('/api/v1', nhaaRoutes);
+// ITR filing assistant - a separate product living in this server for
+// now; isolated route/controller/service tree, own JSON case store.
+app.use('/api/itr', itrRoutes);
 
 // Health Check
 app.get('/ping', (req, res) => {
@@ -60,6 +64,7 @@ app.get('/authority', (req, res) => res.sendFile(path.join(frontendDir, 'authori
 // still point at /lawyer directly.
 app.get('/lawyer', (req, res) => res.sendFile(path.join(frontendDir, 'lawyer_dashboard.html')));
 app.get('/scst', (req, res) => res.redirect('/lawyer'));
+app.get('/itr', (req, res) => res.sendFile(path.join(frontendDir, 'itr_assistant.html')));
 
 // ✅ NEW: with no error-handling middleware at all, an error thrown
 // synchronously in middleware (e.g. multer's fileFilter rejecting an
